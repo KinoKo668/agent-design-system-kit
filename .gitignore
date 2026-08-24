@@ -1,0 +1,55 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.local
+.mcp.local.json
+.claude/settings.local.json
+
+# Node.js and JavaScript tooling
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Logs, temporary files, and generated output
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Test and package-manager artifacts
+.nyc_output/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+
+# Local Codex working data
+.codex/
