@@ -1,6 +1,6 @@
 # Agent Design System Kit
 
-一个本地优先、跨 Agent、面向新项目的开源设计系统工具包。
+一个本地优先、跨 Agent、面向新项目的源码开放设计系统工具包。
 
 ## 项目目标
 
@@ -9,6 +9,12 @@
 ## 当前阶段
 
 项目处于概念设计和术语统一阶段。
+
+## 许可证与商业使用
+
+本项目以 [PolyForm Noncommercial License 1.0.0](LICENSE.md) 公开源码：非商业用途可以依照许可证使用、修改和分发；商业使用必须事先获得版权所有者的书面许可，具体参见[商业授权说明](COMMERCIAL-LICENSE.md)。
+
+由于许可证限制商业使用，本项目属于 **Source Available（源码开放）**，不是 OSI 定义的 Open Source Software。
 
 ## 目录
 
