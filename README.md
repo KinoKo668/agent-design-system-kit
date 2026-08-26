@@ -29,3 +29,4 @@
 - [Agent 设计系统术语入门](docs/Agent设计系统术语入门.md)
 - [项目背景与当前决策](docs/项目背景与当前决策.md)
 - [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)
+- [DIR-002：人工审批门禁与状态模型](docs/DIR-002-人工审批门禁与状态模型.md)
