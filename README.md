@@ -8,7 +8,7 @@
 
 ## 当前阶段
 
-项目已进入 MVP 架构与风险冻结阶段，当前执行范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)。
+项目已完成 M0 架构与风险冻结，下一阶段将初始化正式工程骨架。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
 
 ## 许可证与商业使用
 
@@ -35,3 +35,4 @@
 - [SPIKE-002：Plugin 与本地进程通信验证](docs/SPIKE-002-Plugin与本地进程通信验证.md)
 - [ADR-001：工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [ADR-002：稳定身份、版本、幂等与迁移策略](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
