@@ -843,6 +843,54 @@ Hardcoded Value 是直接写在组件或页面中的数值，而不是引用 Tok
 
 例如 Agent 连续执行两次“创建 Button”，正确结果应该是发现 Button 已存在并更新或跳过，而不是创建两个同名 Button。
 
+### Stable Logical ID｜稳定逻辑 ID
+
+稳定逻辑 ID 是设计系统给一个概念分配的长期名字，例如 `component/button`。
+
+它不会因为 Figma 图层改名、移动位置或发布新版本而改变。Figma Node ID 和 Component Key 可以帮助系统找到对象，但都不能代替稳定逻辑 ID。
+
+### Asset Version｜资产版本
+
+资产版本表示同一个 Token 或 Component 的哪一版规则，例如 `button@1.2.0`。
+
+稳定逻辑 ID 回答“它是谁”，资产版本回答“它现在是哪一版”。版本升级不会把它变成另一个组件。
+
+### Schema Version｜数据格式版本
+
+Schema Version 表示机器文件使用哪一版结构，例如字段名称和必填项目是什么。
+
+它与 Button 的设计版本不是一回事。Schema 升级解决的是“文件怎么读”，资产升级解决的是“设计规则怎么变”。
+
+### Content Digest｜内容摘要
+
+内容摘要是根据一份规则内容计算出的短指纹。内容相同，摘要就相同；重要内容发生变化，摘要也会变化。
+
+审批记录绑定内容摘要后，可以防止 Agent 在设计师批准之后悄悄修改文件并继续使用旧批准。
+
+### Operation ID｜操作 ID
+
+Operation ID 用于识别一次已经被系统接受的执行记录，例如一次创建组件或插入 Instance 的任务。
+
+它只代表这一次执行，不代表 Button 等长期设计资产。
+
+### Idempotency Key｜幂等键
+
+幂等键是调用方在重试同一个操作时重复提供的标记。
+
+系统发现“同一个幂等键加同一份命令”时，会返回原结果或继续恢复，而不会重新创建资产；如果同一个键被拿来执行不同命令，系统会拒绝。
+
+### Placement ID｜放置 ID
+
+Placement ID 表示页面中一个具体 Component Instance 的业务身份。
+
+同一个 Placement ID 重试不会再放一个按钮；新的 Placement ID 则代表用户确实希望新增另一个按钮。它用来区分“网络重试”和“再创建一个”。
+
+### Migration｜迁移
+
+Migration 是把旧数据格式或旧设计资产安全升级到新版本的明确过程。
+
+迁移应先显示会改什么，再由人确认执行。重大组件升级通常保留旧组件，不应自动删除旧资产或批量替换已有页面。
+
 ### Validation｜验证
 
 Validation 是检查输出是否满足明确规则。
