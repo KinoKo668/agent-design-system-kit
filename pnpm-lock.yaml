@@ -6,4 +6,39 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/cli:
+    dependencies:
+      '@agent-design-system-kit/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/core: {}
+
+  packages/figma-plugin:
+    dependencies:
+      '@agent-design-system-kit/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/mcp-server:
+    dependencies:
+      '@agent-design-system-kit/core':
+        specifier: workspace:*
+        version: link:../core
+
+packages:
+
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  typescript@6.0.3: {}

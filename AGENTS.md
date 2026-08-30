@@ -28,13 +28,25 @@
 
 ## 当前阶段
 
-项目处于概念定义、术语统一和 MVP 范围设计阶段，尚未进入正式编码。
+项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。pnpm Workspace、冻结 Lockfile 和四个正式 Package 已建立；业务源码暂时只有用于验证依赖边界的最小入口。
 
 开始工作前请先阅读：
 
 - `README.md`
 - `docs/项目背景与当前决策.md`
 - `docs/Agent设计系统术语入门.md`
+- `docs/ADR-001-工程技术栈与Monorepo方案.md`
+- `docs/ADR-002-稳定身份版本幂等与迁移策略.md`
+- `docs/DEMO-001-MVP演示脚本与成功标准.md`
+
+工程规则：
+
+- 使用 Node.js 24 LTS 和根目录固定的 pnpm 11；
+- Package 之间必须使用 `workspace:*`；
+- `cli`、`mcp-server`、`figma-plugin` 只能单向依赖 `core`；
+- `core` 禁止依赖 `node:*`、Figma 全局对象和 DOM；
+- 正式 Node Package 使用 ESM；
+- 不得把 Spike 代码直接搬入正式 Package，必须按正式 Contract 重建并测试。
 
 ## 第一条验证链路
 

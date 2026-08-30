@@ -8,7 +8,7 @@
 
 ## 当前阶段
 
-项目已进入 M1 工程骨架阶段，根 pnpm Workspace 与冻结 Lockfile 已建立，下一步创建四个正式 Package。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
+项目已进入 M1 工程骨架阶段，根 Workspace 与 `core`、`cli`、`mcp-server`、`figma-plugin` 四个正式 Package 已建立，下一步完善统一质量门禁。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
 
 ## 本地工程基线
 
