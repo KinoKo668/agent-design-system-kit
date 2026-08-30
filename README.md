@@ -100,6 +100,8 @@ What exists today:
 
 - a pnpm workspace with frozen dependency boundaries;
 - `core`, `cli`, `mcp-server`, and `figma-plugin` packages;
+- one `pnpm check` gate for formatting, typed linting, type checks, tests, and builds;
+- an esbuild pipeline that produces the Figma main-thread IIFE bundle;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -131,7 +133,7 @@ git clone https://github.com/KinoKo668/hatchkit.git
 cd hatchkit
 corepack enable pnpm
 pnpm install --frozen-lockfile
-pnpm build
+pnpm check
 ```
 
 Requirements:

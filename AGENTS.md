@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。pnpm Workspace、冻结 Lockfile 和四个正式 Package 已建立；业务源码暂时只有用于验证依赖边界的最小入口。
+项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。pnpm Workspace、冻结 Lockfile、四个正式 Package 和统一质量门禁已建立；业务源码暂时只有用于验证依赖边界的最小入口。
 
 开始工作前请先阅读：
 
@@ -46,6 +46,8 @@
 - `cli`、`mcp-server`、`figma-plugin` 只能单向依赖 `core`；
 - `core` 禁止依赖 `node:*`、Figma 全局对象和 DOM；
 - 正式 Node Package 使用 ESM；
+- 提交前必须在 Node.js 24 下运行 `pnpm check`，依次通过格式、Lint、类型、测试与构建；
+- Figma 主线程源码由 esbuild 打包为 IIFE，禁止把未打包的跨 Package ESM 当作 Plugin 产物；
 - 不得把 Spike 代码直接搬入正式 Package，必须按正式 Contract 重建并测试。
 
 ## 第一条验证链路

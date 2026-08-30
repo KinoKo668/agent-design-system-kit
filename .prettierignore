@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.git
+docs/brand
+development-tasks
+diagrams
+spikes
+pnpm-lock.yaml

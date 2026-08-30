@@ -10,3 +10,5 @@ disallowWorkspaceCycles: true
 autoInstallPeers: false
 strictPeerDependencies: true
 engineStrict: true
+allowBuilds:
+  esbuild: true

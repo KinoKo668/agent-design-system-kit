@@ -12,9 +12,12 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build && pnpm run build:bundle",
+    "build:bundle": "node ./scripts/build.mjs"
   },
   "dependencies": {
     "@agent-design-system-kit/core": "workspace:*"
