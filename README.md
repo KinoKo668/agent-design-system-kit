@@ -32,3 +32,4 @@
 - [DIR-002：人工审批门禁与状态模型](docs/DIR-002-人工审批门禁与状态模型.md)
 - [ARCH-001：系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
 - [SPIKE-001：Figma Plugin 写入能力验证](docs/SPIKE-001-Figma-Plugin写入能力验证.md)
+- [SPIKE-002：Plugin 与本地进程通信验证](docs/SPIKE-002-Plugin与本地进程通信验证.md)

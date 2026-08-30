@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root { color-scheme: light dark; font-family: Inter, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 18px; color: var(--figma-color-text); background: var(--figma-color-bg); }
+      h1 { margin: 0 0 6px; font-size: 17px; }
+      p { margin: 0; color: var(--figma-color-text-secondary); font-size: 12px; line-height: 1.5; }
+      .panel { margin-top: 14px; padding: 12px; border-radius: 8px; background: var(--figma-color-bg-secondary); }
+      label { display: block; margin: 10px 0 5px; font-size: 11px; font-weight: 600; }
+      input[type="text"], input[type="password"] { width: 100%; padding: 9px 10px; border: 1px solid var(--figma-color-border); border-radius: 6px; color: var(--figma-color-text); background: var(--figma-color-bg); }
+      .transport { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; }
+      .transport label { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; }
+      .actions { display: flex; gap: 8px; margin-top: 14px; }
+      button { border: 0; border-radius: 6px; padding: 9px 12px; font-weight: 600; cursor: pointer; }
+      #connect { color: white; background: #4f46e5; }
+      #disconnect, #close { color: var(--figma-color-text); background: var(--figma-color-bg-tertiary); }
+      button:disabled { cursor: not-allowed; opacity: .5; }
+      .status { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+      .dot.connecting { background: #f59e0b; }
+      .dot.connected { background: #16a34a; }
+      .dot.error { background: #dc2626; }
+      pre { min-height: 175px; max-height: 220px; overflow: auto; margin: 12px 0 0; padding: 10px; border-radius: 8px; font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; color: var(--figma-color-text-secondary); background: var(--figma-color-bg-secondary); }
+      .footnote { margin-top: 10px; font-size: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>SPIKE-002 / Local Bridge</h1>
+    <p>连接本机 Bridge，接收串行命令并把执行结果返回给 Agent。</p>
+
+    <div class="panel">
+      <label for="endpoint">本地地址</label>
+      <input id="endpoint" type="text" value="http://localhost:38451" spellcheck="false" />
+      <label for="token">临时 Session Token</label>
+      <input id="token" type="password" autocomplete="off" spellcheck="false" />
+      <label>传输方式</label>
+      <div class="transport">
+        <label><input type="radio" name="transport" value="http" checked /> HTTP 长轮询</label>
+        <label><input type="radio" name="transport" value="websocket" /> WebSocket</label>
+      </div>
+      <div class="actions">
+        <button id="connect" disabled>连接</button>
+        <button id="disconnect" disabled>断开</button>
+        <button id="close">关闭</button>
+      </div>
+    </div>
+
+    <div class="status"><span id="dot" class="dot"></span><span id="status">正在读取 Figma 上下文…</span></div>
+    <pre id="log">尚未连接。</pre>
+    <p class="footnote">Token 只保存在本次插件窗口的内存中；关闭窗口后即丢失。</p>
+
+    <script>
+      const VERSION = "0.1";
+      const endpointInput = document.getElementById("endpoint");
+      const tokenInput = document.getElementById("token");
+      const connectButton = document.getElementById("connect");
+      const disconnectButton = document.getElementById("disconnect");
+      const statusText = document.getElementById("status");
+      const statusDot = document.getElementById("dot");
+      const logOutput = document.getElementById("log");
+
+      let pluginInfo = null;
+      let desiredConnection = false;
+      let activeTransport = null;
+      let webSocket = null;
+      let pollController = null;
+      let reconnectTimer = null;
+      let reconnectAttempt = 0;
+      const completedResults = new Map();
+      const pendingResults = new Map();
+
+      connectButton.onclick = () => connect();
+      disconnectButton.onclick = () => disconnect(true);
+      document.getElementById("close").onclick = () => {
+        disconnect(true).finally(() => parent.postMessage({ pluginMessage: { type: "close" } }, "*"));
+      };
+
+      onmessage = (event) => {
+        const message = event.data.pluginMessage;
+        if (!message) return;
+        if (message.type === "plugin-ready") {
+          pluginInfo = { pluginInstanceId: message.pluginInstanceId, context: message.context };
+          connectButton.disabled = false;
+          setStatus("idle", `就绪：${message.context.fileName} / ${message.context.pageName}`);
+          appendLog(`Plugin instance: ${message.pluginInstanceId}`);
+        } else if (message.type === "command-result") {
+          completedResults.set(message.result.operationId, message.result);
+          pendingResults.set(message.result.operationId, message.result);
+          sendPendingResults();
+        } else if (message.type === "fatal-error") {
+          setStatus("error", `插件初始化失败：${message.error.message}`);
+        }
+      };
+
+      async function connect() {
+        if (!pluginInfo || !tokenInput.value.trim()) {
+          setStatus("error", "请输入 Bridge 输出的临时 Token。");
+          return;
+        }
+        await disconnect(false);
+        desiredConnection = true;
+        activeTransport = document.querySelector('input[name="transport"]:checked').value;
+        connectButton.disabled = true;
+        disconnectButton.disabled = false;
+        setStatus("connecting", `正在通过 ${activeTransport} 连接…`);
+        if (activeTransport === "http") connectHttp();
+        else connectWebSocket();
+      }
+
+      async function disconnect(userRequested) {
+        desiredConnection = false;
+        clearTimeout(reconnectTimer);
+        pollController?.abort();
+        pollController = null;
+        if (webSocket) {
+          webSocket.onclose = null;
+          webSocket.close();
+          webSocket = null;
+        }
+        if (activeTransport === "http" && pluginInfo && tokenInput.value.trim()) {
+          try {
+            await bridgeFetch("/v1/plugin/disconnect", {
+              method: "POST",
+              body: JSON.stringify({ pluginInstanceId: pluginInfo.pluginInstanceId })
+            });
+          } catch (_) {}
+        }
+        activeTransport = null;
+        connectButton.disabled = !pluginInfo;
+        disconnectButton.disabled = true;
+        if (userRequested) setStatus("idle", "已断开。");
+      }
+
+      async function connectHttp() {
+        try {
+          await bridgeFetch("/v1/plugin/connect", {
+            method: "POST",
+            body: JSON.stringify({
+              schemaVersion: VERSION,
+              pluginInstanceId: pluginInfo.pluginInstanceId,
+              transport: "http",
+              context: pluginInfo.context
+            })
+          });
+          reconnectAttempt = 0;
+          setStatus("connected", "HTTP 已连接，等待命令。");
+          appendLog("HTTP session connected.");
+          sendPendingResults();
+          pollHttp();
+        } catch (error) {
+          connectionFailed(error, connectHttp);
+        }
+      }
+
+      async function pollHttp() {
+        while (desiredConnection && activeTransport === "http") {
+          pollController = new AbortController();
+          try {
+            const response = await fetch(
+              `${normalizedEndpoint()}/v1/plugin/next?pluginInstanceId=${encodeURIComponent(pluginInfo.pluginInstanceId)}`,
+              { headers: authHeaders(), signal: pollController.signal }
+            );
+            if (response.status === 204) continue;
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) throw responseError(response, body);
+            receiveCommand(body);
+          } catch (error) {
+            if (error.name === "AbortError" || !desiredConnection) return;
+            connectionFailed(error, connectHttp);
+            return;
+          }
+        }
+      }
+
+      function connectWebSocket() {
+        const wsBase = normalizedEndpoint().replace(/^http/, "ws");
+        const url = `${wsBase}/v1/ws?token=${encodeURIComponent(tokenInput.value.trim())}&pluginInstanceId=${encodeURIComponent(pluginInfo.pluginInstanceId)}`;
+        try {
+          webSocket = new WebSocket(url);
+          webSocket.onopen = () => {
+            reconnectAttempt = 0;
+            webSocket.send(JSON.stringify({
+              kind: "hello",
+              schemaVersion: VERSION,
+              context: pluginInfo.context
+            }));
+          };
+          webSocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.kind === "connected") {
+              setStatus("connected", "WebSocket 已连接，等待命令。");
+              appendLog("WebSocket session connected.");
+              sendPendingResults();
+            } else if (message.kind === "command") {
+              receiveCommand(message.command);
+            } else if (message.kind === "error") {
+              appendLog(`Bridge error: ${message.error.code} / ${message.error.message}`);
+            }
+          };
+          webSocket.onerror = () => appendLog("WebSocket transport error.");
+          webSocket.onclose = () => {
+            webSocket = null;
+            if (desiredConnection) connectionFailed(new Error("WebSocket disconnected."), connectWebSocket);
+          };
+        } catch (error) {
+          connectionFailed(error, connectWebSocket);
+        }
+      }
+
+      function receiveCommand(command) {
+        appendLog(`Received ${command.operationId} (${command.command.type}), attempt ${command.attempt}.`);
+        const cached = completedResults.get(command.operationId);
+        if (cached) {
+          pendingResults.set(command.operationId, cached);
+          appendLog(`Replaying cached result for ${command.operationId}.`);
+          sendPendingResults();
+          return;
+        }
+        parent.postMessage({ pluginMessage: { type: "execute-command", command } }, "*");
+      }
+
+      async function sendPendingResults() {
+        for (const [operationId, result] of pendingResults) {
+          try {
+            if (activeTransport === "websocket" && webSocket?.readyState === WebSocket.OPEN) {
+              webSocket.send(JSON.stringify({ kind: "result", result }));
+            } else if (activeTransport === "http" && desiredConnection) {
+              await bridgeFetch("/v1/plugin/results", { method: "POST", body: JSON.stringify(result) });
+            } else {
+              return;
+            }
+            pendingResults.delete(operationId);
+            appendLog(`Reported ${operationId}: ${result.ok ? "ok" : "failed"}.`);
+          } catch (error) {
+            appendLog(`Result pending for ${operationId}: ${error.message}`);
+            return;
+          }
+        }
+      }
+
+      function connectionFailed(error, reconnect) {
+        setStatus("error", error.message);
+        if (!desiredConnection) return;
+        const delay = Math.min(250 * 2 ** reconnectAttempt, 4000);
+        reconnectAttempt += 1;
+        appendLog(`Reconnect in ${delay} ms.`);
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(reconnect, delay);
+      }
+
+      async function bridgeFetch(path, init = {}) {
+        const response = await fetch(`${normalizedEndpoint()}${path}`, {
+          ...init,
+          headers: { ...authHeaders(), ...(init.headers || {}) }
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw responseError(response, body);
+        return body;
+      }
+
+      function authHeaders() {
+        return { authorization: `Bearer ${tokenInput.value.trim()}`, "content-type": "application/json" };
+      }
+
+      function normalizedEndpoint() {
+        return endpointInput.value.trim().replace(/\/$/, "");
+      }
+
+      function responseError(response, body) {
+        const detail = body.error || { code: `HTTP_${response.status}`, message: response.statusText };
+        return new Error(`${detail.code}: ${detail.message}`);
+      }
+
+      function setStatus(state, message) {
+        statusDot.className = `dot ${state === "idle" ? "" : state}`;
+        statusText.textContent = message;
+      }
+
+      function appendLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        logOutput.textContent = `${logOutput.textContent}\n[${timestamp}] ${message}`.trim();
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

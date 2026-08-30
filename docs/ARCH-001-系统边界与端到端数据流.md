@@ -135,7 +135,7 @@ Figma Plugin Writer 是唯一可以正式修改 Figma 文件的组件。
 - 在遇到冲突时猜测正确组件；
 - 绕过 Writer Queue 并行修改正式资产。
 
-MCP 与 Plugin 之间的具体本地通信方式由 `SPIKE-002` 验证，当前保留本地 HTTP 和 WebSocket 两种候选，不在 ARCH-001 提前决定。
+MCP 与 Plugin 之间的具体本地通信方式已经由 `SPIKE-002` 验证。MVP 采用绑定本机回环地址的 HTTP 长轮询；WebSocket 已证明可行，但不进入第一版正式实现。
 
 ## 7. Figma Design File 边界
 
@@ -183,8 +183,8 @@ Figma 中的人工修改必须通过差异检测和新的审批流程同步回 G
 | --- | --- | --- |
 | Agent ↔ MCP | Model Context Protocol | 已确定 |
 | MCP ↔ Git Repository | 本地文件系统 + Git | 已确定 |
-| MCP ↔ Figma Plugin | 本地 HTTP 或 WebSocket | 待 `SPIKE-002` |
-| Plugin ↔ Figma File | Figma Plugin API | 待 `SPIKE-001` 验证具体能力 |
+| MCP ↔ Figma Plugin | 本机 HTTP 长轮询 | `SPIKE-002` 已验证 |
+| Plugin ↔ Figma File | Figma Plugin API | `SPIKE-001` 已验证 |
 | Git Repository ↔ GitHub | Git push / pull | 已确定，非运行时依赖 |
 
 所有跨边界请求都必须携带或可以解析出：
@@ -347,6 +347,13 @@ macOS
 - Writer Queue 是否需要本地文件日志。
 
 ARCH-001 不提前替这些实验做决定。
+
+### 实验回填
+
+- `SPIKE-001` 已确认 Variables、Component Set、Variant、Instance、稳定身份和重复运行复用可行；
+- `SPIKE-002` 已确认 HTTP 长轮询与 WebSocket 均可从本地进程驱动真实 Figma Plugin；
+- MVP 冻结 HTTP 长轮询作为正式通信方向，使用随机会话 Token、单 Writer、操作租约和幂等键；
+- Writer Queue 保持进程内 FIFO。进程崩溃后由调用方使用原幂等键重试，并由 Figma 稳定身份恢复；运行日志是否持久化及格式留给 ADR-002。
 
 ## 19. ARCH-001 完成标准
 
