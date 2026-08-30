@@ -54,5 +54,8 @@ temp/
 # Local Codex working data
 .codex/
 
+# Local Agent Design System Kit runtime state
+.agent-design-system-kit/
+
 # Local development planning and work logs
 development-tasks/

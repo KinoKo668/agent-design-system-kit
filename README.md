@@ -8,7 +8,25 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结，下一阶段将初始化正式工程骨架。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
+项目已进入 M1 工程骨架阶段，根 pnpm Workspace 与冻结 Lockfile 已建立，下一步创建四个正式 Package。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
+
+## 本地工程基线
+
+- 主要开发版本：Node.js `24.20.0` LTS；
+- 兼容范围：Node.js `>=22.22 <27`；
+- 包管理器：pnpm `11.24.0`；
+- 包管理器由根 `packageManager` 字段和 Corepack 固定；
+- 所有 Workspace 共用根目录唯一的 `pnpm-lock.yaml`。
+
+首次进入工程：
+
+```bash
+corepack enable pnpm
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+使用 nvm 时可先执行 `nvm use`，它会读取仓库中的 `.nvmrc`。
 
 ## 许可证与商业使用
 

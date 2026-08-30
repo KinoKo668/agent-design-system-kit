@@ -1,0 +1,19 @@
+{
+  "name": "agent-design-system-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A local-first, agent-native toolkit for building and governing design systems.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KinoKo668/agent-design-system-kit.git"
+  },
+  "engines": {
+    "node": ">=22.22 <27",
+    "pnpm": "11.24.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "build": "pnpm --recursive --if-present build"
+  }
+}
