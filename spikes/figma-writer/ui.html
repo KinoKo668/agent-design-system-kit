@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 20px; color: var(--figma-color-text); background: var(--figma-color-bg); }
+      h1 { margin: 0 0 8px; font-size: 18px; }
+      p { margin: 0 0 16px; font-size: 12px; line-height: 1.6; color: var(--figma-color-text-secondary); }
+      .notice { padding: 12px; border-radius: 8px; background: var(--figma-color-bg-secondary); }
+      .actions { display: flex; gap: 8px; margin-top: 16px; }
+      button { border: 0; border-radius: 6px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
+      #run { color: white; background: #4f46e5; }
+      #close { color: var(--figma-color-text); background: var(--figma-color-bg-secondary); }
+      button:disabled { cursor: wait; opacity: 0.55; }
+      pre { min-height: 210px; max-height: 280px; overflow: auto; margin: 16px 0 0; padding: 12px; border-radius: 8px; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; background: var(--figma-color-bg-secondary); }
+      .success { color: var(--figma-color-text-success); }
+      .error { color: var(--figma-color-text-danger); }
+    </style>
+  </head>
+  <body>
+    <h1>SPIKE-001 / Figma Writer</h1>
+    <p class="notice">
+      在当前测试文件创建或更新实验 Variables、4 个 Button Variant 和 1 个真实 Instance。
+      再运行一次可验证不会重复创建资产。
+    </p>
+    <div class="actions">
+      <button id="run">运行实验</button>
+      <button id="close">关闭</button>
+    </div>
+    <pre id="output">尚未运行。</pre>
+    <script>
+      const runButton = document.getElementById("run");
+      const output = document.getElementById("output");
+
+      runButton.onclick = () => {
+        runButton.disabled = true;
+        output.className = "";
+        output.textContent = "正在写入并校验……";
+        parent.postMessage({ pluginMessage: { type: "run-spike" } }, "*");
+      };
+
+      document.getElementById("close").onclick = () => {
+        parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+      };
+
+      onmessage = (event) => {
+        const message = event.data.pluginMessage;
+        if (!message || message.type !== "result") return;
+        runButton.disabled = false;
+        output.className = message.ok ? "success" : "error";
+        output.textContent = message.ok
+          ? JSON.stringify(message.result, null, 2)
+          : `失败：${message.error}`;
+      };
+    </script>
+  </body>
+</html>

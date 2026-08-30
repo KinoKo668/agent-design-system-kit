@@ -1,0 +1,12 @@
+{
+  "name": "Agent Design System Kit — SPIKE-001",
+  "id": "1521703469092853728",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "code.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}
