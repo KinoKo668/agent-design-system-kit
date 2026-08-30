@@ -33,3 +33,4 @@
 - [ARCH-001：系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
 - [SPIKE-001：Figma Plugin 写入能力验证](docs/SPIKE-001-Figma-Plugin写入能力验证.md)
 - [SPIKE-002：Plugin 与本地进程通信验证](docs/SPIKE-002-Plugin与本地进程通信验证.md)
+- [ADR-001：工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
