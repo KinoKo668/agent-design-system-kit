@@ -1,56 +1,180 @@
-# Agent Design System Kit
+<p align="center">
+  <img src="docs/brand/hatch-logo.png" width="240" alt="Hatch mascot protecting a golden component tile">
+</p>
 
-一个本地优先、跨 Agent、面向新项目的源码开放设计系统工具包。
+<h1 align="center">Hatch</h1>
 
-## 项目目标
+<p align="center"><strong>Hatch a design system your agents can trust.</strong></p>
 
-帮助 Codex、Claude、Cursor、Antigravity 等 Agent 完成从 UI 定调、Design Token、Figma Components 到后续页面复用与一致性审计的完整流程。
+<p align="center">
+  A local-first, agent-native toolkit for building and governing design systems from product brief to reusable Figma components.
+</p>
 
-## 当前阶段
+<p align="center">
+  <a href="README.zh-CN.md">简体中文</a>
+  ·
+  <a href="#how-hatch-works">How it works</a>
+  ·
+  <a href="#current-status">Status</a>
+  ·
+  <a href="#getting-started">Getting started</a>
+</p>
 
-项目已进入 M1 工程骨架阶段，根 Workspace 与 `core`、`cli`、`mcp-server`、`figma-plugin` 四个正式 Package 已建立，下一步完善统一质量门禁。Button 范围参见 [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)，端到端验收目标参见 [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)。
+<p align="center">
+  <img alt="Stage: M1 foundation" src="https://img.shields.io/badge/stage-M1%20foundation-4C8ECC">
+  <img alt="Node.js 24 LTS" src="https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=nodedotjs&logoColor=white">
+  <img alt="pnpm 11" src="https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white">
+  <img alt="License: source available" src="https://img.shields.io/badge/license-source%20available-F5B700">
+</p>
 
-## 本地工程基线
+## Design systems that survive the agent loop
 
-- 主要开发版本：Node.js `24.20.0` LTS；
-- 兼容范围：Node.js `>=22.22 <27`；
-- 包管理器：pnpm `11.24.0`；
-- 包管理器由根 `packageManager` 字段和 Corepack 固定；
-- 所有 Workspace 共用根目录唯一的 `pnpm-lock.yaml`。
+AI agents can generate a screen. The harder problem is making every future screen follow the same decisions.
 
-首次进入工程：
+Across sessions, tools, and collaborators, design context gets lost. Colors drift, components are redrawn, Figma assets diverge from code, and an agent may invent a near-duplicate instead of reusing the approved component.
+
+Hatch turns professional design-system practice into a workflow that agents can execute, verify, and resume:
+
+- explore multiple UI directions before committing to one;
+- encode approved decisions as design tokens and component contracts;
+- register the exact relationship between Git, Figma, and code assets;
+- make agents query the registry before inserting a real Figma instance;
+- gate important changes on human approval;
+- audit component provenance, design drift, and accessibility.
+
+Hatch is infrastructure for producing and governing a design system—not a collection of prompts and not another component library.
+
+## How Hatch works
+
+```text
+Product brief
+    ↓
+Three design directions
+    ↓
+Human approval
+    ↓
+Design tokens + component contracts
+    ↓
+Registered Figma main components
+    ↓
+Agents query and reuse real instances
+    ↓
+Consistency and accessibility audit
+```
+
+The ownership model is deliberately explicit:
+
+| System           | Owns                                                                           |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Git repository   | Rules, tokens, contracts, approvals, registry, decisions, and version history  |
+| Figma            | Visual assets, main components, variables, instances, and page designs         |
+| Local MCP server | Validation, registry queries, approval gates, orchestration, and audit results |
+| Figma plugin     | The single serialized writer for managed Figma changes                         |
+
+Agents do not search for a Button by guessing its name or reconstructing its appearance from tokens. They resolve its component contract and registry entry, then insert an instance of the registered Figma main component.
+
+## Architecture
+
+```text
+Codex · Claude · Cursor · Antigravity
+                  │
+                  ▼
+          Local MCP server
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+Git design facts      Figma plugin
+rules · contracts     single writer
+registry · history          │
+                            ▼
+                    Figma design file
+```
+
+The first release is local-first. It does not host an AI model and does not require a project cloud server, database, account system, or admin dashboard.
+
+## Current status
+
+**Hatch is in M1: engineering foundation. It is not yet a production-ready toolkit.**
+
+What exists today:
+
+- a pnpm workspace with frozen dependency boundaries;
+- `core`, `cli`, `mcp-server`, and `figma-plugin` packages;
+- accepted architecture, identity, versioning, idempotency, and migration decisions;
+- reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
+- a frozen Button vertical-slice acceptance contract.
+
+The first formal MVP must prove one complete path: validate approved design facts, resolve a Button, ensure the Figma library asset without duplication, insert a real instance, retry idempotently, and audit the result.
+
+## Repository layout
+
+```text
+design-system/   Machine-readable tokens, contracts, registry, and approvals
+packages/core/   Environment-neutral domain logic and schemas
+packages/cli/    Human and automation command-line entry point
+packages/mcp-server/
+                 Local MCP control plane and Figma bridge
+packages/figma-plugin/
+                 Single-writer Figma integration
+skills/          Agent workflows and professional design practices
+adapters/        Codex, Claude, Cursor, and Antigravity integration layers
+docs/            Product, architecture, governance, and validation decisions
+spikes/          Historical M0 capability proofs—not production packages
+```
+
+## Getting started
+
+The formal product workflow is still under construction. To inspect and build the current engineering foundation:
 
 ```bash
+git clone https://github.com/KinoKo668/hatchkit.git
+cd hatchkit
 corepack enable pnpm
 pnpm install --frozen-lockfile
 pnpm build
 ```
 
-使用 nvm 时可先执行 `nvm use`，它会读取仓库中的 `.nvmrc`。
+Requirements:
 
-## 许可证与商业使用
+- Node.js `24.20.0` LTS is the primary development version;
+- Node.js `>=22.22 <27` is the supported range;
+- pnpm is pinned to `11.24.0` through Corepack and the root `packageManager` field.
 
-本项目以 [PolyForm Noncommercial License 1.0.0](LICENSE.md) 公开源码：非商业用途可以依照许可证使用、修改和分发；商业使用必须事先获得版权所有者的书面许可，具体参见[商业授权说明](COMMERCIAL-LICENSE.md)。
+To run the current M0 capability checks:
 
-由于许可证限制商业使用，本项目属于 **Source Available（源码开放）**，不是 OSI 定义的 Open Source Software。
+```bash
+./spikes/run-m0-checks.sh
+```
 
-## 目录
+These checks validate historical spikes only. Passing them does not mean the formal MVP is complete.
 
-- `docs/`：产品说明、术语和设计方法文档
-- `design-system/`：Token、组件契约、设计方向和状态账本
-- `packages/`：核心程序、CLI、MCP Server 和 Figma Plugin
-- `skills/`：Agent 工作流程与专业技能
-- `adapters/`：Codex、Claude、Cursor、Antigravity 适配层
+## Documentation
 
-## 入门资料
+The detailed project documentation is currently written primarily in Chinese:
 
-- [Agent 设计系统术语入门](docs/Agent设计系统术语入门.md)
-- [项目背景与当前决策](docs/项目背景与当前决策.md)
-- [DIR-001：Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)
-- [DIR-002：人工审批门禁与状态模型](docs/DIR-002-人工审批门禁与状态模型.md)
-- [ARCH-001：系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
-- [SPIKE-001：Figma Plugin 写入能力验证](docs/SPIKE-001-Figma-Plugin写入能力验证.md)
-- [SPIKE-002：Plugin 与本地进程通信验证](docs/SPIKE-002-Plugin与本地进程通信验证.md)
-- [ADR-001：工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
-- [ADR-002：稳定身份、版本、幂等与迁移策略](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
-- [DEMO-001：MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
+- [Project background and current decisions](docs/项目背景与当前决策.md)
+- [Agent design-system terminology primer](docs/Agent设计系统术语入门.md)
+- [Button vertical validation path](docs/DIR-001-Button垂直验证链路.md)
+- [Human approval gates and state model](docs/DIR-002-人工审批门禁与状态模型.md)
+- [System boundaries and end-to-end data flow](docs/ARCH-001-系统边界与端到端数据流.md)
+- [Engineering stack and monorepo decision](docs/ADR-001-工程技术栈与Monorepo方案.md)
+- [Identity, versioning, idempotency, and migration](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
+
+Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.
+
+## Principles
+
+- Query the component registry before creating or inserting UI.
+- Insert registered Figma instances instead of drawing lookalikes.
+- Treat tokens as design decisions, not as components or finished screens.
+- Keep one serialized Figma writer; parallel work may research and review.
+- Stop and request a change when no approved component satisfies the need.
+- Require human approval for visual direction, component scope, and major changes.
+- Keep runtime secrets, personal Figma identifiers, and local operation logs out of Git.
+
+## License and commercial use
+
+Hatch is **source available**, not OSI-defined open source.
+
+Non-commercial use, modification, and distribution are permitted under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). Commercial use requires prior written permission; see the [commercial licensing guide](COMMERCIAL-LICENSE.md).
