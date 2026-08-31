@@ -93,6 +93,7 @@ Registry · 历史             │
 - `core`、`cli`、`mcp-server` 与 `figma-plugin` 四个正式 Package；
 - 统一执行格式、类型化 Lint、类型、测试与构建的 `pnpm check`；
 - 在 Node.js 24 与 22 上运行相同门禁的 GitHub Actions；
+- CLI、MCP Server 与 Figma Plugin 共用的结果、错误、恢复动作和结构化日志契约；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -150,6 +151,7 @@ pnpm check
 - [系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
 - [工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [稳定身份、版本、幂等与迁移策略](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [统一结果、错误与日志模型](docs/CORE-001-统一结果错误与日志模型.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

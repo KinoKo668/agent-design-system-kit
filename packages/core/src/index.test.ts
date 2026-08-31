@@ -1,9 +1,47 @@
 import { describe, expect, it } from "vitest";
 
-import { CORE_PACKAGE_NAME } from "./index.js";
+import {
+  CORE_PACKAGE_NAME,
+  LOG_SCHEMA_VERSION,
+  RESULT_SCHEMA_VERSION,
+  createLogEvent,
+  createSuccessResult,
+  createToolkitError,
+} from "./index.js";
 
 describe("core package boundary", () => {
   it("exposes its stable package identity", () => {
     expect(CORE_PACKAGE_NAME).toBe("@agent-design-system-kit/core");
+  });
+
+  it("exposes the shared result contract from its public entry point", () => {
+    expect(createSuccessResult({ ready: true })).toEqual({
+      data: { ready: true },
+      ok: true,
+      schemaVersion: RESULT_SCHEMA_VERSION,
+      warnings: [],
+    });
+  });
+
+  it("exposes shared errors and logs from its public entry point", () => {
+    const error = createToolkitError({
+      code: "INTERNAL_ERROR",
+      message: "The package self-check failed.",
+      recoveryInstruction: "Report the failure to the toolkit maintainer.",
+    });
+    const event = createLogEvent({
+      error,
+      event: "core.self_check_failed",
+      level: "error",
+      message: "The core self-check failed.",
+      source: "core",
+      timestamp: "2026-08-31T12:00:00.000Z",
+    });
+
+    expect(event.schemaVersion).toBe(LOG_SCHEMA_VERSION);
+    expect(event.error).toEqual({
+      category: "internal",
+      code: "INTERNAL_ERROR",
+    });
   });
 });

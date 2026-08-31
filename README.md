@@ -104,6 +104,7 @@ What exists today:
 - one `pnpm check` gate for formatting, typed linting, type checks, tests, and builds;
 - an esbuild pipeline that produces the Figma main-thread IIFE bundle;
 - a GitHub Actions workflow that runs the same gate on Node.js 24 and 22;
+- a shared, JSON-safe result, error, recovery, and structured-log contract;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -163,6 +164,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [System boundaries and end-to-end data flow](docs/ARCH-001-系统边界与端到端数据流.md)
 - [Engineering stack and monorepo decision](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [Identity, versioning, idempotency, and migration](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [Shared result, error, recovery, and logging contract](docs/CORE-001-统一结果错误与日志模型.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.
