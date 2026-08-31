@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "brief",
+  "projectId": "hatch-demo",
+  "assetId": "invalid-example",
+  "assetVersion": "1.0.0",
+  "title": "Invalid cross-reference example",
+  "product": {
+    "summary": "A deliberately invalid fixture used by automated tests.",
+    "problem": "The fixture must exercise semantic validation instead of only missing fields.",
+    "valueProposition": "It proves that an Agent receives precise paths for invalid relationships."
+  },
+  "goals": [
+    {
+      "id": "clear-errors",
+      "statement": "Return actionable errors.",
+      "successSignal": "Each invalid relationship has a JSON Pointer."
+    },
+    {
+      "id": "clear-errors",
+      "statement": "This duplicate must fail.",
+      "successSignal": "The duplicate goal ID is reported."
+    }
+  ],
+  "audiences": [
+    {
+      "id": "designer",
+      "name": "Designer",
+      "description": "A valid audience entry.",
+      "needs": [
+        "Understand the validation result.",
+        "Understand the validation result."
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "review-errors",
+      "name": "Review invalid references",
+      "description": "This scenario intentionally refers to an audience that does not exist.",
+      "audienceIds": ["missing-audience", "missing-audience"],
+      "priority": "primary"
+    }
+  ],
+  "brand": {
+    "attributes": ["Clear", "clear"],
+    "principles": ["Validation must be understandable."],
+    "avoid": ["Do not silently accept invalid relationships."]
+  },
+  "platforms": [
+    {
+      "id": "desktop-web",
+      "name": "Desktop web",
+      "kind": "web",
+      "formFactors": ["desktop", "desktop"],
+      "inputMethods": ["keyboard", "keyboard"]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "test-only",
+      "category": "technical",
+      "statement": "This file must remain invalid."
+    }
+  ],
+  "accessibility": {
+    "standards": ["wcag-2.2-aa", "wcag-2.2-aa"],
+    "requirements": ["Errors must not depend on color alone."]
+  },
+  "references": [
+    {
+      "name": "Private file locator",
+      "reason": "This URL is intentionally forbidden by the repository security policy.",
+      "url": "https://www.figma.com/design/example-private-file/demo"
+    }
+  ]
+}

@@ -2,6 +2,7 @@
   "name": "@agent-design-system-kit/core",
   "version": "0.0.0",
   "private": true,
+  "sideEffects": false,
   "type": "module",
   "description": "Environment-neutral domain logic for Agent Design System Kit.",
   "main": "./dist/index.js",
@@ -17,5 +18,8 @@
   ],
   "scripts": {
     "build": "tsc --build"
+  },
+  "dependencies": {
+    "zod": "4.5.4"
   }
 }

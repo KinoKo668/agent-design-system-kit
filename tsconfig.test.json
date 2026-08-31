@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "resolveJsonModule": true,
     "paths": {
       "@agent-design-system-kit/core": ["./packages/core/src/index.ts"]
     }

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   CORE_PACKAGE_NAME,
+  DESIGN_BRIEF_ASSET_TYPE,
+  DESIGN_BRIEF_SCHEMA_VERSION,
   LOG_SCHEMA_VERSION,
   RESULT_SCHEMA_VERSION,
   createLogEvent,
@@ -13,6 +15,8 @@ import {
 describe("core package boundary", () => {
   it("exposes its stable package identity", () => {
     expect(CORE_PACKAGE_NAME).toBe("@agent-design-system-kit/core");
+    expect(DESIGN_BRIEF_SCHEMA_VERSION).toBe("1.0.0");
+    expect(DESIGN_BRIEF_ASSET_TYPE).toBe("brief");
   });
 
   it("exposes the shared result contract from its public entry point", () => {

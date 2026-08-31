@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img alt="Stage: M1 foundation" src="https://img.shields.io/badge/stage-M1%20foundation-4C8ECC">
+  <img alt="Stage: M2 schemas" src="https://img.shields.io/badge/stage-M2%20schemas-4C8ECC">
   <a href="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml"><img alt="Quality workflow" src="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml/badge.svg"></a>
   <img alt="Node.js 24 LTS" src="https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=nodedotjs&logoColor=white">
   <img alt="pnpm 11" src="https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white">
@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch is in M1: engineering foundation. It is not yet a production-ready toolkit.**
+**Hatch is in M2: schemas and registry foundations. It is not yet a production-ready toolkit.**
 
 What exists today:
 
@@ -106,6 +106,7 @@ What exists today:
 - a GitHub Actions workflow that runs the same gate on Node.js 24 and 22;
 - a shared, JSON-safe result, error, recovery, and structured-log contract;
 - a local credential boundary and recursive log-redaction contract;
+- a versioned Design Brief schema with valid and invalid public fixtures;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -167,6 +168,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Identity, versioning, idempotency, and migration](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
 - [Shared result, error, recovery, and logging contract](docs/CORE-001-统一结果错误与日志模型.md)
 - [Local credentials and log-redaction policy](docs/SEC-001-本地凭据与日志脱敏策略.md)
+- [Design Brief schema](docs/SCH-001-Design-Brief-Schema.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

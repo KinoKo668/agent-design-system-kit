@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。工程、质量门禁和 Node 24／22 GitHub Actions 已建立；`core` 已提供统一结果、错误、恢复动作、日志和脱敏模型，本地凭据边界已经冻结，其他业务能力尚未实现。
+项目已完成 M0 架构与风险冻结以及 M1 工程骨架，当前处于 M2 Schema 与 Registry 基础阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏和 Design Brief Schema；Token、Component、Registry 与正式 Writer 尚未实现。
 
 开始工作前请先阅读：
 
@@ -40,6 +40,7 @@
 - `docs/DEMO-001-MVP演示脚本与成功标准.md`
 - `docs/CORE-001-统一结果错误与日志模型.md`
 - `docs/SEC-001-本地凭据与日志脱敏策略.md`
+- `docs/SCH-001-Design-Brief-Schema.md`
 
 工程规则：
 

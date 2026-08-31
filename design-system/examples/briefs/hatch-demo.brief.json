@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "brief",
+  "projectId": "hatch-demo",
+  "assetId": "product-foundation",
+  "assetVersion": "1.0.0",
+  "title": "Hatch design-system toolkit demo",
+  "product": {
+    "summary": "A local-first toolkit that helps AI agents build and reuse an approved design system.",
+    "problem": "Design decisions are frequently lost across agent sessions and collaborators, causing duplicated components and inconsistent interface rules.",
+    "valueProposition": "Hatch gives agents one machine-readable source for approved design decisions and registered Figma components without requiring a hosted service."
+  },
+  "goals": [
+    {
+      "id": "consistent-reuse",
+      "statement": "Agents reuse the approved Button instead of drawing a visual approximation.",
+      "successSignal": "A page request resolves one registered component and inserts a real Figma Instance."
+    },
+    {
+      "id": "local-operation",
+      "statement": "A contributor can run the first vertical slice on a local computer.",
+      "successSignal": "The Button demonstration completes without a project cloud server or database."
+    }
+  ],
+  "audiences": [
+    {
+      "id": "product-designer",
+      "name": "Product designer",
+      "description": "A designer establishing the visual and component foundation for a new product.",
+      "needs": [
+        "Keep final authority over visual direction and component approval.",
+        "Make approved decisions reusable by several agents and collaborators."
+      ]
+    },
+    {
+      "id": "agent-builder",
+      "name": "Agent-assisted builder",
+      "description": "A contributor using Codex or another agent to create product interfaces.",
+      "needs": [
+        "Find the correct component without relying on chat memory.",
+        "Receive a clear recovery action when no approved component exists."
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "create-library",
+      "name": "Create the initial component library",
+      "description": "The designer approves the foundation and asks an agent to build the registered Figma Button assets.",
+      "audienceIds": ["product-designer"],
+      "priority": "primary"
+    },
+    {
+      "id": "reuse-button",
+      "name": "Reuse an approved Button",
+      "description": "An agent queries the registry and inserts a real Button Instance into a product page.",
+      "audienceIds": ["agent-builder", "product-designer"],
+      "priority": "primary"
+    }
+  ],
+  "brand": {
+    "attributes": ["trustworthy", "clear", "focused"],
+    "principles": [
+      "Make system status and human approval boundaries visible.",
+      "Prefer calm, precise communication over decorative complexity."
+    ],
+    "avoid": [
+      "Do not imply that an unapproved generated component is production-ready.",
+      "Do not use visual novelty to hide unclear system behavior."
+    ]
+  },
+  "platforms": [
+    {
+      "id": "figma-desktop",
+      "name": "Figma Desktop Plugin",
+      "kind": "figma-plugin",
+      "formFactors": ["desktop"],
+      "inputMethods": ["pointer", "keyboard"]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "local-first",
+      "category": "technical",
+      "statement": "The first release must work without a project cloud server, database, or account system."
+    },
+    {
+      "id": "human-approval",
+      "category": "business",
+      "statement": "Visual direction and production component decisions require explicit human approval."
+    },
+    {
+      "id": "single-writer",
+      "category": "technical",
+      "statement": "All managed Figma writes must pass through one serialized Plugin writer."
+    }
+  ],
+  "accessibility": {
+    "standards": ["wcag-2.2-aa"],
+    "requirements": [
+      "Communicate important status with text or structure, not color alone.",
+      "Support keyboard operation for interactive Plugin controls.",
+      "Preserve readable contrast for enabled and disabled Button states."
+    ]
+  },
+  "references": [
+    {
+      "name": "Public design-system example",
+      "reason": "Demonstrates how a public reference can explain intent without embedding a private Figma locator.",
+      "url": "https://example.com/design-system"
+    }
+  ]
+}
