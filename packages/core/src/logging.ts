@@ -5,6 +5,7 @@ import type {
   ToolkitError,
 } from "./errors.js";
 import type { JsonObject } from "./json.js";
+import { redactJsonObject, redactSensitiveText } from "./security.js";
 
 export const LOG_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -43,20 +44,26 @@ export interface CreateLogEventInput {
   readonly event: string;
   readonly level: LogLevel;
   readonly message: string;
+  /** Active runtime secrets to remove. Values are never copied into the event. */
+  readonly sensitiveValues: readonly string[];
   readonly source: LogSource;
   readonly target?: ErrorTarget;
   readonly timestamp: string;
 }
 
 export function createLogEvent(input: CreateLogEventInput): LogEvent {
+  const redactionOptions = { sensitiveValues: input.sensitiveValues };
+
   return {
     event: input.event,
     level: input.level,
-    message: input.message,
+    message: redactSensitiveText(input.message, redactionOptions),
     schemaVersion: LOG_SCHEMA_VERSION,
     source: input.source,
     timestamp: input.timestamp,
-    ...(input.attributes === undefined ? {} : { attributes: input.attributes }),
+    ...(input.attributes === undefined
+      ? {}
+      : { attributes: redactJsonObject(input.attributes, redactionOptions) }),
     ...(input.correlation === undefined
       ? {}
       : { correlation: input.correlation }),

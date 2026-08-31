@@ -74,7 +74,7 @@ CLI、MCP Server 和 Figma Plugin 运行在不同环境，但必须用同一种�
 | 字段 | 要求 |
 | --- | --- |
 | `code` | 稳定机器码，Agent 和 Adapter 不得解析错误文案判断类型 |
-| `category` | `validation`、`approval`、`identity`、`version`、`migration`、`operation`、`transport` 或 `internal` |
+| `category` | `validation`、`approval`、`identity`、`version`、`migration`、`operation`、`security`、`transport` 或 `internal` |
 | `message` | 简短说明发生了什么，不包含密钥、堆栈或个人路径 |
 | `recovery.action` | 稳定机器动作，由错误目录统一决定 |
 | `recovery.instruction` | 结合当前对象给 Agent 的具体下一步，创建错误时必须提供 |
@@ -108,6 +108,8 @@ CORE-001 同时增加三个基础设施错误：
 - `OPERATION_TIMEOUT`：调用超时，必须先检查 Operation，再使用相同身份重试；
 - `INTERNAL_ERROR`：非预期实现错误，必须停止并报告，不能向 Agent 泄露原始堆栈。
 
+SEC-001 随后增加四个安全错误：`CREDENTIAL_REQUIRED`、`CREDENTIAL_INVALID`、`CREDENTIAL_EXPIRED` 和 `UNSAFE_CREDENTIAL_SOURCE`。全部凭据错误都必须在 Figma 写入前阻断。
+
 错误码、类别、默认恢复动作和重试规则的唯一代码事实源是 `packages/core/src/errors.ts`。
 
 ## 6. 结构化日志
@@ -140,10 +142,12 @@ CORE-001 同时增加三个基础设施错误：
 - `event` 是稳定的机器事件名，`message` 是简短人类说明；
 - 只记录 `idempotencyKeyHash`，不得记录原始幂等键；
 - `createLogEvent` 只复制错误码和类别，不复制错误文案、Context 或 Recovery；
+- `createLogEvent` 要求调用方显式提供当前运行时的 `sensitiveValues`，创建时自动脱敏且不把该数组复制进日志；
+- 敏感字段、Bearer／Figma Header、Figma URL 和个人路径由 SEC-001 的纯函数递归遮盖；
 - Timestamp 由运行环境注入，使 `core` 保持确定性和可测试；
 - CORE-001 只创建日志数据，不写控制台、文件或网络。
 
-Session Token、Authorization Header、个人路径、未脱敏 Figma URL、原始幂等键和堆栈不得进入 `message` 或 `attributes`。更完整的凭据存储与脱敏策略由 SEC-001 实现。
+Session Token、Authorization Header、个人路径、未脱敏 Figma URL、原始幂等键和堆栈不得进入 `message` 或 `attributes`。凭据来源、保存边界和脱敏策略见 [SEC-001](SEC-001-本地凭据与日志脱敏策略.md)。
 
 ## 7. 异常边界
 
@@ -160,6 +164,7 @@ Session Token、Authorization Header、个人路径、未脱敏 Figma URL、原�
 - `isSuccessResult`、`isFailureResult`；
 - `createToolkitError`、`getErrorDefinition`、`ERROR_DEFINITIONS`；
 - `createLogEvent`；
+- `redactSensitiveText`、`redactJsonObject`、`redactJsonValue`；
 - 对应的 Result、Error、Log 和 JSON 类型。
 
 后续入口 Package 不得复制错误目录或创建不兼容 Envelope。
@@ -170,12 +175,11 @@ CORE-001 不实现：
 
 - Brief、Token、Contract 或 Registry Schema；
 - Operation Result 的完整状态机；
-- 日志文件写入、轮转和 30 天索引；
-- 自动凭据检测与深度脱敏；
+- 日志文件写入、轮转、30 天索引与外部 Secret Scanner；
 - MCP Transport、HTTP Bridge 或 Figma Writer；
 - JavaScript `Error` 子类体系。
 
-这些能力将在后续 Schema、SEC、MCP 和 FIG 任务中基于本契约实现。
+这些能力将在后续 Schema、MCP 和 FIG 任务中基于本契约实现。
 
 ## 10. 完成标准
 

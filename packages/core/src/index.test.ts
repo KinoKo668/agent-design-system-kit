@@ -7,6 +7,7 @@ import {
   createLogEvent,
   createSuccessResult,
   createToolkitError,
+  redactSensitiveText,
 } from "./index.js";
 
 describe("core package boundary", () => {
@@ -34,6 +35,7 @@ describe("core package boundary", () => {
       event: "core.self_check_failed",
       level: "error",
       message: "The core self-check failed.",
+      sensitiveValues: [],
       source: "core",
       timestamp: "2026-08-31T12:00:00.000Z",
     });
@@ -43,5 +45,10 @@ describe("core package boundary", () => {
       category: "internal",
       code: "INTERNAL_ERROR",
     });
+    expect(
+      redactSensitiveText("Authorization: Bearer private-value", {
+        sensitiveValues: ["private-value"],
+      }),
+    ).toBe("Authorization: Bearer [REDACTED]");
   });
 });

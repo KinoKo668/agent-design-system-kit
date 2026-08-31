@@ -6,6 +6,7 @@ export type ErrorCategory =
   | "internal"
   | "migration"
   | "operation"
+  | "security"
   | "transport"
   | "validation"
   | "version";
@@ -138,6 +139,26 @@ export const ERROR_DEFINITIONS = {
     recoveryAction: "resume_or_recover_operation",
     retry: "retry_same_request",
   },
+  CREDENTIAL_REQUIRED: {
+    category: "security",
+    recoveryAction: "provide_credential_securely",
+    retry: "retry_after_correction",
+  },
+  CREDENTIAL_INVALID: {
+    category: "security",
+    recoveryAction: "replace_invalid_credential",
+    retry: "retry_after_correction",
+  },
+  CREDENTIAL_EXPIRED: {
+    category: "security",
+    recoveryAction: "rotate_expired_credential",
+    retry: "retry_after_external_change",
+  },
+  UNSAFE_CREDENTIAL_SOURCE: {
+    category: "security",
+    recoveryAction: "move_credential_to_secure_source",
+    retry: "do_not_retry",
+  },
   TRANSPORT_UNAVAILABLE: {
     category: "transport",
     recoveryAction: "restore_connection",
@@ -165,6 +186,7 @@ export type ErrorTargetType =
   | "brief"
   | "command"
   | "component"
+  | "credential"
   | "direction"
   | "figma-asset"
   | "figma-file"

@@ -33,6 +33,13 @@ const FROZEN_ERROR_CODES = [
   "PARTIAL_WRITE",
 ] as const satisfies readonly ErrorCode[];
 
+const SECURITY_ERROR_CODES = [
+  "CREDENTIAL_REQUIRED",
+  "CREDENTIAL_INVALID",
+  "CREDENTIAL_EXPIRED",
+  "UNSAFE_CREDENTIAL_SOURCE",
+] as const satisfies readonly ErrorCode[];
+
 describe("error definitions", () => {
   it("contains every error code frozen by DIR-002 and ADR-002", () => {
     expect(Object.keys(ERROR_DEFINITIONS)).toEqual(
@@ -50,6 +57,18 @@ describe("error definitions", () => {
         /^(do_not_retry|retry_after_correction|retry_after_external_change|retry_same_request)$/,
       );
     }
+  });
+
+  it("defines fail-closed credential errors in the security category", () => {
+    for (const code of SECURITY_ERROR_CODES) {
+      expect(getErrorDefinition(code).category).toBe("security");
+    }
+
+    expect(getErrorDefinition("UNSAFE_CREDENTIAL_SOURCE")).toEqual({
+      category: "security",
+      recoveryAction: "move_credential_to_secure_source",
+      retry: "do_not_retry",
+    });
   });
 });
 
