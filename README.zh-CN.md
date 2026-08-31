@@ -91,6 +91,8 @@ Registry · 历史             │
 
 - 固定依赖边界的 pnpm Workspace；
 - `core`、`cli`、`mcp-server` 与 `figma-plugin` 四个正式 Package；
+- 统一执行格式、类型化 Lint、类型、测试与构建的 `pnpm check`；
+- 在 Node.js 24 与 22 上运行相同门禁的 GitHub Actions；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -122,7 +124,7 @@ git clone https://github.com/KinoKo668/hatchkit.git
 cd hatchkit
 corepack enable pnpm
 pnpm install --frozen-lockfile
-pnpm build
+pnpm check
 ```
 
 环境要求：

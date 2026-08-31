@@ -22,6 +22,7 @@
 
 <p align="center">
   <img alt="Stage: M1 foundation" src="https://img.shields.io/badge/stage-M1%20foundation-4C8ECC">
+  <a href="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml"><img alt="Quality workflow" src="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml/badge.svg"></a>
   <img alt="Node.js 24 LTS" src="https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=nodedotjs&logoColor=white">
   <img alt="pnpm 11" src="https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white">
   <img alt="License: source available" src="https://img.shields.io/badge/license-source%20available-F5B700">
@@ -102,6 +103,7 @@ What exists today:
 - `core`, `cli`, `mcp-server`, and `figma-plugin` packages;
 - one `pnpm check` gate for formatting, typed linting, type checks, tests, and builds;
 - an esbuild pipeline that produces the Figma main-thread IIFE bundle;
+- a GitHub Actions workflow that runs the same gate on Node.js 24 and 22;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.

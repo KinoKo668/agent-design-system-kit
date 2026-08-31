@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。pnpm Workspace、冻结 Lockfile、四个正式 Package 和统一质量门禁已建立；业务源码暂时只有用于验证依赖边界的最小入口。
+项目已完成 M0 架构与风险冻结，当前处于 M1 工程骨架阶段。pnpm Workspace、冻结 Lockfile、四个正式 Package、统一质量门禁和 Node 24／22 GitHub Actions 已建立；业务源码暂时只有用于验证依赖边界的最小入口。
 
 开始工作前请先阅读：
 

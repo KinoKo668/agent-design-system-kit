@@ -16,8 +16,8 @@
   "scripts": {
     "build": "tsc --build && pnpm --filter @agent-design-system-kit/figma-plugin build:bundle",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "format": "prettier --write package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \"packages/**/*.{json,md,mjs,ts}\"",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \"packages/**/*.{json,md,mjs,ts}\"",
+    "format": "prettier --write package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"packages/**/*.{json,md,mjs,ts}\"",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"packages/**/*.{json,md,mjs,ts}\"",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "typecheck": "tsc --build --pretty false && tsc --project tsconfig.test.json --pretty false"
