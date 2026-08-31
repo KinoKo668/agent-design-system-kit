@@ -27,6 +27,7 @@ export default tseslint.config(
             "packages/*/src/*.test.ts",
             "vitest.config.mts",
           ],
+          defaultProject: "tsconfig.test.json",
         },
         tsconfigRootDir: import.meta.dirname,
       },
