@@ -90,9 +90,9 @@ MCP Client
 
 LOOP-003 完成自动化的负向黄金路径，但不代替真实 GitHub 受保护分支、真实 Reviewer 身份和设计师指定 Figma 文件的外部验收。
 
-后续可以并行进入：
+后续审计主线：
 
-- `AUD-001`：发现未登记 Token 与硬编码样式；
+- `AUD-001`：已完成未登记 Variable 与硬编码样式发现；
 - `AUD-002`：审计 Instance、Variant 与组件来源；
 - `AUD-003`：审计 Registry 与 Figma 差异；
 - `LOOP-004`：扩展三套 UI 方向的生成、评审与持久化决策。

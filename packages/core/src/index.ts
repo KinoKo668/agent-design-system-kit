@@ -20,6 +20,7 @@ export * from "./logging.js";
 export * from "./results.js";
 export * from "./security.js";
 export * from "./semantic-version.js";
+export * from "./style-audit.js";
 export * from "./schema-primitives.js";
 export * from "./schema-validation.js";
 export * from "./token-set.js";

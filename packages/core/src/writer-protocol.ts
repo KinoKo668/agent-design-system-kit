@@ -11,6 +11,10 @@ import {
 import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
 import { figmaButtonPlanSchema } from "./figma-button-plan.js";
 import { figmaButtonInstancePlanSchema } from "./figma-button-instance-plan.js";
+import {
+  figmaStyleAuditPlanSchema,
+  figmaStyleAuditResultSchema,
+} from "./style-audit.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -133,7 +137,15 @@ export const writerInsertButtonInstanceCommandSchema = z
   })
   .strict();
 
+export const writerAuditStylesCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaStyleAuditPlanSchema }).strict(),
+    type: z.literal("audit.styles.scan"),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerAuditStylesCommandSchema,
   writerInsertButtonInstanceCommandSchema,
   writerEnsureButtonCommandSchema,
   writerEnsureVariablesCommandSchema,
@@ -166,6 +178,31 @@ export const writerCommandEnvelopeSchema = z
           code: "custom",
           message: "writer.ping must target the active Plugin session.",
           path: ["target", "kind"],
+        });
+      }
+      return;
+    }
+
+    if (envelope.command.type === "audit.styles.scan") {
+      if (envelope.approval.mode !== "not_required") {
+        context.addIssue({
+          code: "custom",
+          message: "audit.styles.scan must use read-only diagnostic approval.",
+          path: ["approval"],
+        });
+      }
+      if (
+        envelope.target.kind !== "figma-file" ||
+        envelope.projectId !== envelope.command.payload.plan.projectId ||
+        (envelope.target.kind === "figma-file" &&
+          envelope.target.fileBindingId !==
+            envelope.command.payload.plan.fileBindingId)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "audit.styles.scan must target its exact planned Figma file binding.",
+          path: ["target"],
         });
       }
       return;
@@ -347,6 +384,7 @@ export const writerButtonInstanceResultSchema = z
 
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
+  figmaStyleAuditResultSchema,
   writerButtonResultSchema,
   writerButtonInstanceResultSchema,
   writerVariablesResultSchema,

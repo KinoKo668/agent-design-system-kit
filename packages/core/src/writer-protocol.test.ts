@@ -131,8 +131,45 @@ function buttonCommand(): unknown {
   };
 }
 
+function styleAuditCommand(): unknown {
+  return {
+    approval: {
+      mode: "not_required",
+      reason: "read_only_diagnostic",
+    },
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          projectId: "hatch-demo",
+          registeredVariables: [
+            {
+              stableId:
+                "hatch-demo/token-set/foundation/variables/major-1/variable/semantic/color/action-background",
+              tokenPath: "semantic/color/action-background",
+            },
+          ],
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+        },
+      },
+      type: "audit.styles.scan",
+    },
+    idempotencyKey: "style-audit-page-1",
+    operationId: "49d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("Writer protocol", () => {
-  it("accepts the diagnostic and approved Variable commands", () => {
+  it("accepts diagnostic, audit, and approved Variable commands", () => {
     expect(writerCommandEnvelopeSchema.parse(validCommand())).toEqual(
       validCommand(),
     );
@@ -143,6 +180,19 @@ describe("Writer protocol", () => {
     expect(writerCommandEnvelopeSchema.safeParse(buttonCommand()).success).toBe(
       true,
     );
+    expect(
+      writerCommandEnvelopeSchema.safeParse(styleAuditCommand()).success,
+    ).toBe(true);
+    const mismatchedTokenPath = structuredClone(styleAuditCommand()) as {
+      command: {
+        payload: { plan: { registeredVariables: [{ tokenPath: string }] } };
+      };
+    };
+    mismatchedTokenPath.command.payload.plan.registeredVariables[0].tokenPath =
+      "semantic/color/other";
+    expect(
+      writerCommandEnvelopeSchema.safeParse(mismatchedTokenPath).success,
+    ).toBe(false);
   });
 
   it("rejects unknown fields and an approval bypass", () => {
@@ -208,6 +258,52 @@ describe("Writer protocol", () => {
           deferredTypographyCount: 1,
           type: "variables.ensure",
           variables: { created: 30, unchanged: 0, updated: 0 },
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }).success,
+    ).toBe(true);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          findings: [],
+          page: { id: "1:2", name: "Page 1" },
+          passed: false,
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          summary: {
+            auditedStyles: 5,
+            hardCodedStyles: 0,
+            nodesWithFindings: 0,
+            registeredBindings: 5,
+            unregisteredVariables: 0,
+          },
+          type: "audit.styles.scan",
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }).success,
+    ).toBe(false);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          findings: [],
+          page: { id: "1:2", name: "Page 1" },
+          passed: true,
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          summary: {
+            auditedStyles: 5,
+            hardCodedStyles: 0,
+            nodesWithFindings: 0,
+            registeredBindings: 5,
+            unregisteredVariables: 0,
+          },
+          type: "audit.styles.scan",
         },
         schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
       }).success,

@@ -12,9 +12,15 @@ import {
   withDesignSystemSnapshot,
   type HatchkitCatalogOptions,
 } from "./tool-support.js";
+import {
+  runStyleAuditLoop,
+  styleAuditLoopInputSchema,
+  styleAuditLoopOutputSchema,
+} from "./style-audit-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
+export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
 
 export const HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS = {
   destructiveHint: false,
@@ -44,6 +50,33 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_STYLE_AUDIT_TOOL_NAME,
+    {
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+      description:
+        "Scan the current bound Figma page without modifying it. Compare active visual fields against Variables registered by the current Git Token Sets and return exact node/field findings for hard-coded styles or unregistered Variable bindings. Use a new requestId after the page changes.",
+      inputSchema: styleAuditLoopInputSchema.extend({
+        waitTimeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
+      }),
+      outputSchema: styleAuditLoopOutputSchema,
+      title: "Audit current-page style bindings",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runStyleAuditLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
     {

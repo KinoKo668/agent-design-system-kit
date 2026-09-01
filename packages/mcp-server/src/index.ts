@@ -11,6 +11,7 @@ export * from "./query-tools.js";
 export * from "./resolution-tools.js";
 export * from "./server.js";
 export * from "./stdio.js";
+export * from "./style-audit-loop.js";
 export * from "./writer-queue.js";
 export * from "./write-tools.js";
 

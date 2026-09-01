@@ -118,6 +118,40 @@ const BUTTON_PLAN_KEYS = new Set([
   "typography",
   "variants",
 ]);
+const STYLE_AUDIT_PLAN_KEYS = new Set([
+  "fileBindingId",
+  "projectId",
+  "registeredVariables",
+  "schemaVersion",
+  "scope",
+]);
+const STYLE_AUDIT_VARIABLE_KEYS = new Set(["stableId", "tokenPath"]);
+const STYLE_AUDIT_RESULT_KEYS = new Set([
+  "findings",
+  "page",
+  "passed",
+  "schemaVersion",
+  "scope",
+  "summary",
+  "type",
+]);
+const STYLE_AUDIT_FINDING_KEYS = new Set([
+  "actual",
+  "code",
+  "expected",
+  "field",
+  "kind",
+  "node",
+  "recoveryInstruction",
+  "severity",
+]);
+const STYLE_AUDIT_SUMMARY_KEYS = new Set([
+  "auditedStyles",
+  "hardCodedStyles",
+  "nodesWithFindings",
+  "registeredBindings",
+  "unregisteredVariables",
+]);
 const BUTTON_SET_KEYS = new Set([
   "description",
   "majorVersion",
@@ -904,6 +938,70 @@ function isButtonInstanceCommand(
   );
 }
 
+function isStyleAuditPlan(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, STYLE_AUDIT_PLAN_KEYS) ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    !isStableIdSegment(value.projectId) ||
+    !isUuid(value.fileBindingId) ||
+    !Array.isArray(value.registeredVariables) ||
+    value.registeredVariables.length < 1 ||
+    value.registeredVariables.length > 2_000
+  ) {
+    return false;
+  }
+  const identities = new Set<string>();
+  return value.registeredVariables.every((variable) => {
+    if (
+      !isRecord(variable) ||
+      !hasOnlyKeys(variable, STYLE_AUDIT_VARIABLE_KEYS) ||
+      !isStableAssetId(variable.stableId) ||
+      !isStableAssetId(variable.tokenPath) ||
+      !String(variable.stableId).startsWith(
+        `${String(value.projectId)}/token-set/`,
+      ) ||
+      !String(variable.stableId).endsWith(
+        `/variable/${String(variable.tokenPath)}`,
+      ) ||
+      identities.has(String(variable.stableId))
+    ) {
+      return false;
+    }
+    identities.add(String(variable.stableId));
+    return true;
+  });
+}
+
+function isStyleAuditCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "audit.styles.scan" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isStyleAuditPlan(value.payload.plan) ||
+    !isRecord(value.payload.plan) ||
+    !hasOnlyKeys(approval, new Set(["mode", "reason"])) ||
+    approval.mode !== "not_required" ||
+    approval.reason !== "read_only_diagnostic" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    target.kind !== "figma-file" ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  ) {
+    return false;
+  }
+  return (
+    projectId === value.payload.plan.projectId &&
+    target.fileBindingId === value.payload.plan.fileBindingId
+  );
+}
+
 export function isWriterCommandDelivery(
   value: unknown,
 ): value is WriterCommandDelivery {
@@ -935,6 +1033,16 @@ export function isWriterCommandDelivery(
       value.approval.mode === "not_required" &&
       value.approval.reason === "read_only_diagnostic"
     );
+  }
+  if (
+    isStyleAuditCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    )
+  ) {
+    return true;
   }
   return (
     isVariablesCommand(
@@ -1054,6 +1162,97 @@ function isButtonInstanceResult(value: Record<string, unknown>): boolean {
   );
 }
 
+function isStyleAuditNode(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, new Set(["id", "name", "type"])) &&
+    isBoundedString(value.id, 1, 128) &&
+    /^\d+:\d+$/u.test(value.id) &&
+    isBoundedString(value.name, 1, 256) &&
+    isBoundedString(value.type, 1, 64)
+  );
+}
+
+function isStyleAuditFinding(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, STYLE_AUDIT_FINDING_KEYS) &&
+    ["HARD_CODED_STYLE", "UNREGISTERED_VARIABLE"].includes(
+      String(value.code),
+    ) &&
+    ["color", "dimension", "opacity", "typography"].includes(
+      String(value.kind),
+    ) &&
+    value.severity === "error" &&
+    isBoundedString(value.field, 1, 160) &&
+    isBoundedString(value.recoveryInstruction, 1, 500) &&
+    isStyleAuditNode(value.node) &&
+    isRecord(value.actual) &&
+    hasOnlyKeys(value.actual, new Set(["bindingVariableId", "value"])) &&
+    (value.actual.bindingVariableId === null ||
+      isBoundedString(value.actual.bindingVariableId, 1, 128)) &&
+    isBoundedString(value.actual.value, 1, 240) &&
+    isRecord(value.expected) &&
+    hasOnlyKeys(value.expected, new Set(["registeredVariableRequired"])) &&
+    value.expected.registeredVariableRequired === true
+  );
+}
+
+function isStyleAuditResult(value: Record<string, unknown>): boolean {
+  if (
+    !hasOnlyKeys(value, STYLE_AUDIT_RESULT_KEYS) ||
+    value.type !== "audit.styles.scan" ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    typeof value.passed !== "boolean" ||
+    !Array.isArray(value.findings) ||
+    value.findings.length > 10_000 ||
+    !value.findings.every(isStyleAuditFinding) ||
+    !isRecord(value.page) ||
+    !hasOnlyKeys(value.page, new Set(["id", "name"])) ||
+    !isBoundedString(value.page.id, 1, 128) ||
+    !/^\d+:\d+$/u.test(value.page.id) ||
+    !isBoundedString(value.page.name, 1, 256) ||
+    !isRecord(value.summary) ||
+    !hasOnlyKeys(value.summary, STYLE_AUDIT_SUMMARY_KEYS) ||
+    ![
+      value.summary.auditedStyles,
+      value.summary.hardCodedStyles,
+      value.summary.nodesWithFindings,
+      value.summary.registeredBindings,
+      value.summary.unregisteredVariables,
+    ].every((count) => Number.isSafeInteger(count) && Number(count) >= 0)
+  ) {
+    return false;
+  }
+  const hardCodedStyles = value.findings.filter(
+    (finding: unknown) =>
+      isRecord(finding) && finding.code === "HARD_CODED_STYLE",
+  ).length;
+  const unregisteredVariables = value.findings.filter(
+    (finding: unknown) =>
+      isRecord(finding) && finding.code === "UNREGISTERED_VARIABLE",
+  ).length;
+  const nodesWithFindings = new Set(
+    value.findings.flatMap((finding: unknown) =>
+      isRecord(finding) &&
+      isRecord(finding.node) &&
+      typeof finding.node.id === "string"
+        ? [finding.node.id]
+        : [],
+    ),
+  ).size;
+  return (
+    value.type === "audit.styles.scan" &&
+    value.passed === (value.findings.length === 0) &&
+    value.summary.hardCodedStyles === hardCodedStyles &&
+    value.summary.unregisteredVariables === unregisteredVariables &&
+    value.summary.nodesWithFindings === nodesWithFindings &&
+    value.summary.auditedStyles ===
+      Number(value.summary.registeredBindings) + value.findings.length
+  );
+}
+
 export function isWriterPluginResult(
   value: unknown,
 ): value is WriterPluginResult {
@@ -1072,7 +1271,8 @@ export function isWriterPluginResult(
       ((Object.keys(value.result).length === 1 && value.result.pong === true) ||
         isVariablesResult(value.result) ||
         isButtonResult(value.result) ||
-        isButtonInstanceResult(value.result))
+        isButtonInstanceResult(value.result) ||
+        isStyleAuditResult(value.result))
     );
   }
   if (

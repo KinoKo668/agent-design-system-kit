@@ -39,6 +39,41 @@ function delivery() {
   };
 }
 
+function auditDelivery() {
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    attempt: 1,
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          projectId: "hatch-demo",
+          registeredVariables: [
+            {
+              stableId:
+                "hatch-demo/token-set/foundation/variables/major-1/variable/semantic/color/action-background",
+              tokenPath: "semantic/color/action-background",
+            },
+          ],
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+        },
+      },
+      type: "audit.styles.scan",
+    },
+    idempotencyKey: "audit-page-1",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function buttonDelivery() {
   const tokens = JSON.parse(
     readFileSync(
@@ -204,6 +239,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       true,
     );
     expect(isWriterCommandDelivery(delivery())).toBe(true);
+    expect(writerCommandDeliverySchema.safeParse(auditDelivery()).success).toBe(
+      true,
+    );
+    expect(isWriterCommandDelivery(auditDelivery())).toBe(true);
     expect(
       writerCommandDeliverySchema.safeParse(variablesDelivery()).success,
     ).toBe(true);
@@ -337,6 +376,35 @@ describe("lightweight Figma Writer boundary validation", () => {
       true,
     );
     expect(isWriterPluginResult(instanceSuccess)).toBe(true);
+    const auditSuccess = {
+      ok: true,
+      operationId: OPERATION_ID,
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        page: { id: "1:2", name: "Page 1" },
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "current-page",
+        summary: {
+          auditedStyles: 5,
+          hardCodedStyles: 0,
+          nodesWithFindings: 0,
+          registeredBindings: 5,
+          unregisteredVariables: 0,
+        },
+        type: "audit.styles.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    };
+    expect(writerPluginResultSchema.safeParse(auditSuccess).success).toBe(true);
+    expect(isWriterPluginResult(auditSuccess)).toBe(true);
+    expect(
+      isWriterPluginResult({
+        ...auditSuccess,
+        result: { ...auditSuccess.result, passed: false },
+      }),
+    ).toBe(false);
     expect(writerPluginResultSchema.safeParse(variables).success).toBe(true);
     expect(isWriterPluginResult(variables)).toBe(true);
     expect(writerPluginResultSchema.safeParse(button).success).toBe(true);

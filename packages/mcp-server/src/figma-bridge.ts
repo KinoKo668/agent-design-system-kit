@@ -695,7 +695,10 @@ export function createFigmaBridge(
         );
         return;
       }
-      if (parsed.data.command.type !== "writer.ping") {
+      if (
+        parsed.data.command.type !== "writer.ping" &&
+        parsed.data.command.type !== "audit.styles.scan"
+      ) {
         const authorizationError =
           options.authorizeWrite === undefined
             ? bridgeError(

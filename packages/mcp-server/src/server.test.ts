@@ -17,7 +17,10 @@ import {
   WRITER_OPERATION_SCHEMA_VERSION,
   type WriterOperation,
 } from "./writer-queue.js";
-import { HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME } from "./write-tools.js";
+import {
+  HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
+  HATCHKIT_STYLE_AUDIT_TOOL_NAME,
+} from "./write-tools.js";
 import {
   HATCHKIT_MCP_SERVER_INSTRUCTIONS,
   HATCHKIT_MCP_SERVER_NAME,
@@ -188,6 +191,16 @@ describe("createHatchkitMcpServer", () => {
       },
     });
     const tools = await client.listTools();
+    expect(
+      tools.tools.find(({ name }) => name === HATCHKIT_STYLE_AUDIT_TOOL_NAME),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+    });
     expect(tools.tools.at(-1)).toMatchObject({
       annotations: {
         destructiveHint: false,

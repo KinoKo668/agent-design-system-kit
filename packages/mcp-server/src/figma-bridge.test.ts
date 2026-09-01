@@ -140,6 +140,43 @@ function buttonCommand(operationId: string) {
   };
 }
 
+function styleAuditCommand(operationId: string) {
+  return {
+    approval: {
+      mode: "not_required",
+      reason: "read_only_diagnostic",
+    },
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: FILE_BINDING_ID,
+          projectId: "hatch-demo",
+          registeredVariables: [
+            {
+              stableId:
+                "hatch-demo/token-set/button-foundation/variables/major-1/variable/semantic/color/action-primary-background",
+              tokenPath: "semantic/color/action-primary-background",
+            },
+          ],
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+        },
+      },
+      type: "audit.styles.scan",
+    },
+    idempotencyKey: `audit-${operationId}`,
+    operationId,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function hello(pluginInstanceId = PLUGIN_INSTANCE_ID) {
   return {
     context: { fileName: "Bridge Contract", pageName: "Page 1" },
@@ -365,6 +402,56 @@ describe("local Figma Bridge", () => {
         },
         status: "succeeded",
       },
+      ok: true,
+    });
+  });
+
+  it("carries a read-only style audit without invoking write authorization", async () => {
+    const authorizeWrite = vi.fn(() =>
+      createToolkitError({
+        code: "APPROVAL_REQUIRED",
+        message: "Writes are blocked.",
+        recoveryInstruction: "Obtain approval before writing.",
+      }),
+    );
+    const { address } = await startBridge({ authorizeWrite });
+    await request(address.url, "/v1/plugin/connect", hello());
+    const submitted = await request(
+      address.url,
+      "/v1/operations",
+      styleAuditCommand(OPERATION_IDS[0]),
+    );
+    expect(submitted.response.status).toBe(202);
+    expect(authorizeWrite).not.toHaveBeenCalled();
+
+    await request(address.url, "/v1/plugin/next", {
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    const reported = await request(address.url, "/v1/plugin/results", {
+      ok: true,
+      operationId: OPERATION_IDS[0],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        page: { id: "1:2", name: "Page 1" },
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "current-page",
+        summary: {
+          auditedStyles: 5,
+          hardCodedStyles: 0,
+          nodesWithFindings: 0,
+          registeredBindings: 5,
+          unregisteredVariables: 0,
+        },
+        type: "audit.styles.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(reported.response.status).toBe(202);
+    expect(reported.body).toMatchObject({
+      data: { operation: { status: "succeeded" } },
       ok: true,
     });
   });
