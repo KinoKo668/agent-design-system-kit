@@ -4,8 +4,11 @@ import {
   CORE_PACKAGE_NAME,
   DESIGN_BRIEF_ASSET_TYPE,
   DESIGN_BRIEF_SCHEMA_VERSION,
+  DTCG_VERSION,
   LOG_SCHEMA_VERSION,
   RESULT_SCHEMA_VERSION,
+  TOKEN_SET_ASSET_TYPE,
+  TOKEN_SET_SCHEMA_VERSION,
   createLogEvent,
   createSuccessResult,
   createToolkitError,
@@ -17,6 +20,9 @@ describe("core package boundary", () => {
     expect(CORE_PACKAGE_NAME).toBe("@agent-design-system-kit/core");
     expect(DESIGN_BRIEF_SCHEMA_VERSION).toBe("1.0.0");
     expect(DESIGN_BRIEF_ASSET_TYPE).toBe("brief");
+    expect(TOKEN_SET_SCHEMA_VERSION).toBe("1.0.0");
+    expect(TOKEN_SET_ASSET_TYPE).toBe("token-set");
+    expect(DTCG_VERSION).toBe("2025.10");
   });
 
   it("exposes the shared result contract from its public entry point", () => {

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "token-set",
+  "projectId": "hatch-demo",
+  "assetId": "invalid-aliases",
+  "assetVersion": "1.0.0",
+  "name": "Invalid Token Set",
+  "description": "A deliberately invalid fixture for Token Set diagnostics.",
+  "dtcgVersion": "2025.10",
+  "defaultMode": "missing",
+  "modes": [
+    {
+      "id": "light",
+      "name": "Light",
+      "tokens": [
+        {
+          "path": ["primitive", "color", "brand"],
+          "$type": "color",
+          "$description": "Valid baseline color.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.2, 0.4, 1],
+            "hex": "#3366ff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "brand"],
+          "$type": "color",
+          "$description": "Duplicate path that must fail.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1, 1, 1],
+            "hex": "#ffffff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "bad-alias"],
+          "$type": "color",
+          "$description": "Primitive token that incorrectly uses an alias.",
+          "$value": "{semantic.color.cycle-a}"
+        },
+        {
+          "path": ["semantic", "color", "missing"],
+          "$type": "color",
+          "$description": "Semantic token with an unresolved alias.",
+          "$value": "{primitive.color.does-not-exist}"
+        },
+        {
+          "path": ["semantic", "dimension", "wrong-type"],
+          "$type": "dimension",
+          "$description": "Dimension token that points to a color token.",
+          "$value": "{primitive.color.brand}"
+        },
+        {
+          "path": ["semantic", "color", "cycle-a"],
+          "$type": "color",
+          "$description": "First half of a circular alias.",
+          "$value": "{semantic.color.cycle-b}"
+        },
+        {
+          "path": ["semantic", "color", "cycle-b"],
+          "$type": "color",
+          "$description": "Second half of a circular alias.",
+          "$value": "{semantic.color.cycle-a}"
+        },
+        {
+          "path": ["semantic", "color", "raw-value"],
+          "$type": "color",
+          "$description": "Semantic token that incorrectly stores a raw value.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1, 1, 1],
+            "hex": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "name": "Dark",
+      "tokens": [
+        {
+          "path": ["primitive", "color", "brand"],
+          "$type": "dimension",
+          "$description": "Valid baseline color.",
+          "$value": { "value": 8, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "color", "unexpected"],
+          "$type": "color",
+          "$description": "Token that does not exist in the baseline mode.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0, 0, 0],
+            "hex": "#000000"
+          }
+        }
+      ]
+    }
+  ]
+}

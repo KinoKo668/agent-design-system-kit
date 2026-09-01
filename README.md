@@ -107,6 +107,7 @@ What exists today:
 - a shared, JSON-safe result, error, recovery, and structured-log contract;
 - a local credential boundary and recursive log-redaction contract;
 - a versioned Design Brief schema with valid and invalid public fixtures;
+- a versioned DTCG 2025.10 Token Set subset with typed aliases, modes, dependency rules, and Button fixtures;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -169,6 +170,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Shared result, error, recovery, and logging contract](docs/CORE-001-统一结果错误与日志模型.md)
 - [Local credentials and log-redaction policy](docs/SEC-001-本地凭据与日志脱敏策略.md)
 - [Design Brief schema](docs/SCH-001-Design-Brief-Schema.md)
+- [Design Token schema and DTCG subset](docs/SCH-002-基础Token-Schema与DTCG子集.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

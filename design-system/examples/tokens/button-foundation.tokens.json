@@ -1,0 +1,236 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "token-set",
+  "projectId": "hatch-demo",
+  "assetId": "button-foundation",
+  "assetVersion": "1.0.0",
+  "name": "Button foundation",
+  "description": "The minimum primitive and semantic tokens required by the Hatch Button vertical slice.",
+  "dtcgVersion": "2025.10",
+  "defaultMode": "light",
+  "modes": [
+    {
+      "id": "light",
+      "name": "Light",
+      "tokens": [
+        {
+          "path": ["primitive", "color", "brand-600"],
+          "$type": "color",
+          "$description": "Primary brand color used as the source for emphasized actions.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.2, 0.4, 1],
+            "alpha": 1,
+            "hex": "#3366ff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "brand-200"],
+          "$type": "color",
+          "$description": "Lighter brand color used for disabled emphasized actions.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6, 0.7, 1],
+            "alpha": 1,
+            "hex": "#99b3ff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-0"],
+          "$type": "color",
+          "$description": "Lightest neutral color.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1, 1, 1],
+            "alpha": 1,
+            "hex": "#ffffff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-300"],
+          "$type": "color",
+          "$description": "Mid-light neutral used for disabled content and borders.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.7, 0.7, 0.7],
+            "alpha": 1,
+            "hex": "#b3b3b3"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-900"],
+          "$type": "color",
+          "$description": "Darkest neutral color used for high-emphasis text.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1, 0.1, 0.1],
+            "alpha": 1,
+            "hex": "#1a1a1a"
+          }
+        },
+        {
+          "path": ["primitive", "dimension", "control-height-medium"],
+          "$type": "dimension",
+          "$description": "Height of a medium interactive control.",
+          "$value": { "value": 40, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "space-3"],
+          "$type": "dimension",
+          "$description": "Twelve-pixel spacing step used for inline Button padding.",
+          "$value": { "value": 12, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "border-width-default"],
+          "$type": "dimension",
+          "$description": "Default border thickness for controls.",
+          "$value": { "value": 1, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "radius-medium"],
+          "$type": "dimension",
+          "$description": "Medium corner radius for interactive controls.",
+          "$value": { "value": 8, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "font-size-medium"],
+          "$type": "dimension",
+          "$description": "Font size used by medium control labels.",
+          "$value": { "value": 14, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "letter-spacing-normal"],
+          "$type": "dimension",
+          "$description": "Default letter spacing for control labels.",
+          "$value": { "value": 0, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "font-family", "sans"],
+          "$type": "fontFamily",
+          "$description": "Primary sans-serif font stack.",
+          "$value": ["Inter", "Arial", "sans-serif"]
+        },
+        {
+          "path": ["primitive", "font-weight", "medium"],
+          "$type": "fontWeight",
+          "$description": "Medium emphasis font weight.",
+          "$value": 500
+        },
+        {
+          "path": ["primitive", "number", "line-height-medium"],
+          "$type": "number",
+          "$description": "Unitless line-height multiplier for medium labels.",
+          "$value": 1.43
+        },
+        {
+          "path": ["primitive", "number", "opacity-disabled"],
+          "$type": "number",
+          "$description": "Opacity applied to disabled controls.",
+          "$value": 0.48
+        },
+        {
+          "path": ["semantic", "color", "action-primary-background"],
+          "$type": "color",
+          "$description": "Background color for the default Primary Button.",
+          "$value": "{primitive.color.brand-600}"
+        },
+        {
+          "path": ["semantic", "color", "action-primary-foreground"],
+          "$type": "color",
+          "$description": "Label color for the default Primary Button.",
+          "$value": "{primitive.color.neutral-0}"
+        },
+        {
+          "path": ["semantic", "color", "action-primary-disabled-background"],
+          "$type": "color",
+          "$description": "Background color for the disabled Primary Button.",
+          "$value": "{primitive.color.brand-200}"
+        },
+        {
+          "path": ["semantic", "color", "action-primary-disabled-foreground"],
+          "$type": "color",
+          "$description": "Label color for the disabled Primary Button.",
+          "$value": "{primitive.color.neutral-0}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-background"],
+          "$type": "color",
+          "$description": "Background color for the default Secondary Button.",
+          "$value": "{primitive.color.neutral-0}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-foreground"],
+          "$type": "color",
+          "$description": "Label color for the default Secondary Button.",
+          "$value": "{primitive.color.neutral-900}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-border"],
+          "$type": "color",
+          "$description": "Border color for the Secondary Button.",
+          "$value": "{primitive.color.neutral-300}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-disabled-background"],
+          "$type": "color",
+          "$description": "Background color for the disabled Secondary Button.",
+          "$value": "{primitive.color.neutral-0}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-disabled-foreground"],
+          "$type": "color",
+          "$description": "Label color for the disabled Secondary Button.",
+          "$value": "{primitive.color.neutral-300}"
+        },
+        {
+          "path": ["semantic", "color", "action-secondary-disabled-border"],
+          "$type": "color",
+          "$description": "Border color for the disabled Secondary Button.",
+          "$value": "{primitive.color.neutral-300}"
+        },
+        {
+          "path": ["semantic", "dimension", "action-height-medium"],
+          "$type": "dimension",
+          "$description": "Height of a medium Button.",
+          "$value": "{primitive.dimension.control-height-medium}"
+        },
+        {
+          "path": ["semantic", "dimension", "action-padding-inline"],
+          "$type": "dimension",
+          "$description": "Horizontal padding inside a Button.",
+          "$value": "{primitive.dimension.space-3}"
+        },
+        {
+          "path": ["semantic", "dimension", "action-border-width"],
+          "$type": "dimension",
+          "$description": "Border width of a bordered Button.",
+          "$value": "{primitive.dimension.border-width-default}"
+        },
+        {
+          "path": ["semantic", "dimension", "action-radius"],
+          "$type": "dimension",
+          "$description": "Corner radius of a Button.",
+          "$value": "{primitive.dimension.radius-medium}"
+        },
+        {
+          "path": ["semantic", "typography", "action-label"],
+          "$type": "typography",
+          "$description": "Typography applied to the Button label.",
+          "$value": {
+            "fontFamily": "{primitive.font-family.sans}",
+            "fontSize": "{primitive.dimension.font-size-medium}",
+            "fontWeight": "{primitive.font-weight.medium}",
+            "letterSpacing": "{primitive.dimension.letter-spacing-normal}",
+            "lineHeight": "{primitive.number.line-height-medium}"
+          }
+        },
+        {
+          "path": ["semantic", "number", "action-disabled-opacity"],
+          "$type": "number",
+          "$description": "Opacity applied to disabled Button states.",
+          "$value": "{primitive.number.opacity-disabled}"
+        }
+      ]
+    }
+  ]
+}
