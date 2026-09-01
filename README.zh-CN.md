@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、可机器读取并实时校验 Git 的 Approval Record、经过认证的单 Writer Figma Bridge，以及第一条确定性的 Figma Variables Ensure 链路，但尚未成为可用于生产环境的完整工具。**
+**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、可机器读取并实时校验 Git 的 Approval Record、经过认证的单 Writer Figma Bridge、确定性的 Variables／Button Ensure，以及原子 Registry Ready 登记，但尚未成为可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -114,6 +114,8 @@ Registry · 历史             │
 - 严格的 Variable Plan 与 `variables.ensure` Adapter：把 Button Token Fixture 映射为一个 Major Collection、30 个真实 Variable、精确 Scope、Alias、Code Syntax 和稳定托管身份，并支持无写入重试与部分恢复；
 - 需要设计师二次确认的 Figma 文件绑定入口：未绑定库文件只初始化一次，同一身份可安全重放，不同身份或损坏记录不会被自动覆盖或改绑；
 - 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
+- 确定性的 Button Writer：建立或收敛一个真实 Main Component Set、四个已批准 Variant、Label 属性与准确 Variable Binding，不重复创建近似资产；
+- 原子 Registry 最终化：只在 Figma 审计成功后登记 Button Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -216,6 +218,8 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge 与单 Writer 队列](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [确定性 Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
+- [确定性 Button Component Set Ensure](docs/FIG-004-Button-Component-Ensure.md)
+- [Registry 原子 Ready 登记](docs/FIG-005-Registry-Atomic-Ready.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

@@ -303,7 +303,34 @@ async function runCommand(
     writeAuthorized: writeCommand && command.approval.mode === "approved",
   });
   const result = await waitForMainResult(command);
-  await client.report(result);
+  const acceptance = await client.report(result);
+  if (acceptance.status !== "succeeded") {
+    const acceptedError = acceptance.error;
+    if (acceptedError === null) {
+      throw new Error("Bridge finalization failed without recovery details.");
+    }
+    update({
+      error: acceptedError,
+      operation: {
+        completedSteps: Math.min(
+          result.ok
+            ? totalSteps - 1
+            : (result.error.completedSteps?.length ?? 0),
+          totalSteps,
+        ),
+        detail:
+          acceptance.status === "partial"
+            ? "Figma completed, but the local Registry still needs recovery."
+            : "The Writer Operation failed safely.",
+        operationId: command.operationId,
+        status: "failed",
+        step: "Review the structured recovery instruction",
+        totalSteps,
+      },
+      writeAuthorized: false,
+    });
+    return;
+  }
   if (result.ok) {
     const variablesResult =
       "type" in result.result && result.result.type === "variables.ensure"

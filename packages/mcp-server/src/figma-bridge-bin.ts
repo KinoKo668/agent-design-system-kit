@@ -4,6 +4,7 @@ import process from "node:process";
 
 import { createGitApprovalVerifier } from "./approval-verifier.js";
 import { createFigmaBridge } from "./figma-bridge.js";
+import { createRegistryWriteFinalizer } from "./registry-finalizer.js";
 import {
   HATCHKIT_FIGMA_BRIDGE_HELP,
   parseFigmaBridgeArguments,
@@ -20,7 +21,10 @@ if (!parsed.ok) {
   const bridge = createFigmaBridge({
     ...(approvalVerifier === null
       ? {}
-      : { authorizeWrite: createGitApprovalVerifier(approvalVerifier) }),
+      : {
+          authorizeWrite: createGitApprovalVerifier(approvalVerifier),
+          finalizeWrite: createRegistryWriteFinalizer(approvalVerifier),
+        }),
   });
 
   try {

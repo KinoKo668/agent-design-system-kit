@@ -270,7 +270,10 @@ export const writerButtonResultSchema = z
     componentSet: z
       .object({
         action: z.enum(["created", "unchanged", "updated"]),
-        nodeId: z.string().min(1).max(128),
+        nodeId: z
+          .string()
+          .max(128, "Must contain at most 128 characters.")
+          .regex(/^\d+:\d+$/u, "Must be a Figma Plugin node ID."),
         stableId: stableAssetIdSchema,
       })
       .strict(),
@@ -297,6 +300,7 @@ export const writerSuccessResultSchema = z.union([
   writerButtonResultSchema,
   writerVariablesResultSchema,
 ]);
+export type WriterSuccessResult = z.infer<typeof writerSuccessResultSchema>;
 
 export const writerPluginResultSchema = z.discriminatedUnion("ok", [
   z

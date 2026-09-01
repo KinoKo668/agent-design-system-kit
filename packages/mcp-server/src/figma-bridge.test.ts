@@ -4,11 +4,14 @@ import { join } from "node:path";
 
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
+  createFigmaButtonPlan,
   createFigmaVariablePlan,
+  createToolkitError,
 } from "@agent-design-system-kit/core";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
+import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 
 import { createFigmaBridge, type FigmaBridge } from "./figma-bridge.js";
 
@@ -20,6 +23,10 @@ const OPERATION_IDS = [
   "ae8ee112-0337-4168-93fe-b7b04fa1367e",
   "77f50469-046a-460c-8336-c4dc010e4773",
 ] as const;
+const COMPONENT_DIGEST =
+  "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78";
+const TOKEN_DIGEST = `sha256:${"a".repeat(64)}`;
+const FILE_BINDING_ID = "00000000-0000-4000-8000-000000000001";
 
 const bridges: FigmaBridge[] = [];
 const temporaryDirectories: string[] = [];
@@ -96,6 +103,37 @@ function variablesCommand(operationId: string) {
     source: { client: "mcp-server" },
     target: {
       fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
+function buttonCommand(operationId: string) {
+  const planned = createFigmaButtonPlan(
+    validContract,
+    validTokenSet,
+    COMPONENT_DIGEST,
+    TOKEN_DIGEST,
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.button.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "components.button.ensure",
+    },
+    idempotencyKey: `button-${operationId}`,
+    operationId,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
       kind: "figma-file",
       stableId: "hatch-demo/figma-file/library",
     },
@@ -293,7 +331,7 @@ describe("local Figma Bridge", () => {
       ok: true,
     });
 
-    const reported = await request(address.url, "/v1/plugin/results", {
+    const pluginResult = {
       ok: true,
       operationId: OPERATION_IDS[0],
       pluginInstanceId: PLUGIN_INSTANCE_ID,
@@ -307,7 +345,12 @@ describe("local Figma Bridge", () => {
         variables: { created: 30, unchanged: 0, updated: 0 },
       },
       schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
-    });
+    };
+    const reported = await request(
+      address.url,
+      "/v1/plugin/results",
+      pluginResult,
+    );
     expect(reported.response.status).toBe(202);
 
     const operation = await request(address.url, "/v1/operations/get", {
@@ -324,6 +367,91 @@ describe("local Figma Bridge", () => {
       },
       ok: true,
     });
+  });
+
+  it("records PARTIAL_WRITE when Registry finalization fails after Figma success", async () => {
+    const finalizeWrite = vi.fn(() =>
+      Promise.resolve(
+        createToolkitError({
+          code: "PARTIAL_WRITE",
+          message: "The Figma asset exists, but Registry commit failed.",
+          recoveryInstruction:
+            "Resolve the Registry conflict and retry the same command.",
+        }),
+      ),
+    );
+    const { address } = await startBridge({
+      authorizeWrite: () => null,
+      finalizeWrite,
+    });
+    await request(address.url, "/v1/plugin/connect", hello());
+    await request(
+      address.url,
+      "/v1/operations",
+      buttonCommand(OPERATION_IDS[0]),
+    );
+    await request(address.url, "/v1/plugin/next", {
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+
+    const buttonResult = {
+      ok: true,
+      operationId: OPERATION_IDS[0],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        componentSet: {
+          action: "created",
+          nodeId: "300:400",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        labelPropertyName: "Label#300:401",
+        type: "components.button.ensure",
+        typography: {
+          lineHeightStrategy: "resolved-percent",
+          variableBindings: 4,
+        },
+        variants: { created: 4, unchanged: 0, updated: 0 },
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    };
+    const reported = await request(
+      address.url,
+      "/v1/plugin/results",
+      buttonResult,
+    );
+
+    expect(finalizeWrite).toHaveBeenCalledOnce();
+    expect(reported.response.status).toBe(202);
+    expect(reported.body).toMatchObject({
+      data: {
+        operation: {
+          error: { code: "PARTIAL_WRITE" },
+          status: "partial",
+        },
+        replayed: false,
+      },
+      ok: true,
+    });
+    const operation = await request(address.url, "/v1/operations/get", {
+      operationId: OPERATION_IDS[0],
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(operation.body).toMatchObject({
+      data: { error: { code: "PARTIAL_WRITE" }, status: "partial" },
+      ok: true,
+    });
+    const replay = await request(
+      address.url,
+      "/v1/plugin/results",
+      buttonResult,
+    );
+    expect(replay.response.status).toBe(200);
+    expect(replay.body).toMatchObject({
+      data: { operation: { status: "partial" }, replayed: true },
+      ok: true,
+    });
+    expect(finalizeWrite).toHaveBeenCalledOnce();
   });
 
   it("blocks write commands when no Git approval verifier is configured", async () => {

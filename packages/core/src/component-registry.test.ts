@@ -7,6 +7,7 @@ import validRegistry from "../../../design-system/hatch-demo/registry/components
 import {
   COMPONENT_REGISTRY_SCHEMA_VERSION,
   COMPONENT_REGISTRY_TYPE,
+  markComponentRegistryReady,
   validateComponentRegistry,
   validateComponentRegistryWithButtonContract,
 } from "./component-registry.js";
@@ -14,6 +15,39 @@ import { isFailureResult, isSuccessResult } from "./results.js";
 import { compareSemanticVersions } from "./semantic-version.js";
 
 const CONTRACT_DIGEST = validButtonContract.contentDigest;
+
+function unbuiltRegistry() {
+  const entry = validRegistry.entries[0];
+  if (entry === undefined) throw new Error("Button Registry fixture missing.");
+  return {
+    ...validRegistry,
+    entries: [
+      {
+        ...entry,
+        figma: {
+          channel: "library",
+          fileBindingId: "00000000-0000-4000-8000-000000000001",
+          majorVersion: 1,
+          role: "component-set",
+          slotId: "root",
+          status: "unbuilt",
+        },
+      },
+    ],
+  };
+}
+
+const READY_INPUT = {
+  approvalId: "approval.component.button.1.0.0",
+  assetId: "button",
+  assetVersion: "1.0.0",
+  componentSetStableId: "hatch-demo/component/button/component-set/major-1",
+  contentDigest: CONTRACT_DIGEST,
+  fileBindingId: "00000000-0000-4000-8000-000000000001",
+  majorVersion: 1,
+  nodeId: "300:400",
+  projectId: "hatch-demo",
+};
 
 describe("validateComponentRegistry", () => {
   it("accepts the public Button Registry fixture", () => {
@@ -241,5 +275,80 @@ describe("compareSemanticVersions", () => {
   it("rejects incomplete or malformed versions instead of guessing", () => {
     expect(() => compareSemanticVersions("1.0", "1.0.0")).toThrow(TypeError);
     expect(() => compareSemanticVersions("v1.0.0", "1.0.0")).toThrow(TypeError);
+  });
+});
+
+describe("markComponentRegistryReady", () => {
+  it("promotes the exact unbuilt track and is idempotent", () => {
+    const first = markComponentRegistryReady(unbuiltRegistry(), READY_INPUT);
+    expect(first).toMatchObject({
+      data: {
+        action: "ready",
+        entryIndex: 0,
+        registry: {
+          entries: [
+            {
+              figma: {
+                appliedDigest: CONTRACT_DIGEST,
+                appliedVersion: "1.0.0",
+                locator: { nodeId: "300:400" },
+                status: "ready",
+              },
+            },
+          ],
+        },
+      },
+      ok: true,
+    });
+    if (!first.ok) return;
+    const second = markComponentRegistryReady(first.data.registry, READY_INPUT);
+    expect(second).toMatchObject({ data: { action: "unchanged" }, ok: true });
+  });
+
+  it("repairs only the locator on the same audited physical track", () => {
+    const result = markComponentRegistryReady(validRegistry, {
+      ...READY_INPUT,
+      nodeId: "500:600",
+    });
+    expect(result).toMatchObject({
+      data: {
+        action: "locator-repaired",
+        registry: {
+          entries: [
+            {
+              figma: {
+                locator: {
+                  componentSetKey: "fixture_button_component_set_key_0001",
+                  nodeId: "500:600",
+                },
+              },
+            },
+          ],
+        },
+      },
+      ok: true,
+    });
+  });
+
+  it("rejects file, approval and stable-identity drift", () => {
+    expect(
+      markComponentRegistryReady(unbuiltRegistry(), {
+        ...READY_INPUT,
+        fileBindingId: "00000000-0000-4000-8000-000000000002",
+      }),
+    ).toMatchObject({ error: { code: "FILE_BINDING_MISMATCH" }, ok: false });
+    expect(
+      markComponentRegistryReady(unbuiltRegistry(), {
+        ...READY_INPUT,
+        contentDigest: `sha256:${"f".repeat(64)}`,
+      }),
+    ).toMatchObject({ error: { code: "APPROVAL_STALE" }, ok: false });
+    expect(
+      markComponentRegistryReady(unbuiltRegistry(), {
+        ...READY_INPUT,
+        componentSetStableId:
+          "hatch-demo/component/button/component-set/major-2",
+      }),
+    ).toMatchObject({ error: { code: "VALIDATION_FAILED" }, ok: false });
   });
 });

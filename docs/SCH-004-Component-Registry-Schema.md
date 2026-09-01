@@ -93,11 +93,11 @@ SCH-004 只校验 Approval ID 与资产身份一致。Approval Record 的角色�
 
 第一版支持：
 
-| 状态 | 新页面是否可用 | 规则 |
-| --- | --- | --- |
-| `active` | 取决于 Figma 是否 Ready | 同一逻辑组件最多一个 Active 版本 |
-| `superseded` | 否 | 必须说明原因并提供更高的 `replacedBy` |
-| `revoked` | 否 | 必须说明撤销原因；已有使用进入审计范围 |
+| 状态         | 新页面是否可用          | 规则                                   |
+| ------------ | ----------------------- | -------------------------------------- |
+| `active`     | 取决于 Figma 是否 Ready | 同一逻辑组件最多一个 Active 版本       |
+| `superseded` | 否                      | 必须说明原因并提供更高的 `replacedBy`  |
+| `revoked`    | 否                      | 必须说明撤销原因；已有使用进入审计范围 |
 
 Active Entry：
 
@@ -248,7 +248,7 @@ Registry 可以保存 Figma 物理定位信息，但这些字段：
 
 ## 12. 当前不做
 
-SCH-004 不实现：
+SCH-004 本身不实现：
 
 - 文件发现、加载、写回和原子替换；
 - Component 搜索、排序与唯一解析；
@@ -261,6 +261,8 @@ SCH-004 不实现：
 - 审计结果、运行日志和 Operation 队列的持久化。
 
 这些能力分别属于 REG、LOOP、FIG、AUD 和后续扩展任务。
+
+其中 Registry 的 `unbuilt → ready` 纯状态转换、并发保护、原子文件替换、重载验证与 `PARTIAL_WRITE` 恢复已由 [FIG-005](FIG-005-Registry-Atomic-Ready.md) 实现；本节保留的是 SCH-004 当时的 Schema 任务边界。
 
 ## 13. 完成标准
 

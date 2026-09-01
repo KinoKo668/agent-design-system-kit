@@ -24,6 +24,8 @@ import {
   type JsonValue,
   type ToolkitError,
   type WriterCommandEnvelope,
+  type WriterPluginResult,
+  type WriterSuccessResult,
 } from "@agent-design-system-kit/core";
 import * as z from "zod";
 
@@ -77,6 +79,10 @@ export interface FigmaBridgeOptions {
     command: WriterCommandEnvelope,
   ) => Promise<ToolkitError | null> | ToolkitError | null;
   readonly leaseMs?: number;
+  readonly finalizeWrite?: (
+    command: WriterCommandEnvelope,
+    result: WriterSuccessResult,
+  ) => Promise<ToolkitError | null> | ToolkitError | null;
   readonly longPollMs?: number;
   readonly now?: () => Date;
   readonly nowMonotonicMs?: () => number;
@@ -624,7 +630,39 @@ export function createFigmaBridge(
         );
         return;
       }
-      const accepted = await queue.acceptResult(parsed.data);
+      let acceptedResult: WriterPluginResult = parsed.data;
+      if (parsed.data.ok && options.finalizeWrite !== undefined) {
+        const command = queue.getDispatchedCommand(parsed.data.operationId);
+        if (command !== null) {
+          let finalizationError: ToolkitError | null;
+          try {
+            finalizationError = await options.finalizeWrite(
+              command,
+              parsed.data.result,
+            );
+          } catch {
+            finalizationError = bridgeError(
+              "PARTIAL_WRITE",
+              "The Figma write succeeded, but local finalization failed unexpectedly.",
+              "Keep the Figma asset, inspect the local Registry, and retry the same approved command.",
+            );
+          }
+          if (finalizationError !== null) {
+            acceptedResult = {
+              error: {
+                code: "PARTIAL_WRITE",
+                message: finalizationError.message,
+                recoveryInstruction: finalizationError.recovery.instruction,
+              },
+              ok: false,
+              operationId: parsed.data.operationId,
+              pluginInstanceId: parsed.data.pluginInstanceId,
+              schemaVersion: parsed.data.schemaVersion,
+            };
+          }
+        }
+      }
+      const accepted = await queue.acceptResult(acceptedResult);
       if (!accepted.ok) {
         sendFailure(
           response,

@@ -125,6 +125,8 @@ What exists today:
 - a strict Variable planner and `variables.ensure` adapter that maps the Button Token fixture to one Major-version Collection, 30 real Variables, targeted scopes, aliases, code syntax, stable managed identities, no-op retries, and recoverable partial writes;
 - an explicit human-confirmed Figma file-binding control that binds an unbound library once, safely replays the same identity, and refuses automatic overwrite or rebind;
 - a live Git Approval verifier that reloads the catalog before every write, validates the exact subject and upstream chain, and fails closed on missing, stale, revoked, superseded, duplicate, or invalid records;
+- a deterministic Button writer that ensures one real Main Component Set, four approved Variants, Label properties, and exact Variable bindings without duplicate assets;
+- an atomic Registry finalizer that records the audited Button node only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -229,6 +231,8 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge and single-writer queue](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [Deterministic Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
+- [Deterministic Button Component Set Ensure](docs/FIG-004-Button-Component-Ensure.md)
+- [Atomic Registry Ready finalization](docs/FIG-005-Registry-Atomic-Ready.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

@@ -92,6 +92,9 @@ export interface WriterQueue {
   readonly getOperation: (
     operationId: string,
   ) => ToolkitResult<WriterOperation>;
+  readonly getDispatchedCommand: (
+    operationId: string,
+  ) => WriterCommandEnvelope | null;
   readonly initialize: () => Promise<void>;
   readonly leaseNext: () => Promise<WriterCommandDelivery | null>;
   readonly snapshot: () => WriterQueueSnapshot;
@@ -524,6 +527,16 @@ export function createWriterQueue(options: WriterQueueOptions): WriterQueue {
             ),
           )
         : createSuccessResult(publicOperation(operation));
+    },
+
+    getDispatchedCommand(operationId) {
+      requireInitialized();
+      const operation = operations.get(operationId);
+      return operation?.status === "dispatched" &&
+        inFlightOperationId === operationId &&
+        operation.command !== undefined
+        ? structuredClone(operation.command)
+        : null;
     },
 
     snapshot() {

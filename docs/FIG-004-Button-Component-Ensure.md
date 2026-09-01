@@ -117,4 +117,4 @@ FIG-004 的正式代码、协议、Adapter、恢复路径与自动测试已经�
 
 在外部条件满足前，不创建假审批、不使用隐藏旁路，也不写入用户的正式 Library。
 
-下一项 FIG-005 将把成功返回的 `componentSet.nodeId` 与稳定资产身份登记进 Registry，使后续 Agent 能在重新打开文件后定位并复用真实 Main Component。
+后续 FIG-005 已把成功返回的 `componentSet.nodeId` 与稳定资产身份原子登记进 Registry，并将登记失败纳入 `PARTIAL_WRITE` 恢复链路。详见 [FIG-005](FIG-005-Registry-Atomic-Ready.md)。下一项 FIG-006 将只依据 Ready Registry 插入真实 Button Instance。

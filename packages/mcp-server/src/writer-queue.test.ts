@@ -126,6 +126,7 @@ describe("formal Writer queue", () => {
   it("rejects a result for an operation that was never dispatched", async () => {
     const fixture = await queueFixture(await temporaryLogDirectory());
     await fixture.queue.submit(command(IDS[0]));
+    expect(fixture.queue.getDispatchedCommand(IDS[0])).toBeNull();
 
     const result = await fixture.queue.acceptResult({
       ok: true,
@@ -171,6 +172,14 @@ describe("formal Writer queue", () => {
     const fixture = await queueFixture(await temporaryLogDirectory());
     await fixture.queue.submit(command(IDS[0]));
     await fixture.queue.leaseNext();
+    const dispatched = fixture.queue.getDispatchedCommand(IDS[0]);
+    expect(dispatched).toEqual(command(IDS[0]));
+    if (dispatched !== null) {
+      (dispatched as { projectId: string }).projectId = "mutated-copy";
+    }
+    expect(fixture.queue.getDispatchedCommand(IDS[0])?.projectId).toBe(
+      "hatch-demo",
+    );
     const result = {
       ok: true as const,
       operationId: IDS[0],
@@ -187,6 +196,7 @@ describe("formal Writer queue", () => {
       data: { status: "succeeded" },
       ok: true,
     });
+    expect(fixture.queue.getDispatchedCommand(IDS[0])).toBeNull();
   });
 
   it("preserves completed steps for a recoverable partial write", async () => {

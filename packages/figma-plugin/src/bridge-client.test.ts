@@ -58,7 +58,13 @@ describe("Figma Bridge browser client", () => {
         transport: "http",
       }),
       success({ command: commandDelivery() }),
-      success({ replayed: false }, 202),
+      success(
+        {
+          operation: { status: "succeeded" },
+          replayed: false,
+        },
+        202,
+      ),
       success({ disconnected: true }),
     ];
     const fetchImplementation: typeof fetch = (input, init) => {
@@ -80,13 +86,15 @@ describe("Figma Bridge browser client", () => {
 
     await client.connect({ fileName: "Demo", pageName: "Page 1" });
     expect(await client.next()).toEqual(commandDelivery());
-    await client.report({
-      ok: true,
-      operationId: OPERATION_ID,
-      pluginInstanceId: PLUGIN_INSTANCE_ID,
-      result: { pong: true },
-      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
-    });
+    await expect(
+      client.report({
+        ok: true,
+        operationId: OPERATION_ID,
+        pluginInstanceId: PLUGIN_INSTANCE_ID,
+        result: { pong: true },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }),
+    ).resolves.toEqual({ error: null, status: "succeeded" });
     await client.disconnect();
 
     expect(requests.map((request) => request.path)).toEqual([
@@ -160,6 +168,66 @@ describe("Figma Bridge browser client", () => {
         message: "The token is invalid.",
         recoveryInstruction: "Paste the current token.",
       },
+    });
+  });
+
+  it("returns a recoverable partial status after Figma succeeds but Registry finalization fails", async () => {
+    const responses = [
+      success({
+        leaseMs: 5_000,
+        pluginInstanceId: PLUGIN_INSTANCE_ID,
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+        transport: "http",
+      }),
+      success(
+        {
+          operation: {
+            error: {
+              code: "PARTIAL_WRITE",
+              message: "The Registry locator was not committed.",
+              recovery: {
+                action: "retry_operation",
+                instruction:
+                  "Resolve the Registry conflict and retry the same command.",
+                retry: "retry_after_correction",
+              },
+            },
+            status: "partial",
+          },
+          replayed: false,
+        },
+        202,
+      ),
+    ];
+    const fetchImplementation: typeof fetch = () => {
+      const response = responses.shift();
+      return response === undefined
+        ? Promise.reject(new Error("Unexpected browser client request."))
+        : Promise.resolve(response);
+    };
+    const client = createFigmaBridgeClient({
+      fetchImplementation,
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      sessionToken: SESSION_TOKEN,
+    });
+    await client.connect({ fileName: "Demo", pageName: "Page 1" });
+
+    await expect(
+      client.report({
+        ok: true,
+        operationId: OPERATION_ID,
+        pluginInstanceId: PLUGIN_INSTANCE_ID,
+        result: { pong: true },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }),
+    ).resolves.toMatchObject({
+      error: {
+        code: "PARTIAL_WRITE",
+        message: "The Registry locator was not committed.",
+        recoveryInstruction:
+          "Resolve the Registry conflict and retry the same command.",
+      },
+      status: "partial",
     });
   });
 

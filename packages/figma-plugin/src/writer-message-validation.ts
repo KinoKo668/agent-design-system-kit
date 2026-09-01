@@ -838,6 +838,7 @@ function isButtonResult(value: Record<string, unknown>): boolean {
       String(value.componentSet.action),
     ) &&
     isBoundedString(value.componentSet.nodeId, 1, 128) &&
+    /^\d+:\d+$/u.test(value.componentSet.nodeId) &&
     isStableAssetId(value.componentSet.stableId) &&
     isBoundedString(value.labelPropertyName, 1, 120) &&
     isRecord(value.typography) &&

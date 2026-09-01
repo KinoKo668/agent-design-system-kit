@@ -73,11 +73,18 @@ export interface FigmaBridgeClientOptions {
   readonly sessionToken: string;
 }
 
+export interface FigmaBridgeReportAcceptance {
+  readonly error: PluginErrorView | null;
+  readonly status: "failed" | "partial" | "succeeded";
+}
+
 export interface FigmaBridgeClient {
   readonly connect: (context: FigmaDocumentContext) => Promise<void>;
   readonly disconnect: () => Promise<void>;
   readonly next: () => Promise<WriterCommandDelivery | null>;
-  readonly report: (result: WriterPluginResult) => Promise<void>;
+  readonly report: (
+    result: WriterPluginResult,
+  ) => Promise<FigmaBridgeReportAcceptance>;
 }
 
 export function createFigmaBridgeClient(
@@ -264,7 +271,41 @@ export function createFigmaBridgeClient(
           ),
         );
       }
-      await request("/v1/plugin/results", result);
+      const data = await request("/v1/plugin/results", result);
+      if (
+        !isRecord(data) ||
+        !isRecord(data.operation) ||
+        !["failed", "partial", "succeeded"].includes(
+          String(data.operation.status),
+        )
+      ) {
+        throw new FigmaBridgeClientError(
+          errorView(
+            "TRANSPORT_UNAVAILABLE",
+            "The local Bridge returned an invalid final Operation status.",
+            "Update Hatchkit so the Bridge and Plugin use the same protocol.",
+          ),
+        );
+      }
+      const status = data.operation.status as
+        "failed" | "partial" | "succeeded";
+      const operationError =
+        status === "succeeded"
+          ? null
+          : parseRemoteError({
+              error: data.operation.error,
+              ok: false,
+            });
+      if (status !== "succeeded" && operationError === null) {
+        throw new FigmaBridgeClientError(
+          errorView(
+            "TRANSPORT_UNAVAILABLE",
+            "The local Bridge omitted recovery details for a failed Operation.",
+            "Inspect the local Bridge and retry only after its state is known.",
+          ),
+        );
+      }
+      return { error: operationError, status };
     },
   };
 }
