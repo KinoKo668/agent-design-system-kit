@@ -1,5 +1,6 @@
 import {
   CORE_PACKAGE_NAME,
+  HATCHKIT_VERSION,
   createFailureResult,
   createSuccessResult,
   createToolkitError,
@@ -29,6 +30,7 @@ export const CLI_EXIT_CODES = {
 export const CLI_HELP = `Hatchkit — local design-system validation and component queries
 
 Usage:
+  hatchkit --version
   hatchkit validate [catalog options]
   hatchkit search [catalog options] [search options]
   hatchkit resolve [catalog options] --asset-id <id> [resolve options]
@@ -426,6 +428,12 @@ export async function runCli(
   argv: readonly string[],
   options: CliRunOptions = {},
 ): Promise<CliRunResult> {
+  if (argv.length === 1 && (argv[0] === "--version" || argv[0] === "-v")) {
+    return {
+      exitCode: CLI_EXIT_CODES.success,
+      output: `${HATCHKIT_VERSION}\n`,
+    };
+  }
   if (
     argv.length === 0 ||
     argv[0] === "help" ||

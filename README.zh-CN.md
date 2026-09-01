@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 查询合同和 M3 Writer 自动化骨架，正在推进 M4 Agent Loop 与 M5 质量门禁：当前可通过可选 MCP 调用插入 Registry 驱动的 Button Instance，只读审计当前页面的样式与组件来源，并对整个 Figma Library 执行 Registry 双向差异检查。真实审批与独立 Figma 文件验收尚未完成，因此还不是可用于生产环境的完整工具。**
+**`v0.1.0-alpha.1` 是 Hatch 的首个公开源码预发布。自动化 Button 链路现已覆盖 Agent 精确查询、Registry 驱动的 Instance 编排、三类 Figma 审计、失败恢复和发布门禁。真实审批与独立 Figma Desktop 视觉验收尚未完成，因此还不可用于生产环境。**
 
 目前已经完成：
 
@@ -164,6 +164,7 @@ pnpm check
 构建完成后可以查看只读 CLI：
 
 ```bash
+pnpm --silent hatchkit --version
 pnpm --silent hatchkit --help
 ```
 
@@ -243,6 +244,9 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [安装与五分钟 Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
 - [故障排查手册](docs/DOC-002-故障排查手册.md)
 - [当前架构与运行边界](docs/DOC-002-当前架构与运行边界.md)
+- [v0.1.0-alpha.1 发布说明](docs/REL-001-v0.1.0-alpha.1发布说明.md)
+- [变更记录](CHANGELOG.md)
+- [安全策略](SECURITY.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

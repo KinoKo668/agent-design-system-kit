@@ -31,6 +31,7 @@ nvm use
 corepack enable pnpm
 pnpm install --frozen-lockfile
 pnpm build
+pnpm --silent hatchkit --version
 ```
 
 没有使用 nvm 时，请自行确认 `node --version` 为 `v24.20.0`，然后从 `corepack enable pnpm` 开始。

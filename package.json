@@ -1,6 +1,6 @@
 {
   "name": "agent-design-system-kit",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "description": "A local-first, agent-native toolkit for building and governing design systems.",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -29,7 +29,8 @@
     "qa:golden": "vitest run packages/mcp-server/src/golden-path-regression.test.ts",
     "qa:failures": "vitest run packages/mcp-server/src/failure-matrix-regression.test.ts",
     "docs:quickstart-check": "vitest run packages/cli/src/quickstart-contract.test.ts packages/mcp-server/src/quickstart-contract.test.ts",
-    "docs:check": "vitest run packages/cli/src/quickstart-contract.test.ts packages/mcp-server/src/quickstart-contract.test.ts packages/mcp-server/src/documentation-contract.test.ts",
+    "docs:check": "vitest run packages/cli/src/quickstart-contract.test.ts packages/mcp-server/src/quickstart-contract.test.ts packages/mcp-server/src/documentation-contract.test.ts packages/mcp-server/src/release-contract.test.ts",
+    "release:check": "pnpm check && pnpm audit --audit-level=high && ./spikes/run-m0-checks.sh",
     "test": "vitest run",
     "typecheck": "tsc --build --pretty false && tsc --project tsconfig.test.json --pretty false"
   },

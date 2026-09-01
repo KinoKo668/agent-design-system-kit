@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
 
 import {
+  HATCHKIT_VERSION,
   createSuccessResult,
   type ToolkitResult,
 } from "@agent-design-system-kit/core";
@@ -13,7 +14,7 @@ import type { LocalWriterClient } from "./local-writer-client.js";
 import { registerHatchkitWriteTools } from "./write-tools.js";
 
 export const HATCHKIT_MCP_SERVER_NAME = "hatchkit" as const;
-export const HATCHKIT_MCP_SERVER_VERSION = "0.0.0" as const;
+export const HATCHKIT_MCP_SERVER_VERSION = HATCHKIT_VERSION;
 export const HATCHKIT_STATUS_TOOL_NAME = "hatchkit_status" as const;
 export const HATCHKIT_MCP_SERVER_INSTRUCTIONS =
   "Hatchkit is a local design-system control plane. Call hatchkit_status first. Use only exact registered identities and variants; never invent or approximate. Read success is not write authorization. If a Writer Tool is available, use it only for an explicit page request: Git approval, file binding, and Figma audit still gate every write. Otherwise request a structured component change." as const;

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  HATCHKIT_VERSION,
   createFailureResult,
   createToolkitError,
 } from "@agent-design-system-kit/core";
@@ -55,6 +56,17 @@ describe("cli package boundary", () => {
 });
 
 describe("runCli", () => {
+  it("prints the release version without reading project files", async () => {
+    const long = await runCli(["--version"], { cwd: WORKSPACE_ROOT });
+    const short = await runCli(["-v"], { cwd: WORKSPACE_ROOT });
+
+    expect(long).toEqual({
+      exitCode: CLI_EXIT_CODES.success,
+      output: `${HATCHKIT_VERSION}\n`,
+    });
+    expect(short).toEqual(long);
+  });
+
   it("prints help without reading project files", async () => {
     const result = await runCli(["--help"], { cwd: WORKSPACE_ROOT });
 

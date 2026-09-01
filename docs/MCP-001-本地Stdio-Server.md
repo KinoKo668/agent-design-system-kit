@@ -33,7 +33,7 @@ MCP SDK 版本遵循 [ADR-001](ADR-001-工程技术栈与Monorepo方案.md)。�
 ```json
 {
   "name": "hatchkit",
-  "version": "0.0.0"
+  "version": "0.1.0-alpha.1"
 }
 ```
 

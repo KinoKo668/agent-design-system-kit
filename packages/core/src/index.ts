@@ -26,4 +26,5 @@ export * from "./style-audit.js";
 export * from "./schema-primitives.js";
 export * from "./schema-validation.js";
 export * from "./token-set.js";
+export * from "./version.js";
 export * from "./writer-protocol.js";

@@ -1,6 +1,6 @@
 {
   "name": "@agent-design-system-kit/figma-plugin",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "type": "module",
   "description": "Single-writer Figma Plugin package for Agent Design System Kit.",

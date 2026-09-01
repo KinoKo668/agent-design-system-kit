@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img alt="Stage: M3 MCP" src="https://img.shields.io/badge/stage-M3%20MCP-4C8ECC">
+  <a href="https://github.com/KinoKo668/hatchkit/releases/tag/v0.1.0-alpha.1"><img alt="Release: v0.1.0-alpha.1" src="https://img.shields.io/badge/release-v0.1.0--alpha.1-4C8ECC"></a>
   <a href="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml"><img alt="Quality workflow" src="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml/badge.svg"></a>
   <img alt="Node.js 24 LTS" src="https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=nodedotjs&logoColor=white">
   <img alt="pnpm 11" src="https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white">
@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed the M2 query contracts and the M3 automated Writer foundation, and is implementing the M4 Agent Loop and M5 quality gates. Optional MCP calls can now insert a Registry-backed Button Instance, audit current-page style and component provenance, and run a full-file Registry-to-Figma drift check. Real approvals and independent Figma-file acceptance are still outstanding, so the toolkit is not production-ready.**
+**`v0.1.0-alpha.1` is the first source pre-release of Hatch. The automated Button path now covers exact Agent queries, Registry-backed Instance orchestration, three Figma audits, failure recovery, and release gates. Real approvals and independent Figma Desktop visual acceptance are still outstanding, so this release is not production-ready.**
 
 What exists today:
 
@@ -175,6 +175,7 @@ pnpm check
 After building, inspect the read-only CLI with:
 
 ```bash
+pnpm --silent hatchkit --version
 pnpm --silent hatchkit --help
 ```
 
@@ -256,6 +257,9 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Installation and five-minute Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
 - [Troubleshooting handbook](docs/DOC-002-故障排查手册.md)
 - [Current architecture and runtime boundaries](docs/DOC-002-当前架构与运行边界.md)
+- [v0.1.0-alpha.1 release notes](docs/REL-001-v0.1.0-alpha.1发布说明.md)
+- [Changelog](CHANGELOG.md)
+- [Security policy](SECURITY.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

@@ -137,7 +137,7 @@ describe("createHatchkitMcpServer", () => {
           access: "read-only",
           name: "hatchkit",
           transport: "stdio",
-          version: "0.0.0",
+          version: HATCHKIT_MCP_SERVER_VERSION,
         },
         status: "ready",
       },
