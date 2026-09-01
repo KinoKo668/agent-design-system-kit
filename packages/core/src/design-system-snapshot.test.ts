@@ -5,13 +5,28 @@ import validButtonContract from "../../../design-system/examples/components/butt
 import validRegistry from "../../../design-system/examples/registry/components.registry.json" with { type: "json" };
 import validTokenSet from "../../../design-system/examples/tokens/button-foundation.tokens.json" with { type: "json" };
 
+import { canonicalizeJson } from "./canonical-json.js";
 import {
+  validateDesignSystemIntegrity,
   validateDesignSystemSnapshot,
   type DesignSystemSourceDocument,
 } from "./design-system-snapshot.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
 
-const CONTRACT_DIGEST = `sha256:${"d".repeat(64)}`;
+const CONTRACT_DIGEST = validButtonContract.contentDigest;
+const PUBLIC_CONTRACT_DIGEST_SUBJECT: Record<string, unknown> = {
+  ...validButtonContract,
+};
+delete PUBLIC_CONTRACT_DIGEST_SUBJECT.contentDigest;
+const CONTRACT_DIGEST_SUBJECT = canonicalizeJson(
+  PUBLIC_CONTRACT_DIGEST_SUBJECT,
+);
+
+function computeDigest(value: unknown): string {
+  return canonicalizeJson(value) === CONTRACT_DIGEST_SUBJECT
+    ? CONTRACT_DIGEST
+    : `sha256:${"e".repeat(64)}`;
+}
 
 function validDocuments(): DesignSystemSourceDocument[] {
   return [
@@ -156,6 +171,58 @@ describe("validateDesignSystemSnapshot", () => {
         path: "/sourcePath",
         sourcePath: ".",
       });
+    }
+  });
+});
+
+describe("validateDesignSystemIntegrity", () => {
+  it("validates the public catalog and its stored content digest", () => {
+    const result = validateDesignSystemIntegrity(
+      "hatch-demo",
+      validDocuments(),
+      computeDigest,
+    );
+
+    expect(isSuccessResult(result)).toBe(true);
+  });
+
+  it("reports digest drift using the source-relative Component path", () => {
+    const documents = validDocuments().map((document) =>
+      document.kind === "component"
+        ? {
+            ...document,
+            value: {
+              ...validButtonContract,
+              description: "Changed without updating contentDigest.",
+            },
+          }
+        : document,
+    );
+    const result = validateDesignSystemIntegrity(
+      "hatch-demo",
+      documents,
+      computeDigest,
+    );
+
+    expectIssue(result, {
+      code: "content_digest_mismatch",
+      path: "/contentDigest",
+      sourcePath: "components/button.component.json",
+    });
+  });
+
+  it("fails safely when the runtime digest adapter throws", () => {
+    const result = validateDesignSystemIntegrity(
+      "hatch-demo",
+      validDocuments(),
+      () => {
+        throw new Error("adapter failure");
+      },
+    );
+
+    expect(isFailureResult(result)).toBe(true);
+    if (isFailureResult(result)) {
+      expect(result.error.code).toBe("INTERNAL_ERROR");
     }
   });
 });

@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结以及 M1 工程骨架，当前处于 M2 Registry 读取与查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照校验、组件搜索、唯一解析与缺失组件 Change Request；`mcp-server` 已实现本地文件加载和内容摘要验证。CLI、MCP 协议服务与正式 Writer 尚未实现。
+项目已完成 M0 架构与风险冻结、M1 工程骨架以及 M2 Schema、Registry 与只读查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已实现本地文件加载。当前开始 M3 MCP 查询与 Figma Writer。
 
 开始工作前请先阅读：
 
@@ -47,6 +47,7 @@
 - `docs/REG-001-文件加载与完整性校验.md`
 - `docs/REG-002-组件搜索与精确解析.md`
 - `docs/REG-003-缺失组件Change-Request.md`
+- `docs/CLI-001-本地只读命令.md`
 
 工程规则：
 

@@ -12,7 +12,7 @@ import {
 } from "./design-system-snapshot.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
 
-const CONTRACT_DIGEST = `sha256:${"d".repeat(64)}`;
+const CONTRACT_DIGEST = validButtonContract.contentDigest;
 
 function createSnapshot(
   figmaStatus: "ready" | "unbuilt" = "ready",

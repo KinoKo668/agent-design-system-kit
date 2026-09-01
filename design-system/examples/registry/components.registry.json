@@ -8,7 +8,7 @@
         "type": "component",
         "id": "button",
         "version": "1.0.0",
-        "contentDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        "contentDigest": "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78"
       },
       "approvalId": "approval.component.button.1.0.0",
       "lifecycle": "active",
@@ -21,7 +21,7 @@
         "role": "component-set",
         "slotId": "root",
         "appliedVersion": "1.0.0",
-        "appliedDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "appliedDigest": "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78",
         "locator": {
           "nodeId": "100:200",
           "componentSetKey": "fixture_button_component_set_key_0001"

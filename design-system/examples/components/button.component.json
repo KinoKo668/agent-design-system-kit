@@ -4,6 +4,7 @@
   "projectId": "hatch-demo",
   "assetId": "button",
   "assetVersion": "1.0.0",
+  "contentDigest": "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78",
   "name": "Button",
   "description": "The frozen Medium Button contract for the first Hatch vertical slice.",
   "profile": "button-v1",

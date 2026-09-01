@@ -13,8 +13,7 @@ import {
 } from "./component-registry.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
 
-const CONTRACT_DIGEST =
-  "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+const CONTRACT_DIGEST = validButtonContract.contentDigest;
 
 describe("validateComponentRegistry", () => {
   it("accepts the public Button Registry fixture", () => {
@@ -141,7 +140,7 @@ describe("validateComponentRegistry", () => {
   it("requires an exact verified Contract digest before registration", () => {
     const missingDigest = validateComponentRegistryWithButtonContract(
       validRegistry,
-      validButtonContract,
+      { ...validButtonContract, contentDigest: undefined },
     );
     const mismatchedDigest = validateComponentRegistryWithButtonContract(
       validRegistry,

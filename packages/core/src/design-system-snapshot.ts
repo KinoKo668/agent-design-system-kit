@@ -2,6 +2,7 @@ import type { ZodError } from "zod";
 
 import {
   buttonComponentContractSchema,
+  toButtonComponentContractDigestSubject,
   validateButtonComponentContractWithTokenSet,
   type ButtonComponentContract,
 } from "./button-contract.js";
@@ -9,14 +10,22 @@ import {
   componentRegistrySchema,
   type ComponentRegistry,
 } from "./component-registry.js";
-import { designBriefSchema, type DesignBrief } from "./design-brief.js";
+import {
+  designBriefSchema,
+  toDesignBriefDigestSubject,
+  type DesignBrief,
+} from "./design-brief.js";
 import { createToolkitError } from "./errors.js";
 import type { JsonObject, JsonValue } from "./json.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
 import { stableIdSegmentSchema } from "./schema-primitives.js";
 import { toJsonPointer, toValidationIssues } from "./schema-validation.js";
-import { tokenSetSchema, type TokenSet } from "./token-set.js";
+import {
+  tokenSetSchema,
+  toTokenSetDigestSubject,
+  type TokenSet,
+} from "./token-set.js";
 
 export const DESIGN_SYSTEM_DOCUMENT_KINDS = [
   "brief",
@@ -46,6 +55,8 @@ export interface DesignSystemSnapshot {
   readonly registries: readonly LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: readonly LocatedDesignAsset<TokenSet>[];
 }
+
+export type JsonContentDigestCalculator = (value: unknown) => string;
 
 export interface DesignSystemIntegrityIssue extends JsonObject {
   readonly code: string;
@@ -485,4 +496,90 @@ export function validateDesignSystemSnapshot(
     registries: snapshot.registries,
     tokenSets: snapshot.tokenSets,
   });
+}
+
+function digestComputationFailure(): FailureResult {
+  return createFailureResult(
+    createToolkitError({
+      code: "INTERNAL_ERROR",
+      message: "The design-system content digest could not be computed.",
+      recoveryInstruction:
+        "Check the configured SHA-256 adapter and retry without changing the source files.",
+      target: { logicalId: "design-system-digest", type: "registry" },
+    }),
+  );
+}
+
+export function verifyDesignSystemContentDigests(
+  snapshot: DesignSystemSnapshot,
+  calculateDigest: JsonContentDigestCalculator,
+): ToolkitResult<DesignSystemSnapshot> {
+  const issues: DesignSystemIntegrityIssue[] = [];
+  try {
+    for (const brief of snapshot.briefs) {
+      if (
+        brief.data.contentDigest !== undefined &&
+        calculateDigest(toDesignBriefDigestSubject(brief.data)) !==
+          brief.data.contentDigest
+      ) {
+        issues.push({
+          code: "content_digest_mismatch",
+          message:
+            "Stored Design Brief contentDigest does not match its canonical content.",
+          path: "/contentDigest",
+          sourcePath: brief.sourcePath,
+        });
+      }
+    }
+    for (const tokenSet of snapshot.tokenSets) {
+      if (
+        tokenSet.data.contentDigest !== undefined &&
+        calculateDigest(toTokenSetDigestSubject(tokenSet.data)) !==
+          tokenSet.data.contentDigest
+      ) {
+        issues.push({
+          code: "content_digest_mismatch",
+          message:
+            "Stored Token Set contentDigest does not match its canonical content.",
+          path: "/contentDigest",
+          sourcePath: tokenSet.sourcePath,
+        });
+      }
+    }
+    for (const component of snapshot.components) {
+      if (
+        component.data.contentDigest !== undefined &&
+        calculateDigest(
+          toButtonComponentContractDigestSubject(component.data),
+        ) !== component.data.contentDigest
+      ) {
+        issues.push({
+          code: "content_digest_mismatch",
+          message:
+            "Stored Component Contract contentDigest does not match its canonical content.",
+          path: "/contentDigest",
+          sourcePath: component.sourcePath,
+        });
+      }
+    }
+  } catch {
+    return digestComputationFailure();
+  }
+  return issues.length === 0
+    ? createSuccessResult(snapshot)
+    : createDesignSystemIntegrityFailure(issues);
+}
+
+export function validateDesignSystemIntegrity(
+  expectedProjectId: string,
+  documents: readonly DesignSystemSourceDocument[],
+  calculateDigest: JsonContentDigestCalculator,
+): ToolkitResult<DesignSystemSnapshot> {
+  const snapshotResult = validateDesignSystemSnapshot(
+    expectedProjectId,
+    documents,
+  );
+  return snapshotResult.ok
+    ? verifyDesignSystemContentDigests(snapshotResult.data, calculateDigest)
+    : snapshotResult;
 }

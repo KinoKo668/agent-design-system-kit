@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img alt="Stage: M2 schemas" src="https://img.shields.io/badge/stage-M2%20schemas-4C8ECC">
+  <img alt="Stage: M3 MCP" src="https://img.shields.io/badge/stage-M3%20MCP-4C8ECC">
   <a href="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml"><img alt="Quality workflow" src="https://github.com/KinoKo668/hatchkit/actions/workflows/quality.yml/badge.svg"></a>
   <img alt="Node.js 24 LTS" src="https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=nodedotjs&logoColor=white">
   <img alt="pnpm 11" src="https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white">
@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch is in M2: schemas and registry foundations. It is not yet a production-ready toolkit.**
+**Hatch has completed M2 schemas and read-only queries and is entering M3 MCP integration. It is not yet a production-ready toolkit.**
 
 What exists today:
 
@@ -113,6 +113,7 @@ What exists today:
 - a deterministic local loader that safely discovers managed files, validates cross-asset references, and rejects content-digest drift with relative source paths;
 - deterministic component search and exact resolution that never fuzzy-matches, silently falls back to inactive versions, or treats an unbuilt Figma asset as insertable;
 - a structured Component Change Request outcome that stops execution and routes real capability gaps to human triage without emitting approximate UI or Figma write commands;
+- a read-only `hatchkit` CLI for explicit-source validation, exact search, resolution, and deterministic Change Request generation;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -145,6 +146,12 @@ cd hatchkit
 corepack enable pnpm
 pnpm install --frozen-lockfile
 pnpm check
+```
+
+After building, inspect the read-only CLI with:
+
+```bash
+pnpm --silent hatchkit --help
 ```
 
 Requirements:
@@ -181,6 +188,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Local file loading and integrity validation](docs/REG-001-文件加载与完整性校验.md)
 - [Component search and exact resolution](docs/REG-002-组件搜索与精确解析.md)
 - [Missing-component Change Requests](docs/REG-003-缺失组件Change-Request.md)
+- [Read-only local CLI](docs/CLI-001-本地只读命令.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

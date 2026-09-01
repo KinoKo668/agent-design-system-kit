@@ -8,10 +8,7 @@ import {
   createDesignSystemIntegrityFailure,
   createFailureResult,
   createToolkitError,
-  toButtonComponentContractDigestSubject,
-  toDesignBriefDigestSubject,
-  toTokenSetDigestSubject,
-  validateDesignSystemSnapshot,
+  validateDesignSystemIntegrity,
   type DesignSystemDocumentKind,
   type DesignSystemIntegrityIssue,
   type DesignSystemSnapshot,
@@ -350,64 +347,6 @@ export function computeJsonContentDigest(value: unknown): string {
   return `sha256:${createHash("sha256").update(canonical, "utf8").digest("hex")}`;
 }
 
-function verifyStoredContentDigests(
-  snapshot: DesignSystemSnapshot,
-): readonly DesignSystemIntegrityIssue[] {
-  const issues: DesignSystemIntegrityIssue[] = [];
-  for (const brief of snapshot.briefs) {
-    if (brief.data.contentDigest === undefined) {
-      continue;
-    }
-    const actual = computeJsonContentDigest(
-      toDesignBriefDigestSubject(brief.data),
-    );
-    if (actual !== brief.data.contentDigest) {
-      issues.push({
-        code: "content_digest_mismatch",
-        message:
-          "Stored Design Brief contentDigest does not match its canonical content.",
-        path: "/contentDigest",
-        sourcePath: brief.sourcePath,
-      });
-    }
-  }
-  for (const tokenSet of snapshot.tokenSets) {
-    if (tokenSet.data.contentDigest === undefined) {
-      continue;
-    }
-    const actual = computeJsonContentDigest(
-      toTokenSetDigestSubject(tokenSet.data),
-    );
-    if (actual !== tokenSet.data.contentDigest) {
-      issues.push({
-        code: "content_digest_mismatch",
-        message:
-          "Stored Token Set contentDigest does not match its canonical content.",
-        path: "/contentDigest",
-        sourcePath: tokenSet.sourcePath,
-      });
-    }
-  }
-  for (const component of snapshot.components) {
-    if (component.data.contentDigest === undefined) {
-      continue;
-    }
-    const actual = computeJsonContentDigest(
-      toButtonComponentContractDigestSubject(component.data),
-    );
-    if (actual !== component.data.contentDigest) {
-      issues.push({
-        code: "content_digest_mismatch",
-        message:
-          "Stored Component Contract contentDigest does not match its canonical content.",
-        path: "/contentDigest",
-        sourcePath: component.sourcePath,
-      });
-    }
-  }
-  return issues;
-}
-
 function loaderFailure(
   code: "IDENTITY_NOT_FOUND" | "INTERNAL_ERROR",
 ): FailureResult {
@@ -488,17 +427,11 @@ export async function loadDesignSystemFromDirectory(
       return createDesignSystemIntegrityFailure(issues);
     }
 
-    const snapshotResult = validateDesignSystemSnapshot(
+    return validateDesignSystemIntegrity(
       options.expectedProjectId,
       documents,
+      computeJsonContentDigest,
     );
-    if (!snapshotResult.ok) {
-      return snapshotResult;
-    }
-    const digestIssues = verifyStoredContentDigests(snapshotResult.data);
-    return digestIssues.length === 0
-      ? snapshotResult
-      : createDesignSystemIntegrityFailure(digestIssues);
   } catch {
     return loaderFailure("INTERNAL_ERROR");
   }

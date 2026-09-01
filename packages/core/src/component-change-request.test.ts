@@ -18,7 +18,7 @@ import {
 } from "./design-system-snapshot.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
 
-const CONTRACT_DIGEST = `sha256:${"d".repeat(64)}`;
+const CONTRACT_DIGEST = validButtonContract.contentDigest;
 const SUBMISSION = {
   intendedUse:
     "Use the requested component in a product page without introducing one-off visual rules.",
