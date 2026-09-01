@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryType": "component-registry",
+  "projectId": "hatch-demo",
+  "entries": [
+    {
+      "asset": {
+        "type": "component",
+        "id": "button",
+        "version": "1.0.0",
+        "contentDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "approvalId": "approval.component.button.9.9.9",
+      "lifecycle": "active",
+      "lifecycleReason": "Active entries cannot carry an inactive reason.",
+      "figma": {
+        "status": "ready",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 2,
+        "role": "component-set",
+        "slotId": "root",
+        "appliedVersion": "1.0.1",
+        "appliedDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "locator": {
+          "nodeId": "100:200",
+          "componentSetKey": "fixture_button_component_set_key_0001"
+        }
+      },
+      "supersedes": "1.0.1",
+      "replacedBy": "1.0.1"
+    },
+    {
+      "asset": {
+        "type": "component",
+        "id": "button",
+        "version": "1.0.1",
+        "contentDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "approvalId": "approval.component.button.1.0.1",
+      "lifecycle": "active",
+      "lifecycleReason": null,
+      "figma": {
+        "status": "unbuilt",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 1,
+        "role": "component-set",
+        "slotId": "root"
+      },
+      "supersedes": null,
+      "replacedBy": null
+    },
+    {
+      "asset": {
+        "type": "component",
+        "id": "input",
+        "version": "1.0.0",
+        "contentDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "approvalId": "approval.component.input.1.0.0",
+      "lifecycle": "active",
+      "lifecycleReason": null,
+      "figma": {
+        "status": "ready",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 1,
+        "role": "component-set",
+        "slotId": "root",
+        "appliedVersion": "1.0.0",
+        "appliedDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "locator": {
+          "nodeId": "100:200",
+          "componentSetKey": "fixture_button_component_set_key_0001"
+        }
+      },
+      "supersedes": null,
+      "replacedBy": null
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryType": "component-registry",
+  "projectId": "hatch-demo",
+  "entries": [
+    {
+      "asset": {
+        "type": "component",
+        "id": "button",
+        "version": "1.0.0",
+        "contentDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "approvalId": "approval.component.button.1.0.0",
+      "lifecycle": "active",
+      "lifecycleReason": null,
+      "figma": {
+        "status": "ready",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 1,
+        "role": "component-set",
+        "slotId": "root",
+        "appliedVersion": "1.0.0",
+        "appliedDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "locator": {
+          "nodeId": "100:200",
+          "componentSetKey": "fixture_button_component_set_key_0001"
+        }
+      },
+      "supersedes": null,
+      "replacedBy": null
+    }
+  ]
+}

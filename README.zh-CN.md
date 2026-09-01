@@ -98,6 +98,7 @@ Registry · 历史             │
 - 带正确／错误公开样例的版本化 Design Brief Schema；
 - 带类型 Alias、Mode、依赖规则和 Button 样例的 DTCG 2025.10 Token Set 子集；
 - 带严格属性、完整 Variant 矩阵、稳定 Slot 和类型化 Token Binding 的 Button v1 Component Contract；
+- 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -160,6 +161,7 @@ pnpm check
 - [Design Brief Schema](docs/SCH-001-Design-Brief-Schema.md)
 - [基础 Token Schema 与 DTCG 子集](docs/SCH-002-基础Token-Schema与DTCG子集.md)
 - [Button Component Contract](docs/SCH-003-Button-Component-Contract.md)
+- [Component Registry Schema](docs/SCH-004-Component-Registry-Schema.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

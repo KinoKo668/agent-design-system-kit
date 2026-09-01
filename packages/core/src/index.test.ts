@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   BUTTON_CONTRACT_PROFILE,
   BUTTON_CONTRACT_SCHEMA_VERSION,
+  COMPONENT_REGISTRY_SCHEMA_VERSION,
+  COMPONENT_REGISTRY_TYPE,
   CORE_PACKAGE_NAME,
   COMPONENT_ASSET_TYPE,
   DESIGN_BRIEF_ASSET_TYPE,
@@ -24,6 +26,8 @@ describe("core package boundary", () => {
     expect(BUTTON_CONTRACT_SCHEMA_VERSION).toBe("1.0.0");
     expect(BUTTON_CONTRACT_PROFILE).toBe("button-v1");
     expect(COMPONENT_ASSET_TYPE).toBe("component");
+    expect(COMPONENT_REGISTRY_SCHEMA_VERSION).toBe("1.0.0");
+    expect(COMPONENT_REGISTRY_TYPE).toBe("component-registry");
     expect(DESIGN_BRIEF_SCHEMA_VERSION).toBe("1.0.0");
     expect(DESIGN_BRIEF_ASSET_TYPE).toBe("brief");
     expect(TOKEN_SET_SCHEMA_VERSION).toBe("1.0.0");
