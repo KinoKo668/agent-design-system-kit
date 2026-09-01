@@ -8,6 +8,7 @@ export * from "./component-change-request.js";
 export * from "./component-query.js";
 export * from "./component-registry.js";
 export * from "./design-system-snapshot.js";
+export * from "./design-asset-query.js";
 export * from "./design-brief.js";
 export * from "./errors.js";
 export * from "./json.js";

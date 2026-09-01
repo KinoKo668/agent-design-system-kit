@@ -5,6 +5,11 @@ import { InMemoryTransport } from "@modelcontextprotocol/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  HATCHKIT_BRIEF_QUERY_TOOL_NAME,
+  HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+  HATCHKIT_TOKEN_QUERY_TOOL_NAME,
+} from "./query-tools.js";
+import {
   HATCHKIT_MCP_SERVER_INSTRUCTIONS,
   HATCHKIT_MCP_SERVER_NAME,
   HATCHKIT_MCP_SERVER_VERSION,
@@ -37,7 +42,7 @@ afterEach(async () => {
 });
 
 describe("createHatchkitMcpServer", () => {
-  it("advertises stable identity, instructions, and one read-only status tool", async () => {
+  it("advertises stable identity, instructions, and only read-only tools", async () => {
     const client = await connect({
       designSystemRoot: resolve(WORKSPACE_ROOT, "design-system/hatch-demo"),
       expectedProjectId: "hatch-demo",
@@ -50,18 +55,38 @@ describe("createHatchkitMcpServer", () => {
     expect(client.getInstructions()).toBe(HATCHKIT_MCP_SERVER_INSTRUCTIONS);
     expect(HATCHKIT_MCP_SERVER_INSTRUCTIONS.length).toBeLessThanOrEqual(512);
     const tools = await client.listTools();
-    expect(tools.tools).toEqual([
-      expect.objectContaining({
-        annotations: {
-          destructiveHint: false,
-          idempotentHint: true,
-          openWorldHint: false,
-          readOnlyHint: true,
-        },
-        name: HATCHKIT_STATUS_TOOL_NAME,
-        title: "Check Hatchkit status",
-      }),
+    expect(tools.tools.map(({ name }) => name)).toEqual([
+      HATCHKIT_STATUS_TOOL_NAME,
+      HATCHKIT_BRIEF_QUERY_TOOL_NAME,
+      HATCHKIT_TOKEN_QUERY_TOOL_NAME,
+      HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
     ]);
+    for (const tool of tools.tools) {
+      expect(tool).toEqual(
+        expect.objectContaining({
+          annotations: {
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false,
+            readOnlyHint: true,
+          },
+        }),
+      );
+    }
+    expect(tools.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          annotations: {
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false,
+            readOnlyHint: true,
+          },
+          name: HATCHKIT_STATUS_TOOL_NAME,
+          title: "Check Hatchkit status",
+        }),
+      ]),
+    );
   });
 
   it("validates the real catalog through the status tool", async () => {

@@ -101,9 +101,10 @@ Registry · 历史             │
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
 - 确定性的组件搜索与精确解析，不模糊猜测、不自动回退旧版本，也不把尚未建成的 Figma 资产冒充为可插入；
+- 环境无关的 Brief 与 Token 查询，支持精确详情、确定性分页、Token Path 限量与已校验的 Alias 依赖闭包；
 - 结构化的缺失组件 Change Request，把真实能力缺口交给人工分诊，同时阻止近似 UI 和 Figma 写入命令；
 - 可显式选择来源文件的只读 `hatchkit` CLI，支持校验、精确搜索、解析与确定性 Change Request；
-- 带初始化治理说明、只读 Catalog 状态工具以及新旧协议冒烟验证的本地 `hatchkit` stdio MCP Server；
+- 带初始化治理说明以及 Status、Brief、Token、Component Search 四个只读 Tool 的本地 `hatchkit` stdio MCP Server，并覆盖新旧协议冒烟验证；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -185,6 +186,7 @@ pnpm --silent hatchkit:mcp --help
 - [缺失组件 Change Request](docs/REG-003-缺失组件Change-Request.md)
 - [本地只读 CLI](docs/CLI-001-本地只读命令.md)
 - [本地 stdio MCP Server](docs/MCP-001-本地Stdio-Server.md)
+- [只读设计资产 MCP 查询](docs/MCP-002-只读设计资产查询Tools.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

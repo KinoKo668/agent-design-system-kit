@@ -172,4 +172,4 @@ MCP-001 不实现：
 - HTTP MCP Server、OAuth 或远程部署；
 - Figma Bridge 与 Writer。
 
-以上分别进入 MCP-002、MCP-003、MCP-004 与 FIG 系列任务。
+其中 Brief、Token 与 Component Search 已在 MCP-002 完成；其余分别进入 MCP-003、MCP-004 与 FIG 系列任务。

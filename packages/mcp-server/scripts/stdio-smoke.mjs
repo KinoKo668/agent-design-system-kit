@@ -11,6 +11,12 @@ const SERVER_ARGUMENTS = [
   "--root",
   "design-system/hatch-demo",
 ];
+const EXPECTED_TOOL_NAMES = [
+  "hatchkit_status",
+  "hatchkit_query_briefs",
+  "hatchkit_query_tokens",
+  "hatchkit_search_components",
+];
 
 async function captureProcess(arguments_) {
   const child = spawn(process.execPath, arguments_, {
@@ -86,18 +92,68 @@ async function verifyConnection(label, versionNegotiation) {
   try {
     await client.connect(transport);
     const tools = await client.listTools();
-    if (!tools.tools.some((tool) => tool.name === "hatchkit_status")) {
-      throw new Error(`${label}: hatchkit_status was not discoverable.`);
+    if (
+      JSON.stringify(tools.tools.map(({ name }) => name)) !==
+      JSON.stringify(EXPECTED_TOOL_NAMES)
+    ) {
+      throw new Error(`${label}: Hatchkit tools were not fully discoverable.`);
     }
-    const result = await client.callTool({
+    if (
+      tools.tools.some(
+        ({ annotations }) =>
+          annotations?.readOnlyHint !== true ||
+          annotations.destructiveHint !== false ||
+          annotations.openWorldHint !== false,
+      )
+    ) {
+      throw new Error(`${label}: a Hatchkit tool was not declared read-only.`);
+    }
+    const status = await client.callTool({
       arguments: {},
       name: "hatchkit_status",
     });
     if (
-      result.isError === true ||
-      result.structuredContent?.data?.status !== "ready"
+      status.isError === true ||
+      status.structuredContent?.data?.status !== "ready"
     ) {
       throw new Error(`${label}: hatchkit_status did not report readiness.`);
+    }
+    const briefs = await client.callTool({
+      arguments: {},
+      name: "hatchkit_query_briefs",
+    });
+    if (
+      briefs.isError === true ||
+      briefs.structuredContent?.data?.page?.total !== 1
+    ) {
+      throw new Error(`${label}: Brief summaries were not queryable.`);
+    }
+    const tokens = await client.callTool({
+      arguments: {
+        assetId: "button-foundation",
+        assetVersion: "1.0.0",
+        detail: "definitions",
+        modeId: "light",
+        paths: ["semantic.color.action-primary-background"],
+      },
+      name: "hatchkit_query_tokens",
+    });
+    if (
+      tokens.isError === true ||
+      tokens.structuredContent?.data?.items?.[0]?.definitions?.length !== 2
+    ) {
+      throw new Error(`${label}: exact Token definitions were not queryable.`);
+    }
+    const components = await client.callTool({
+      arguments: { term: "Button" },
+      name: "hatchkit_search_components",
+    });
+    if (
+      components.isError === true ||
+      components.structuredContent?.data?.page?.total !== 1 ||
+      JSON.stringify(components).includes("nodeId")
+    ) {
+      throw new Error(`${label}: Component search was incomplete or unsafe.`);
     }
     if (!client.getInstructions()?.startsWith("Hatchkit is a local")) {
       throw new Error(`${label}: server instructions were not initialized.`);
