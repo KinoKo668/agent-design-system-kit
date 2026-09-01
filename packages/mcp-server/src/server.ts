@@ -9,16 +9,19 @@ import {
 import { loadDesignSystemFromDirectory } from "./registry-files.js";
 import { registerHatchkitQueryTools } from "./query-tools.js";
 import { registerHatchkitResolutionTools } from "./resolution-tools.js";
+import type { LocalWriterClient } from "./local-writer-client.js";
+import { registerHatchkitWriteTools } from "./write-tools.js";
 
 export const HATCHKIT_MCP_SERVER_NAME = "hatchkit" as const;
 export const HATCHKIT_MCP_SERVER_VERSION = "0.0.0" as const;
 export const HATCHKIT_STATUS_TOOL_NAME = "hatchkit_status" as const;
 export const HATCHKIT_MCP_SERVER_INSTRUCTIONS =
-  "Hatchkit is a local, read-only design-system control plane. Call hatchkit_status before catalog queries. Use only exact registered component identities and variants. Never invent, approximate, or silently fall back to inactive assets. A successful lookup does not authorize Figma writes: approval and audit gates still apply. When no exact capability exists, stop and request a structured component change." as const;
+  "Hatchkit is a local design-system control plane. Call hatchkit_status first. Use only exact registered identities and variants; never invent or approximate. Read success is not write authorization. If a Writer Tool is available, use it only for an explicit page request: Git approval, file binding, and Figma audit still gate every write. Otherwise request a structured component change." as const;
 
 export interface HatchkitMcpServerOptions {
   readonly designSystemRoot: string;
   readonly expectedProjectId: string;
+  readonly writer?: LocalWriterClient;
 }
 
 const statusOutputSchema = z.strictObject({
@@ -35,7 +38,7 @@ const statusOutputSchema = z.strictObject({
       sources: z.array(z.string()),
     }),
     server: z.strictObject({
-      access: z.literal("read-only"),
+      access: z.enum(["read-only", "writer-enabled"]),
       name: z.literal(HATCHKIT_MCP_SERVER_NAME),
       transport: z.literal("stdio"),
       version: z.literal(HATCHKIT_MCP_SERVER_VERSION),
@@ -83,7 +86,7 @@ async function createStatusResult(
       ].sort(),
     },
     server: {
-      access: "read-only",
+      access: options.writer === undefined ? "read-only" : "writer-enabled",
       name: HATCHKIT_MCP_SERVER_NAME,
       transport: "stdio",
       version: HATCHKIT_MCP_SERVER_VERSION,
@@ -137,6 +140,9 @@ export function createHatchkitMcpServer(
 
   registerHatchkitQueryTools(server, options);
   registerHatchkitResolutionTools(server, options);
+  if (options.writer !== undefined) {
+    registerHatchkitWriteTools(server, { ...options, writer: options.writer });
+  }
 
   return server;
 }

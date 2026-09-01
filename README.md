@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point, machine-readable Approval Records with live Git write verification, the authenticated single-writer Figma Bridge, and the first deterministic Figma Variables Ensure path, but the toolkit is not yet production-ready.**
+**Hatch has completed the M2 query contracts and the M3 automated Writer foundation, and has entered the M4 Agent Loop. One optional MCP call can now resolve the exact Registry asset, plan a deterministic Button Instance, submit an approval-gated local write, wait for the Plugin, and return the audited result. Real approvals and independent Figma-file acceptance are still outstanding, so the toolkit is not production-ready.**
 
 What exists today:
 
@@ -129,6 +129,7 @@ What exists today:
 - an atomic Registry finalizer that records the audited Button node only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
 - a Registry-backed Button Instance writer that audits the real Main Component and exact Variant, creates one managed Figma Instance, and performs zero writes on an unchanged retry;
 - a unified Writer replay and destructive-action policy that forces real writes to re-audit on recovery and forbids automatic delete, detach, or component swap;
+- an optional `hatchkit_insert_button_instance` MCP tool that performs exact Registry/Variant resolution, deterministic planning, authenticated Bridge submission, Plugin waiting, and audited Instance reporting in one call while remaining absent in the default read-only configuration;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -237,6 +238,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Atomic Registry Ready finalization](docs/FIG-005-Registry-Atomic-Ready.md)
 - [Registry-backed Button Instance insertion](docs/FIG-006-Button-Instance-Insert.md)
 - [Writer idempotency, conflict, and recovery policy](docs/FIG-007-Writer-Idempotency-Conflict-Recovery.md)
+- [Single-call Registry-to-Figma write loop](docs/LOOP-002-Registry到Figma单次写入流程.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

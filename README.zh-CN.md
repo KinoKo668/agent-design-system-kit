@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、可机器读取并实时校验 Git 的 Approval Record、经过认证的单 Writer Figma Bridge、确定性的 Variables／Button Ensure，以及原子 Registry Ready 登记，但尚未成为可用于生产环境的完整工具。**
+**Hatch 已完成 M2 查询合同和 M3 Writer 自动化骨架，并进入 M4 Agent Loop：当前可用一次可选 MCP 调用完成 Registry 精确解析、确定性 Button Instance 规划、受审批保护的本地写入和结果等待，但真实审批与独立 Figma 文件验收尚未完成，因此还不是可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -118,6 +118,7 @@ Registry · 历史             │
 - 原子 Registry 最终化：只在 Figma 审计成功后登记 Button Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
+- 可选的 `hatchkit_insert_button_instance` MCP Tool：一次调用完成 Registry／Variant 查询、确定性计划、认证 Bridge 提交、Plugin 等待与真实 Instance 审计结果；默认不配置本地凭据时完全保持只读；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -224,6 +225,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Registry 原子 Ready 登记](docs/FIG-005-Registry-Atomic-Ready.md)
 - [Button 真实 Instance 插入](docs/FIG-006-Button-Instance-Insert.md)
 - [Writer 幂等、冲突与恢复保护](docs/FIG-007-Writer-Idempotency-Conflict-Recovery.md)
+- [Registry 到 Figma 单次写入流程](docs/LOOP-002-Registry到Figma单次写入流程.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

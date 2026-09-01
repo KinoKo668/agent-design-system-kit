@@ -49,6 +49,44 @@ describe("parseHatchkitMcpArguments", () => {
     expect(JSON.stringify(result)).toContain("missing_required_option");
   });
 
+  it("enables the Writer only from a complete environment pair", () => {
+    const environment = {
+      HATCHKIT_DESIGN_SYSTEM_ROOT: "design-system/hatch-demo",
+      HATCHKIT_FIGMA_BRIDGE_TOKEN: "stdio-test-session-token-32-characters",
+      HATCHKIT_FIGMA_BRIDGE_URL: "http://127.0.0.1:38451",
+      HATCHKIT_PROJECT_ID: "hatch-demo",
+    };
+    expect(parseHatchkitMcpArguments([], environment)).toMatchObject({
+      data: {
+        writerOptions: {
+          sessionToken: environment.HATCHKIT_FIGMA_BRIDGE_TOKEN,
+          url: environment.HATCHKIT_FIGMA_BRIDGE_URL,
+        },
+      },
+      ok: true,
+    });
+    const incomplete = parseHatchkitMcpArguments([], {
+      HATCHKIT_DESIGN_SYSTEM_ROOT: environment.HATCHKIT_DESIGN_SYSTEM_ROOT,
+      HATCHKIT_FIGMA_BRIDGE_TOKEN: environment.HATCHKIT_FIGMA_BRIDGE_TOKEN,
+      HATCHKIT_PROJECT_ID: environment.HATCHKIT_PROJECT_ID,
+    });
+    expect(incomplete).toMatchObject({
+      error: { code: "VALIDATION_FAILED" },
+      ok: false,
+    });
+    expect(JSON.stringify(incomplete)).not.toContain(
+      environment.HATCHKIT_FIGMA_BRIDGE_TOKEN,
+    );
+    const unsafe = parseHatchkitMcpArguments([], {
+      ...environment,
+      HATCHKIT_FIGMA_BRIDGE_URL: "https://writer.example.com",
+    });
+    expect(unsafe).toMatchObject({
+      error: { code: "VALIDATION_FAILED" },
+      ok: false,
+    });
+  });
+
   it("exposes help without requiring startup options", () => {
     const result = parseHatchkitMcpArguments(["--help"]);
 

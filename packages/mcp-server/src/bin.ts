@@ -7,6 +7,7 @@ import {
   parseHatchkitMcpArguments,
   startHatchkitMcpStdioServer,
 } from "./stdio.js";
+import { createLocalWriterClient } from "./local-writer-client.js";
 
 const parsed = parseHatchkitMcpArguments(process.argv.slice(2), process.env);
 if (!parsed.ok) {
@@ -15,11 +16,20 @@ if (!parsed.ok) {
 } else if (parsed.data.showHelp) {
   process.stdout.write(`${HATCHKIT_MCP_HELP}\n`);
 } else {
-  const handle = startHatchkitMcpStdioServer(parsed.data, {
-    onError: () => {
-      process.stderr.write("Hatchkit MCP stdio transport error.\n");
+  const { writerOptions, ...serverOptions } = parsed.data;
+  const handle = startHatchkitMcpStdioServer(
+    {
+      ...serverOptions,
+      ...(writerOptions === undefined
+        ? {}
+        : { writer: createLocalWriterClient(writerOptions) }),
     },
-  });
+    {
+      onError: () => {
+        process.stderr.write("Hatchkit MCP stdio transport error.\n");
+      },
+    },
+  );
   const close = async (): Promise<void> => {
     await handle.close();
     process.exitCode = 0;

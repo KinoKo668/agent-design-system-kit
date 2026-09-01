@@ -40,11 +40,13 @@ export function toMcpToolResponse(result: ToolkitResult<unknown>) {
 
 export async function withDesignSystemSnapshot<T>(
   options: HatchkitCatalogOptions,
-  query: (snapshot: DesignSystemSnapshot) => ToolkitResult<T>,
+  query: (
+    snapshot: DesignSystemSnapshot,
+  ) => ToolkitResult<T> | Promise<ToolkitResult<T>>,
 ): Promise<ToolkitResult<T>> {
   const snapshotResult = await loadDesignSystemFromDirectory({
     designSystemRoot: options.designSystemRoot,
     expectedProjectId: options.expectedProjectId,
   });
-  return snapshotResult.ok ? query(snapshotResult.data) : snapshotResult;
+  return snapshotResult.ok ? await query(snapshotResult.data) : snapshotResult;
 }

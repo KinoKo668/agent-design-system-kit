@@ -15,6 +15,10 @@ import {
   createHatchkitMcpServer,
   type HatchkitMcpServerOptions,
 } from "./server.js";
+import {
+  normalizeLocalWriterUrl,
+  type LocalWriterClientOptions,
+} from "./local-writer-client.js";
 
 export const HATCHKIT_MCP_HELP = `Hatchkit MCP Server
 
@@ -29,16 +33,25 @@ Options:
 Environment fallbacks:
   HATCHKIT_PROJECT_ID
   HATCHKIT_DESIGN_SYSTEM_ROOT
+  HATCHKIT_FIGMA_BRIDGE_URL
+  HATCHKIT_FIGMA_BRIDGE_TOKEN
 
-The server uses MCP stdio. Protocol messages are the only stdout output.`;
+The server uses MCP stdio. Protocol messages are the only stdout output.
+The optional Writer Tool is enabled only when both Bridge environment variables are set. The Session Token is never accepted as a command-line argument.`;
 
 export interface HatchkitMcpEnvironment {
   readonly HATCHKIT_DESIGN_SYSTEM_ROOT?: string;
+  readonly HATCHKIT_FIGMA_BRIDGE_TOKEN?: string;
+  readonly HATCHKIT_FIGMA_BRIDGE_URL?: string;
   readonly HATCHKIT_PROJECT_ID?: string;
 }
 
-export interface HatchkitMcpLaunchOptions extends HatchkitMcpServerOptions {
+export interface HatchkitMcpLaunchOptions extends Omit<
+  HatchkitMcpServerOptions,
+  "writer"
+> {
   readonly showHelp: false;
+  readonly writerOptions?: LocalWriterClientOptions;
 }
 
 export interface HatchkitMcpHelpOptions {
@@ -116,6 +129,8 @@ export function parseHatchkitMcpArguments(
     values.get("--project") ?? environment.HATCHKIT_PROJECT_ID;
   const designSystemRoot =
     values.get("--root") ?? environment.HATCHKIT_DESIGN_SYSTEM_ROOT;
+  const writerUrl = environment.HATCHKIT_FIGMA_BRIDGE_URL;
+  const writerToken = environment.HATCHKIT_FIGMA_BRIDGE_TOKEN;
   if (expectedProjectId === undefined || expectedProjectId.length === 0) {
     issues.push(
       issue("--project", "missing_required_option", "Project ID is required."),
@@ -129,6 +144,41 @@ export function parseHatchkitMcpArguments(
         "Design-system root is required.",
       ),
     );
+  }
+  if ((writerUrl === undefined) !== (writerToken === undefined)) {
+    issues.push(
+      issue(
+        "writer-environment",
+        "incomplete_writer_configuration",
+        "Both HATCHKIT_FIGMA_BRIDGE_URL and HATCHKIT_FIGMA_BRIDGE_TOKEN are required to enable the Writer Tool.",
+      ),
+    );
+  }
+  if (
+    writerToken !== undefined &&
+    (writerToken.length < 32 || writerToken.length > 256)
+  ) {
+    issues.push(
+      issue(
+        "HATCHKIT_FIGMA_BRIDGE_TOKEN",
+        "invalid_writer_token",
+        "Writer Session Token must contain 32 to 256 characters.",
+      ),
+    );
+  }
+  let normalizedWriterUrl: string | undefined;
+  if (writerUrl !== undefined) {
+    try {
+      normalizedWriterUrl = normalizeLocalWriterUrl(writerUrl);
+    } catch {
+      issues.push(
+        issue(
+          "HATCHKIT_FIGMA_BRIDGE_URL",
+          "invalid_writer_url",
+          "Writer URL must be an HTTP 127.0.0.1 origin without credentials, path, query, or fragment.",
+        ),
+      );
+    }
   }
   if (issues.length > 0) {
     return argumentFailure(issues);
@@ -146,6 +196,14 @@ export function parseHatchkitMcpArguments(
     designSystemRoot,
     expectedProjectId,
     showHelp: false,
+    ...(normalizedWriterUrl === undefined || writerToken === undefined
+      ? {}
+      : {
+          writerOptions: {
+            sessionToken: writerToken,
+            url: normalizedWriterUrl,
+          },
+        }),
   });
 }
 

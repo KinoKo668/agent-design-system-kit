@@ -14,21 +14,24 @@ import {
   HATCHKIT_TOKEN_QUERY_TOOL_NAME,
 } from "./query-tools.js";
 import {
+  WRITER_OPERATION_SCHEMA_VERSION,
+  type WriterOperation,
+} from "./writer-queue.js";
+import { HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME } from "./write-tools.js";
+import {
   HATCHKIT_MCP_SERVER_INSTRUCTIONS,
   HATCHKIT_MCP_SERVER_NAME,
   HATCHKIT_MCP_SERVER_VERSION,
   HATCHKIT_STATUS_TOOL_NAME,
   createHatchkitMcpServer,
+  type HatchkitMcpServerOptions,
 } from "./server.js";
 
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "../../..");
 const clients: Client[] = [];
 const servers: ReturnType<typeof createHatchkitMcpServer>[] = [];
 
-async function connect(options: {
-  readonly designSystemRoot: string;
-  readonly expectedProjectId: string;
-}): Promise<Client> {
+async function connect(options: HatchkitMcpServerOptions): Promise<Client> {
   const server = createHatchkitMcpServer(options);
   const client = new Client({ name: "hatchkit-test", version: "1.0.0" });
   const [clientTransport, serverTransport] =
@@ -136,6 +139,92 @@ describe("createHatchkitMcpServer", () => {
       ok: true,
       schemaVersion: "1.0.0",
       warnings: [],
+    });
+  });
+
+  it("exposes one additive write Tool only when a local Writer is configured", async () => {
+    const requestId = "2c73620e-29b0-4285-8861-1a65b18f11dc";
+    const operation: WriterOperation = {
+      attempt: 1,
+      commandFingerprint: `sha256:${"a".repeat(64)}`,
+      commandType: "instances.button.insert",
+      completedAt: "2026-09-01T20:00:01.000Z",
+      dispatchedAt: "2026-09-01T20:00:00.500Z",
+      idempotencyKeyHash: `sha256:${"b".repeat(64)}`,
+      operationId: requestId,
+      projectId: "hatch-demo",
+      queuedAt: "2026-09-01T20:00:00.000Z",
+      result: {
+        componentSet: {
+          nodeId: "100:200",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "300:400",
+          stableId: "hatch-demo/instance/settings/save-button",
+        },
+        type: "instances.button.insert",
+        variant: {
+          stableId:
+            "hatch-demo/component/button/component-set/major-1/variant/appearance-secondary/state-disabled",
+        },
+      },
+      schemaVersion: WRITER_OPERATION_SCHEMA_VERSION,
+      status: "succeeded",
+      targetStableId: "hatch-demo/figma-file/library",
+    };
+    const client = await connect({
+      designSystemRoot: resolve(WORKSPACE_ROOT, "design-system/hatch-demo"),
+      expectedProjectId: "hatch-demo",
+      writer: {
+        execute: () =>
+          Promise.resolve({
+            data: operation,
+            ok: true,
+            schemaVersion: "1.0.0",
+            warnings: [],
+          }),
+      },
+    });
+    const tools = await client.listTools();
+    expect(tools.tools.at(-1)).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: false,
+      },
+      name: HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
+    });
+    const status = await client.callTool({
+      arguments: {},
+      name: HATCHKIT_STATUS_TOOL_NAME,
+    });
+    expect(status.structuredContent).toMatchObject({
+      data: { server: { access: "writer-enabled" } },
+    });
+
+    const result = await client.callTool({
+      arguments: {
+        assetId: "button",
+        instanceId: "settings/save-button",
+        label: "Save changes",
+        requestId,
+        variantSelections: { appearance: "secondary", state: "disabled" },
+        waitTimeoutMs: 5_000,
+        x: 320,
+        y: 240,
+      },
+      name: HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
+    });
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      data: {
+        operation: { instanceNodeId: "300:400", status: "succeeded" },
+        status: "inserted",
+      },
+      ok: true,
     });
   });
 
