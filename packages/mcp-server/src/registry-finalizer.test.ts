@@ -87,6 +87,67 @@ function command() {
   });
 }
 
+function instanceCommand() {
+  const button = command();
+  if (button.command.type !== "components.button.ensure") {
+    throw new Error("Expected Button command.");
+  }
+  const root = button.command.payload.plan.componentSet.stableId;
+  return writerCommandEnvelopeSchema.parse({
+    approval: button.approval,
+    command: {
+      payload: {
+        plan: {
+          componentSet: {
+            expectedVariantStableIds: button.command.payload.plan.variants.map(
+              ({ stableId }) => stableId,
+            ),
+            majorVersion: 1,
+            nodeId: "100:200",
+            stableId: root,
+          },
+          instance: {
+            stableId: "hatch-demo/instance/screen-checkout/submit",
+            x: 100,
+            y: 200,
+          },
+          properties: {
+            appearance: { name: "Appearance", value: "Primary" },
+            label: { name: "Label", value: "Place order" },
+            state: { name: "State", value: "Default" },
+          },
+          schemaVersion: "1.0.0",
+          selectedVariant: {
+            figmaName: "Appearance=Primary, State=Default",
+            selections: { appearance: "primary", state: "default" },
+            slotId: "variant/appearance-primary/state-default",
+            stableId: `${root}/variant/appearance-primary/state-default`,
+          },
+          source: {
+            approvalId: "approval.component.button.1.0.0",
+            assetId: "button",
+            assetVersion: "1.0.0",
+            contentDigest: COMPONENT_DIGEST,
+            fileBindingId: FILE_BINDING_ID,
+            projectId: "hatch-demo",
+          },
+        },
+      },
+      type: "instances.button.insert",
+    },
+    idempotencyKey: "registry-finalizer-instance",
+    operationId: "49d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: "1.0.0",
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  });
+}
+
 const BUTTON_RESULT = {
   componentSet: {
     action: "created" as const,
@@ -160,6 +221,44 @@ describe("Registry write finalizer", () => {
 
     await expect(finalize(command(), BUTTON_RESULT)).resolves.toMatchObject({
       code: "PARTIAL_WRITE",
+    });
+  });
+
+  it("repairs a stale Component Set locator returned by Instance insertion", async () => {
+    let current = componentRegistrySchema.parse(validRegistry);
+    const finalize = createRegistryWriteFinalizer(
+      { designSystemRoot: "/unused", expectedProjectId: "hatch-demo" },
+      {
+        loadSnapshot: () =>
+          Promise.resolve(createSuccessResult(snapshot(current))),
+        updateRegistrySource: (input) => {
+          current = input.updated;
+          return Promise.resolve();
+        },
+      },
+    );
+
+    await expect(
+      finalize(instanceCommand(), {
+        componentSet: {
+          nodeId: "500:600",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "700:800",
+          stableId: "hatch-demo/instance/screen-checkout/submit",
+        },
+        type: "instances.button.insert",
+        variant: {
+          stableId:
+            "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+        },
+      }),
+    ).resolves.toBeNull();
+    expect(current.entries[0]?.figma).toMatchObject({
+      locator: { nodeId: "500:600" },
+      status: "ready",
     });
   });
 });

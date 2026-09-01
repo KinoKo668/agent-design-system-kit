@@ -1,7 +1,9 @@
 import {
   approvalRecordSchema,
   buttonComponentContractSchema,
+  componentRegistrySchema,
   createFailureResult,
+  createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
   createFigmaVariablePlan,
   createSuccessResult,
@@ -15,6 +17,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 
 import { createGitApprovalVerifier } from "./approval-verifier.js";
 
@@ -260,7 +263,13 @@ function snapshot(approvals: readonly ApprovalRecord[]): DesignSystemSnapshot {
       },
     ],
     projectId: "hatch-demo",
-    registries: [],
+    registries: [
+      {
+        data: componentRegistrySchema.parse(validRegistry),
+        sourcePath:
+          "design-system/hatch-demo/registry/components.registry.json",
+      },
+    ],
     tokenSets: [
       {
         data: TOKEN_SET,
@@ -325,7 +334,73 @@ function buttonCommand() {
   });
 }
 
+function instanceCommand() {
+  const planned = createFigmaButtonInstancePlan(snapshot([]), {
+    assetId: "button",
+    instanceId: "screen-checkout/submit",
+    label: "Place order",
+    projectId: "hatch-demo",
+    variantSelections: { appearance: "primary", state: "default" },
+    x: 100,
+    y: 200,
+  });
+  if (!planned.ok) throw new Error(planned.error.message);
+  return writerCommandEnvelopeSchema.parse({
+    approval: {
+      approvalId: planned.data.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: planned.data.source.assetId,
+        assetVersion: planned.data.source.assetVersion,
+        contentDigest: planned.data.source.contentDigest,
+        projectId: planned.data.source.projectId,
+        type: "component",
+      },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "instances.button.insert",
+    },
+    idempotencyKey: "instance-approval-verifier-command",
+    operationId: "5d73620e-29b0-4285-8861-1a65b18f11dc",
+    projectId: "hatch-demo",
+    schemaVersion: "1.0.0",
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: planned.data.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  });
+}
+
 describe("Git Approval verifier", () => {
+  it("rebuilds the entire Registry-backed Instance plan and rejects client tampering", async () => {
+    const direction = approvedDirection();
+    const token = approvedToken(direction);
+    const component = approvedComponent(token);
+    const verify = createGitApprovalVerifier(
+      { designSystemRoot: "/unused", expectedProjectId: "hatch-demo" },
+      {
+        loadSnapshot: () =>
+          Promise.resolve(
+            createSuccessResult(snapshot([direction, token, component])),
+          ),
+      },
+    );
+    expect(await verify(instanceCommand())).toBeNull();
+
+    const tampered = structuredClone(instanceCommand());
+    if (tampered.command.type !== "instances.button.insert") {
+      throw new Error("Expected Instance command.");
+    }
+    tampered.command.payload.plan.selectedVariant.figmaName =
+      "Appearance=Secondary, State=Default";
+    await expect(verify(tampered)).resolves.toMatchObject({
+      code: "APPROVAL_STALE",
+    });
+  });
+
   it("re-reads the snapshot before every write and invalidates revoked dependencies", async () => {
     const direction = approvedDirection();
     const token = approvedToken(direction);

@@ -1,6 +1,7 @@
 import {
   canonicalizeJson,
   checkApprovalForUse,
+  createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
   createFigmaVariablePlan,
   createToolkitError,
@@ -74,6 +75,28 @@ function verifyDeterministicPlan(
     return !expected.ok ||
       canonicalizeJson(expected.data) !==
         canonicalizeJson(command.command.payload.plan)
+      ? planMismatchError(command)
+      : null;
+  }
+
+  if (command.command.type === "instances.button.insert") {
+    const plan = command.command.payload.plan;
+    const prefix = `${plan.source.projectId}/instance/`;
+    if (!plan.instance.stableId.startsWith(prefix)) {
+      return planMismatchError(command);
+    }
+    const expected = createFigmaButtonInstancePlan(snapshot, {
+      assetId: plan.source.assetId,
+      assetVersion: plan.source.assetVersion,
+      instanceId: plan.instance.stableId.slice(prefix.length),
+      label: plan.properties.label.value,
+      projectId: plan.source.projectId,
+      variantSelections: plan.selectedVariant.selections,
+      x: plan.instance.x,
+      y: plan.instance.y,
+    });
+    return !expected.ok ||
+      canonicalizeJson(expected.data) !== canonicalizeJson(plan)
       ? planMismatchError(command)
       : null;
   }

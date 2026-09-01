@@ -116,6 +116,7 @@ Registry · 历史             │
 - 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
 - 确定性的 Button Writer：建立或收敛一个真实 Main Component Set、四个已批准 Variant、Label 属性与准确 Variable Binding，不重复创建近似资产；
 - 原子 Registry 最终化：只在 Figma 审计成功后登记 Button Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
+- Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -220,6 +221,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [确定性 Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
 - [确定性 Button Component Set Ensure](docs/FIG-004-Button-Component-Ensure.md)
 - [Registry 原子 Ready 登记](docs/FIG-005-Registry-Atomic-Ready.md)
+- [Button 真实 Instance 插入](docs/FIG-006-Button-Instance-Insert.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

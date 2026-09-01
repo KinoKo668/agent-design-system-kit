@@ -17,7 +17,12 @@ import {
 import { FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION } from "./writer-message-validation.js";
 import { createFigmaVariablesPort } from "./figma-variables-port.js";
 import { createFigmaButtonPort } from "./figma-button-port.js";
+import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
 import { ButtonWriterError, ensureFigmaButton } from "./button-writer.js";
+import {
+  ButtonInstanceWriterError,
+  insertFigmaButtonInstance,
+} from "./button-instance-writer.js";
 import {
   bindFigmaLibraryFile,
   ensureFigmaVariables,
@@ -108,6 +113,7 @@ const completedCommands = new Map<string, CompletedCommand>();
 const MAX_COMPLETED_COMMANDS = 100;
 const variablesPort = createFigmaVariablesPort(figma);
 const buttonPort = createFigmaButtonPort(figma);
+const buttonInstancePort = createFigmaButtonInstancePort(figma);
 let executionChain: Promise<void> = Promise.resolve();
 
 function commandFingerprint(command: WriterCommandDelivery): string {
@@ -261,6 +267,40 @@ async function executeCommand(
               message: "The Figma Button writer failed unexpectedly.",
               recoveryInstruction:
                 "Inspect the local Plugin diagnostics and report the failure before retrying.",
+            });
+    }
+  } else if (
+    command.command.type === "instances.button.insert" &&
+    command.approval.mode === "approved" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      const instanceResult = await insertFigmaButtonInstance(
+        buttonInstancePort,
+        command.command.payload.plan,
+        {
+          approvalId: command.approval.approvalId,
+          fileBindingId: command.target.fileBindingId,
+          operationId: command.operationId,
+          projectId: command.projectId,
+        },
+      );
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: instanceResult,
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof ButtonInstanceWriterError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Figma Button Instance writer failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics before retrying.",
             });
     }
   } else {

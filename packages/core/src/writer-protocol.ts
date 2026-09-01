@@ -10,6 +10,7 @@ import {
 } from "./schema-primitives.js";
 import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
 import { figmaButtonPlanSchema } from "./figma-button-plan.js";
+import { figmaButtonInstancePlanSchema } from "./figma-button-instance-plan.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -125,7 +126,15 @@ export const writerEnsureButtonCommandSchema = z
   })
   .strict();
 
+export const writerInsertButtonInstanceCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaButtonInstancePlanSchema }).strict(),
+    type: z.literal("instances.button.insert"),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerInsertButtonInstanceCommandSchema,
   writerEnsureButtonCommandSchema,
   writerEnsureVariablesCommandSchema,
   writerPingCommandSchema,
@@ -181,7 +190,7 @@ export const writerCommandEnvelopeSchema = z
     const subject = envelope.approval.subject;
     const expectedSubjectType =
       envelope.command.type === "variables.ensure" ? "token-set" : "component";
-    const mismatches = [
+    const mismatches: string[] = [
       subject.type !== expectedSubjectType ? "type" : null,
       subject.projectId !== plan.source.projectId ? "projectId" : null,
       subject.assetId !== plan.source.assetId ? "assetId" : null,
@@ -191,6 +200,21 @@ export const writerCommandEnvelopeSchema = z
         : null,
       envelope.projectId !== plan.source.projectId ? "envelopeProjectId" : null,
     ].filter((value): value is string => value !== null);
+    if (envelope.command.type === "instances.button.insert") {
+      if (
+        envelope.approval.approvalId !==
+        envelope.command.payload.plan.source.approvalId
+      ) {
+        mismatches.push("approvalId");
+      }
+      if (
+        envelope.target.kind === "figma-file" &&
+        envelope.target.fileBindingId !==
+          envelope.command.payload.plan.source.fileBindingId
+      ) {
+        mismatches.push("fileBindingId");
+      }
+    }
     if (mismatches.length > 0) {
       context.addIssue({
         code: "custom",
@@ -295,9 +319,36 @@ export const writerButtonResultSchema = z
   })
   .strict();
 
+export const writerButtonInstanceResultSchema = z
+  .object({
+    componentSet: z
+      .object({
+        nodeId: z
+          .string()
+          .max(128)
+          .regex(/^\d+:\d+$/u),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    instance: z
+      .object({
+        action: z.enum(["created", "recovered", "unchanged"]),
+        nodeId: z
+          .string()
+          .max(128)
+          .regex(/^\d+:\d+$/u),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    type: z.literal("instances.button.insert"),
+    variant: z.object({ stableId: stableAssetIdSchema }).strict(),
+  })
+  .strict();
+
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
   writerButtonResultSchema,
+  writerButtonInstanceResultSchema,
   writerVariablesResultSchema,
 ]);
 export type WriterSuccessResult = z.infer<typeof writerSuccessResultSchema>;

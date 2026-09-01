@@ -271,8 +271,15 @@ async function runCommand(
 ): Promise<void> {
   const variablesCommand = command.command.type === "variables.ensure";
   const buttonCommand = command.command.type === "components.button.ensure";
-  const writeCommand = variablesCommand || buttonCommand;
-  const totalSteps = variablesCommand ? 5 : buttonCommand ? 7 : 1;
+  const instanceCommand = command.command.type === "instances.button.insert";
+  const writeCommand = variablesCommand || buttonCommand || instanceCommand;
+  const totalSteps = variablesCommand
+    ? 5
+    : buttonCommand
+      ? 7
+      : instanceCommand
+        ? 4
+        : 1;
   update({
     approval: writeCommand
       ? command.approval.mode === "approved"
@@ -291,12 +298,12 @@ async function runCommand(
     operation: {
       completedSteps: 0,
       detail: writeCommand
-        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : "Button"} plan.`
+        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : "Button"} plan.`
         : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
       step: writeCommand
-        ? `Verify file, identities, ${variablesCommand ? "Modes" : "Token dependencies"} and conflicts`
+        ? `Verify file, identities, ${variablesCommand ? "Modes" : instanceCommand ? "Registry locator and Variant" : "Token dependencies"} and conflicts`
         : "Validate writer.ping",
       totalSteps,
     },
@@ -341,6 +348,11 @@ async function runCommand(
       result.result.type === "components.button.ensure"
         ? result.result
         : null;
+    const instanceResult =
+      "type" in result.result &&
+      result.result.type === "instances.button.insert"
+        ? result.result
+        : null;
     update({
       operation: {
         completedSteps: totalSteps,
@@ -349,7 +361,9 @@ async function runCommand(
             ? `${String(variablesResult.variables.created)} created, ${String(variablesResult.variables.updated)} updated, ${String(variablesResult.variables.unchanged)} unchanged.`
             : buttonResult !== null
               ? `${String(buttonResult.variants.created)} Variants created, ${String(buttonResult.variants.updated)} updated, ${String(buttonResult.variants.unchanged)} unchanged.`
-              : "The diagnostic round trip completed without a Figma write.",
+              : instanceResult !== null
+                ? `Button Instance ${instanceResult.instance.action} from the registered ${instanceResult.variant.stableId}.`
+                : "The diagnostic round trip completed without a Figma write.",
         operationId: command.operationId,
         status: "succeeded",
         step:
@@ -357,7 +371,9 @@ async function runCommand(
             ? "Variables audited and managed markers committed"
             : buttonResult !== null
               ? "Button Component Set audited and managed markers committed"
-              : "writer.ping acknowledged",
+              : instanceResult !== null
+                ? "Button Instance audited and managed marker committed"
+                : "writer.ping acknowledged",
         totalSteps,
       },
       writeAuthorized: false,

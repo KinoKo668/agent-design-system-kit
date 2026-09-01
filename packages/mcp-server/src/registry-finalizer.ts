@@ -212,17 +212,28 @@ export function createRegistryWriteFinalizer(
   adapters: RegistryFinalizerAdapters = DEFAULT_ADAPTERS,
 ): RegistryWriteFinalizer {
   return async (command, result) => {
-    if (!("type" in result) || result.type !== "components.button.ensure") {
+    if (
+      !("type" in result) ||
+      (result.type !== "components.button.ensure" &&
+        result.type !== "instances.button.insert")
+    ) {
       return null;
     }
+    const plan =
+      result.type === "components.button.ensure" &&
+      command.command.type === "components.button.ensure"
+        ? command.command.payload.plan
+        : result.type === "instances.button.insert" &&
+            command.command.type === "instances.button.insert"
+          ? command.command.payload.plan
+          : null;
     if (
-      command.command.type !== "components.button.ensure" ||
+      plan === null ||
       command.approval.mode !== "approved" ||
       command.target.kind !== "figma-file"
     )
       return partialRegistryError(command);
-    const buttonResult = result;
-    const buttonCommand = command.command;
+    const componentSetResult = result.componentSet;
     const target = command.target;
     try {
       const snapshotResult = await adapters.loadSnapshot(options);
@@ -230,23 +241,22 @@ export function createRegistryWriteFinalizer(
       const matches = snapshotResult.data.registries.filter(({ data }) =>
         data.entries.some(
           ({ asset }) =>
-            asset.id === buttonCommand.payload.plan.source.assetId &&
-            asset.version === buttonCommand.payload.plan.source.assetVersion,
+            asset.id === plan.source.assetId &&
+            asset.version === plan.source.assetVersion,
         ),
       );
       if (matches.length !== 1) return partialRegistryError(command);
       const located = matches[0];
       if (located === undefined) return partialRegistryError(command);
-      const plan = buttonCommand.payload.plan;
       const update = markComponentRegistryReady(located.data, {
         approvalId: command.approval.approvalId,
         assetId: plan.source.assetId,
         assetVersion: plan.source.assetVersion,
-        componentSetStableId: buttonResult.componentSet.stableId,
+        componentSetStableId: componentSetResult.stableId,
         contentDigest: plan.source.contentDigest,
         fileBindingId: target.fileBindingId,
         majorVersion: plan.componentSet.majorVersion,
-        nodeId: buttonResult.componentSet.nodeId,
+        nodeId: componentSetResult.nodeId,
         projectId: plan.source.projectId,
       });
       if (!update.ok) return partialRegistryError(command);
@@ -269,7 +279,7 @@ export function createRegistryWriteFinalizer(
         return (
           entry?.figma.status === "ready" &&
           entry.figma.fileBindingId === target.fileBindingId &&
-          entry.figma.locator.nodeId === buttonResult.componentSet.nodeId &&
+          entry.figma.locator.nodeId === componentSetResult.nodeId &&
           entry.figma.appliedDigest === plan.source.contentDigest
         );
       });

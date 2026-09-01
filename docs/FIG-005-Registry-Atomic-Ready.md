@@ -116,4 +116,4 @@ Registry 最终化只会为当前队列中唯一 `dispatched` 的命令运行。
 
 FIG-005 不发布 Library、不获取 `componentSetKey`，也不自动提交 Registry 到 Git。当前 Node ID 足以让同一文件中的 Plugin 重新定位；未来发布后的 Key 可以在同一 Ready Locator 中补充。
 
-下一项 FIG-006 将严格从 Ready Registry 解析目标，打开登记的 Main Component，并插入真实 Button Instance；找不到、漂移或出现多个候选时必须停止。
+后续 FIG-006 已严格从 Ready Registry 解析目标，审计登记的 Main Component，并插入真实 Button Instance；找不到、漂移或出现多个候选时会停止。详见 [FIG-006](FIG-006-Button-Instance-Insert.md)。

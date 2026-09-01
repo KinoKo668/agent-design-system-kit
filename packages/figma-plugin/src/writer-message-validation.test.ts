@@ -1,13 +1,17 @@
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
+  createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
   createFigmaVariablePlan,
+  validateDesignSystemSnapshot,
   writerCommandDeliverySchema,
   writerPluginResultSchema,
 } from "@agent-design-system-kit/core";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 
 import {
   FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
@@ -118,6 +122,79 @@ function variablesDelivery() {
   };
 }
 
+function instanceDelivery() {
+  const tokens = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/tokens/button-foundation.tokens.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const contract = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/components/button.component.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const snapshot = validateDesignSystemSnapshot("hatch-demo", [
+    { kind: "token-set", sourcePath: "tokens/a.tokens.json", value: tokens },
+    {
+      kind: "component",
+      sourcePath: "components/a.component.json",
+      value: contract,
+    },
+    {
+      kind: "component-registry",
+      sourcePath: "registry/a.registry.json",
+      value: validRegistry,
+    },
+  ]);
+  if (!snapshot.ok) throw new Error(snapshot.error.message);
+  const planned = createFigmaButtonInstancePlan(snapshot.data, {
+    assetId: "button",
+    instanceId: "screen-checkout/submit",
+    label: "Place order",
+    projectId: "hatch-demo",
+    variantSelections: { appearance: "primary", state: "default" },
+    x: 100,
+    y: 200,
+  });
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: planned.data.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: planned.data.source.assetId,
+        assetVersion: planned.data.source.assetVersion,
+        contentDigest: planned.data.source.contentDigest,
+        projectId: planned.data.source.projectId,
+        type: "component",
+      },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "instances.button.insert",
+    },
+    idempotencyKey: "instance-screen-checkout-submit",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: planned.data.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("lightweight Figma Writer boundary validation", () => {
   it("stays version-aligned with the authoritative Core schema", () => {
     expect(FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION).toBe(
@@ -135,6 +212,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(buttonDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(buttonDelivery())).toBe(true);
+    expect(
+      writerCommandDeliverySchema.safeParse(instanceDelivery()).success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(instanceDelivery())).toBe(true);
   });
 
   it("rejects the same unsafe command extensions at the Plugin boundary", () => {
@@ -229,6 +310,33 @@ describe("lightweight Figma Writer boundary validation", () => {
     expect(writerPluginResultSchema.safeParse(failure).success).toBe(true);
     expect(isWriterPluginResult(success)).toBe(true);
     expect(isWriterPluginResult(failure)).toBe(true);
+
+    const instanceSuccess = {
+      ok: true,
+      operationId: OPERATION_ID,
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        componentSet: {
+          nodeId: "100:200",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "200:300",
+          stableId: "hatch-demo/instance/screen-checkout/submit",
+        },
+        type: "instances.button.insert",
+        variant: {
+          stableId:
+            "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+        },
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    };
+    expect(writerPluginResultSchema.safeParse(instanceSuccess).success).toBe(
+      true,
+    );
+    expect(isWriterPluginResult(instanceSuccess)).toBe(true);
     expect(writerPluginResultSchema.safeParse(variables).success).toBe(true);
     expect(isWriterPluginResult(variables)).toBe(true);
     expect(writerPluginResultSchema.safeParse(button).success).toBe(true);
