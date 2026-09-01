@@ -26,6 +26,7 @@
     "lint": "eslint . --max-warnings 0",
     "mcp:smoke": "node packages/mcp-server/scripts/stdio-smoke.mjs",
     "mcp:codex-contract": "pnpm build && node packages/mcp-server/scripts/codex-agent-contract.mjs",
+    "qa:golden": "vitest run packages/mcp-server/src/golden-path-regression.test.ts",
     "test": "vitest run",
     "typecheck": "tsc --build --pretty false && tsc --project tsconfig.test.json --pretty false"
   },

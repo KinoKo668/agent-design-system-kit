@@ -134,6 +134,7 @@ What exists today:
 - a read-only `hatchkit_audit_styles` MCP tool that derives the registered Variable allowlist from current Git facts, scans the bound Figma page, and reports hard-coded styles or foreign Variables with exact node and field evidence;
 - a read-only `hatchkit_audit_components` MCP tool that cross-checks real Instances, managed markers, Component Set sources, approved Variants, and current Variant properties against the active Git Registry;
 - a read-only `hatchkit_audit_registry_drift` MCP tool that inventories the entire bound Figma library and reports bidirectional missing assets, duplicate identities, invalid markers, version or digest drift, locator conflicts, and incomplete Variable or Variant sets;
+- a release-gated Agent golden-path regression that exercises MCP status, exact Button search and resolution, idempotent insertion orchestration, and all three audit tools through one coherent public-demo scenario;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -247,6 +248,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Hard-coded style and unregistered Variable audit](docs/AUD-001-硬编码样式与未登记Variable审计.md)
 - [Instance, Variant, and component-source audit](docs/AUD-002-Instance-Variant与组件来源审计.md)
 - [Registry-to-Figma bidirectional drift audit](docs/AUD-003-Registry与Figma双向差异审计.md)
+- [Agent-facing golden-path regression](docs/QA-001-Agent黄金路径回归测试.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
