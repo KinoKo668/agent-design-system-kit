@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "requestType": "component-change-request",
+  "requestId": "00000000-0000-4000-8000-000000000003",
+  "requestVersion": "1.0.0",
+  "projectId": "hatch-demo",
+  "status": "proposed",
+  "changeKind": "extend-component",
+  "summary": "Add a Tertiary appearance to the approved Button component",
+  "rationale": "The requested low-emphasis action cannot be represented by the currently registered Primary or Secondary appearances.",
+  "intendedUse": "Use Tertiary for a low-emphasis action in the settings footer without drawing a one-off button.",
+  "target": {
+    "assetType": "component",
+    "assetId": "button",
+    "requestedVersion": "1.0.0"
+  },
+  "sourceQuery": {
+    "projectId": "hatch-demo",
+    "assetId": "button",
+    "assetVersion": "1.0.0",
+    "variantSelections": {
+      "appearance": "tertiary",
+      "state": "default"
+    }
+  },
+  "resolutionEvidence": {
+    "errorCode": "VALIDATION_FAILED",
+    "issues": [
+      {
+        "code": "unsupported_variant_option",
+        "message": "Variant property 'appearance' does not define option 'tertiary'.",
+        "path": "/variantSelections/appearance"
+      }
+    ]
+  },
+  "existingCandidates": [
+    {
+      "asset": {
+        "id": "button",
+        "version": "1.0.0",
+        "contentDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "approvalId": "approval.component.button.1.0.0",
+      "lifecycle": "active",
+      "figmaStatus": "ready",
+      "sources": {
+        "contractSourcePath": "components/button.component.json",
+        "registrySourcePath": "registry/components.registry.json"
+      }
+    }
+  ],
+  "submission": {
+    "submittedBy": {
+      "type": "agent",
+      "id": "codex"
+    },
+    "submittedAt": "2026-09-01T15:45:00Z"
+  },
+  "nextAction": "human-triage",
+  "prohibitedActions": [
+    "create-visual-approximation",
+    "fallback-to-inactive-component",
+    "invent-unregistered-property-or-variant",
+    "enqueue-figma-write"
+  ]
+}

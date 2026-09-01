@@ -101,6 +101,7 @@ Registry · 历史             │
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
 - 确定性的组件搜索与精确解析，不模糊猜测、不自动回退旧版本，也不把尚未建成的 Figma 资产冒充为可插入；
+- 结构化的缺失组件 Change Request，把真实能力缺口交给人工分诊，同时阻止近似 UI 和 Figma 写入命令；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -166,6 +167,7 @@ pnpm check
 - [Component Registry Schema](docs/SCH-004-Component-Registry-Schema.md)
 - [文件加载与完整性校验](docs/REG-001-文件加载与完整性校验.md)
 - [组件搜索与精确解析](docs/REG-002-组件搜索与精确解析.md)
+- [缺失组件 Change Request](docs/REG-003-缺失组件Change-Request.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

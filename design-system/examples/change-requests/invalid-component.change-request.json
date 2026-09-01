@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0.0",
+  "requestType": "component-change-request",
+  "requestId": "00000000-0000-4000-8000-000000000004",
+  "requestVersion": "1.0.0",
+  "projectId": "another-project",
+  "status": "proposed",
+  "changeKind": "create-component",
+  "summary": "Invalid fixture",
+  "rationale": "This fixture deliberately violates cross-field Change Request rules.",
+  "intendedUse": "Exercise stable validation paths without creating any assets.",
+  "target": {
+    "assetType": "component",
+    "assetId": "input",
+    "requestedVersion": "1.0.0"
+  },
+  "sourceQuery": {
+    "projectId": "hatch-demo",
+    "assetId": "button",
+    "assetVersion": "1.0.0",
+    "variantSelections": {
+      "appearance": "tertiary"
+    }
+  },
+  "resolutionEvidence": {
+    "errorCode": "IDENTITY_NOT_FOUND",
+    "issues": [
+      {
+        "code": "unsupported_variant_option",
+        "message": "This issue is incompatible with Identity Not Found evidence.",
+        "path": "/variantSelections/appearance"
+      }
+    ]
+  },
+  "existingCandidates": [
+    {
+      "asset": {
+        "id": "button",
+        "version": "1.0.0",
+        "contentDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "approvalId": "approval.component.button.1.0.0",
+      "lifecycle": "active",
+      "figmaStatus": "ready",
+      "sources": {
+        "contractSourcePath": "components/button.component.json",
+        "registrySourcePath": "registry/components.registry.json"
+      }
+    }
+  ],
+  "submission": {
+    "submittedBy": {
+      "type": "agent",
+      "id": "codex"
+    },
+    "submittedAt": "2026-09-01T15:45:00Z"
+  },
+  "nextAction": "human-triage",
+  "prohibitedActions": [
+    "create-visual-approximation",
+    "fallback-to-inactive-component",
+    "invent-unregistered-property-or-variant",
+    "enqueue-figma-write"
+  ]
+}

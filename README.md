@@ -112,6 +112,7 @@ What exists today:
 - a Component Registry schema that connects exact Contract digests, Approval references, lifecycle, and repairable Figma locators;
 - a deterministic local loader that safely discovers managed files, validates cross-asset references, and rejects content-digest drift with relative source paths;
 - deterministic component search and exact resolution that never fuzzy-matches, silently falls back to inactive versions, or treats an unbuilt Figma asset as insertable;
+- a structured Component Change Request outcome that stops execution and routes real capability gaps to human triage without emitting approximate UI or Figma write commands;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -179,6 +180,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Component Registry schema](docs/SCH-004-Component-Registry-Schema.md)
 - [Local file loading and integrity validation](docs/REG-001-文件加载与完整性校验.md)
 - [Component search and exact resolution](docs/REG-002-组件搜索与精确解析.md)
+- [Missing-component Change Requests](docs/REG-003-缺失组件Change-Request.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.
