@@ -119,6 +119,7 @@ Registry · 历史             │
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
 - 可选的 `hatchkit_insert_button_instance` MCP Tool：一次调用完成 Registry／Variant 查询、确定性计划、认证 Bridge 提交、Plugin 等待与真实 Instance 审计结果；默认不配置本地凭据时完全保持只读；
+- 完整 Agent Loop 的审批负向门禁：缺失、评审中、要求修改、不完整、拒绝、过期、被取代和撤销均在进入 Queue 前阻断，并向 Agent 保留准确恢复动作；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -226,6 +227,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Button 真实 Instance 插入](docs/FIG-006-Button-Instance-Insert.md)
 - [Writer 幂等、冲突与恢复保护](docs/FIG-007-Writer-Idempotency-Conflict-Recovery.md)
 - [Registry 到 Figma 单次写入流程](docs/LOOP-002-Registry到Figma单次写入流程.md)
+- [审批拒绝端到端阻断](docs/LOOP-003-审批拒绝端到端阻断.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
