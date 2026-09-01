@@ -2,6 +2,7 @@ export const CORE_PACKAGE_NAME = "@agent-design-system-kit/core" as const;
 
 export type CorePackageName = typeof CORE_PACKAGE_NAME;
 
+export * from "./button-contract.js";
 export * from "./design-brief.js";
 export * from "./errors.js";
 export * from "./json.js";

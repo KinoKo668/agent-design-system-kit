@@ -45,7 +45,7 @@ function requiredText(maxLength: number): z.ZodString {
     });
 }
 
-const tokenReferenceSchema = z
+export const tokenReferenceSchema = z
   .string()
   .regex(
     TOKEN_REFERENCE_PATTERN,

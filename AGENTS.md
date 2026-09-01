@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结以及 M1 工程骨架，当前处于 M2 Schema 与 Registry 基础阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema 与基础 Token Schema；Component、Registry 与正式 Writer 尚未实现。
+项目已完成 M0 架构与风险冻结以及 M1 工程骨架，当前处于 M2 Schema 与 Registry 基础阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema 与 Button v1 Component Contract；Registry 与正式 Writer 尚未实现。
 
 开始工作前请先阅读：
 
@@ -42,6 +42,7 @@
 - `docs/SEC-001-本地凭据与日志脱敏策略.md`
 - `docs/SCH-001-Design-Brief-Schema.md`
 - `docs/SCH-002-基础Token-Schema与DTCG子集.md`
+- `docs/SCH-003-Button-Component-Contract.md`
 
 工程规则：
 

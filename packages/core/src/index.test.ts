@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BUTTON_CONTRACT_PROFILE,
+  BUTTON_CONTRACT_SCHEMA_VERSION,
   CORE_PACKAGE_NAME,
+  COMPONENT_ASSET_TYPE,
   DESIGN_BRIEF_ASSET_TYPE,
   DESIGN_BRIEF_SCHEMA_VERSION,
   DTCG_VERSION,
@@ -18,6 +21,9 @@ import {
 describe("core package boundary", () => {
   it("exposes its stable package identity", () => {
     expect(CORE_PACKAGE_NAME).toBe("@agent-design-system-kit/core");
+    expect(BUTTON_CONTRACT_SCHEMA_VERSION).toBe("1.0.0");
+    expect(BUTTON_CONTRACT_PROFILE).toBe("button-v1");
+    expect(COMPONENT_ASSET_TYPE).toBe("component");
     expect(DESIGN_BRIEF_SCHEMA_VERSION).toBe("1.0.0");
     expect(DESIGN_BRIEF_ASSET_TYPE).toBe("brief");
     expect(TOKEN_SET_SCHEMA_VERSION).toBe("1.0.0");

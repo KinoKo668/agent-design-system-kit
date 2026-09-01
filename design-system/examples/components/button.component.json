@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "component",
+  "projectId": "hatch-demo",
+  "assetId": "button",
+  "assetVersion": "1.0.0",
+  "name": "Button",
+  "description": "The frozen Medium Button contract for the first Hatch vertical slice.",
+  "profile": "button-v1",
+  "componentKind": "component-set",
+  "size": "medium",
+  "tokenSource": {
+    "assetType": "token-set",
+    "projectId": "hatch-demo",
+    "assetId": "button-foundation",
+    "assetVersion": "1.0.0"
+  },
+  "layout": {
+    "direction": "horizontal",
+    "primaryAxisSizing": "hug",
+    "counterAxisSizing": "fixed",
+    "primaryAxisAlignment": "center",
+    "counterAxisAlignment": "center"
+  },
+  "accessibility": {
+    "role": "button",
+    "accessibleNamePropertyId": "label",
+    "disabledPropertyId": "state",
+    "disabledOptionId": "disabled"
+  },
+  "properties": [
+    {
+      "id": "label",
+      "kind": "text",
+      "figmaName": "Label",
+      "description": "Visible action label and accessible name source.",
+      "defaultValue": "Button",
+      "required": true
+    },
+    {
+      "id": "appearance",
+      "kind": "variant",
+      "figmaName": "Appearance",
+      "description": "Visual emphasis of the action.",
+      "defaultOptionId": "primary",
+      "options": [
+        {
+          "id": "primary",
+          "figmaValue": "Primary",
+          "description": "Emphasized primary action."
+        },
+        {
+          "id": "secondary",
+          "figmaValue": "Secondary",
+          "description": "Lower-emphasis secondary action."
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "kind": "variant",
+      "figmaName": "State",
+      "description": "Current interaction availability.",
+      "defaultOptionId": "default",
+      "options": [
+        {
+          "id": "default",
+          "figmaValue": "Default",
+          "description": "Enabled resting state."
+        },
+        {
+          "id": "disabled",
+          "figmaValue": "Disabled",
+          "description": "Unavailable action state."
+        }
+      ]
+    }
+  ],
+  "sharedBindings": [
+    {
+      "target": "container.height",
+      "token": "{semantic.dimension.action-height-medium}"
+    },
+    {
+      "target": "container.padding-inline",
+      "token": "{semantic.dimension.action-padding-inline}"
+    },
+    {
+      "target": "container.radius",
+      "token": "{semantic.dimension.action-radius}"
+    },
+    {
+      "target": "label.typography",
+      "token": "{semantic.typography.action-label}"
+    }
+  ],
+  "variants": [
+    {
+      "id": "appearance-primary/state-default",
+      "slotId": "variant/appearance-primary/state-default",
+      "name": "Primary / Default",
+      "selections": {
+        "appearance": "primary",
+        "state": "default"
+      },
+      "bindings": [
+        {
+          "target": "container.fill",
+          "token": "{semantic.color.action-primary-background}"
+        },
+        {
+          "target": "label.fill",
+          "token": "{semantic.color.action-primary-foreground}"
+        }
+      ]
+    },
+    {
+      "id": "appearance-primary/state-disabled",
+      "slotId": "variant/appearance-primary/state-disabled",
+      "name": "Primary / Disabled",
+      "selections": {
+        "appearance": "primary",
+        "state": "disabled"
+      },
+      "bindings": [
+        {
+          "target": "container.fill",
+          "token": "{semantic.color.action-primary-disabled-background}"
+        },
+        {
+          "target": "label.fill",
+          "token": "{semantic.color.action-primary-disabled-foreground}"
+        },
+        {
+          "target": "container.opacity",
+          "token": "{semantic.number.action-disabled-opacity}"
+        }
+      ]
+    },
+    {
+      "id": "appearance-secondary/state-default",
+      "slotId": "variant/appearance-secondary/state-default",
+      "name": "Secondary / Default",
+      "selections": {
+        "appearance": "secondary",
+        "state": "default"
+      },
+      "bindings": [
+        {
+          "target": "container.fill",
+          "token": "{semantic.color.action-secondary-background}"
+        },
+        {
+          "target": "label.fill",
+          "token": "{semantic.color.action-secondary-foreground}"
+        },
+        {
+          "target": "container.border-color",
+          "token": "{semantic.color.action-secondary-border}"
+        },
+        {
+          "target": "container.border-width",
+          "token": "{semantic.dimension.action-border-width}"
+        }
+      ]
+    },
+    {
+      "id": "appearance-secondary/state-disabled",
+      "slotId": "variant/appearance-secondary/state-disabled",
+      "name": "Secondary / Disabled",
+      "selections": {
+        "appearance": "secondary",
+        "state": "disabled"
+      },
+      "bindings": [
+        {
+          "target": "container.fill",
+          "token": "{semantic.color.action-secondary-disabled-background}"
+        },
+        {
+          "target": "label.fill",
+          "token": "{semantic.color.action-secondary-disabled-foreground}"
+        },
+        {
+          "target": "container.border-color",
+          "token": "{semantic.color.action-secondary-disabled-border}"
+        },
+        {
+          "target": "container.border-width",
+          "token": "{semantic.dimension.action-border-width}"
+        },
+        {
+          "target": "container.opacity",
+          "token": "{semantic.number.action-disabled-opacity}"
+        }
+      ]
+    }
+  ]
+}
