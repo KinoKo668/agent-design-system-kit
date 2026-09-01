@@ -99,4 +99,4 @@ FIG-006 不包含：
 - Responsive Constraint、Prototype Interaction 或业务数据绑定；
 - Agent 可直接调用的一键“查询并插入”MCP Tool。
 
-下一项 FIG-007 将集中审查 FIG-003 至 FIG-006 的幂等、冲突、恢复与破坏性变更保护；随后 LOOP-002 才把 Registry 查询、确认与 Writer Command 串成 Agent 可调用的单次流程。
+后续 FIG-007 已完成 FIG-003 至 FIG-006 的幂等、冲突、恢复与破坏性变更保护审查，并修复写入成功缓存绕过恢复再审计的问题。详见 [FIG-007](FIG-007-Writer-Idempotency-Conflict-Recovery.md)。下一项 LOOP-002 将把 Registry 查询、确认与 Writer Command 串成 Agent 可调用的单次流程。

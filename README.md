@@ -128,6 +128,7 @@ What exists today:
 - a deterministic Button writer that ensures one real Main Component Set, four approved Variants, Label properties, and exact Variable bindings without duplicate assets;
 - an atomic Registry finalizer that records the audited Button node only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
 - a Registry-backed Button Instance writer that audits the real Main Component and exact Variant, creates one managed Figma Instance, and performs zero writes on an unchanged retry;
+- a unified Writer replay and destructive-action policy that forces real writes to re-audit on recovery and forbids automatic delete, detach, or component swap;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -235,6 +236,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Deterministic Button Component Set Ensure](docs/FIG-004-Button-Component-Ensure.md)
 - [Atomic Registry Ready finalization](docs/FIG-005-Registry-Atomic-Ready.md)
 - [Registry-backed Button Instance insertion](docs/FIG-006-Button-Instance-Insert.md)
+- [Writer idempotency, conflict, and recovery policy](docs/FIG-007-Writer-Idempotency-Conflict-Recovery.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

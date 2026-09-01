@@ -15,6 +15,7 @@ import {
   type WriterPluginResult,
 } from "@agent-design-system-kit/core";
 import { FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION } from "./writer-message-validation.js";
+import { shouldCacheWriterResult } from "./writer-replay-policy.js";
 import { createFigmaVariablesPort } from "./figma-variables-port.js";
 import { createFigmaButtonPort } from "./figma-button-port.js";
 import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
@@ -311,10 +312,7 @@ async function executeCommand(
         "Rebuild the command from the current approved source and bound Figma file.",
     });
   }
-  if (
-    result.ok ||
-    ERROR_DEFINITIONS[result.error.code].retry === "do_not_retry"
-  ) {
+  if (shouldCacheWriterResult(command.command.type, result)) {
     rememberCompleted(command, result);
   }
   return result;
