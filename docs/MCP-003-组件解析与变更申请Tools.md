@@ -216,4 +216,4 @@ MCP-003 不实现：
 - Figma Locator 实际回读、修复或写入；
 - Writer Command、Queue 或 Instance 插入。
 
-下一步 MCP-004 使用真实 Codex Agent 验证完整查询决策；Figma 写入能力随后进入 FIG 系列任务。
+MCP-004 已使用真实 Codex Agent 验证完整查询决策；Figma 写入能力随后进入 FIG 系列任务。

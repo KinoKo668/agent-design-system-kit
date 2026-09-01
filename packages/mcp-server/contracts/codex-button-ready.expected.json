@@ -1,0 +1,11 @@
+{
+  "assetId": "button",
+  "assetVersion": "1.0.0",
+  "status": "figma-ready",
+  "selectedVariantId": "appearance-secondary/state-disabled",
+  "nextAction": "verify-approval-and-audit-then-insert-instance",
+  "mayWriteFigma": false,
+  "requiredWarningCodes": ["APPROVAL_GUARD_REQUIRED", "FIGMA_AUDIT_REQUIRED"],
+  "contractSourcePath": "components/button.component.json",
+  "registrySourcePath": "registry/components.registry.json"
+}

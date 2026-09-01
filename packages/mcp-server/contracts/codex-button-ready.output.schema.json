@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "assetId": {
+      "type": "string"
+    },
+    "assetVersion": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "selectedVariantId": {
+      "type": "string"
+    },
+    "nextAction": {
+      "type": "string"
+    },
+    "mayWriteFigma": {
+      "type": "boolean"
+    },
+    "requiredWarningCodes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contractSourcePath": {
+      "type": "string"
+    },
+    "registrySourcePath": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assetId",
+    "assetVersion",
+    "status",
+    "selectedVariantId",
+    "nextAction",
+    "mayWriteFigma",
+    "requiredWarningCodes",
+    "contractSourcePath",
+    "registrySourcePath"
+  ]
+}

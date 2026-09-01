@@ -22,6 +22,7 @@
     "hatchkit:mcp": "node packages/mcp-server/dist/bin.js",
     "lint": "eslint . --max-warnings 0",
     "mcp:smoke": "node packages/mcp-server/scripts/stdio-smoke.mjs",
+    "mcp:codex-contract": "pnpm build && node packages/mcp-server/scripts/codex-agent-contract.mjs",
     "test": "vitest run",
     "typecheck": "tsc --build --pretty false && tsc --project tsconfig.test.json --pretty false"
   },
