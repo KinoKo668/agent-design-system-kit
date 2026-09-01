@@ -124,6 +124,7 @@ Registry · 历史             │
 - 只读 `hatchkit_audit_components` MCP Tool：把真实 Instance、托管 Marker、Component Set 来源、批准 Variant 与当前 Variant Properties 和 Active Registry 交叉核对；
 - 只读 `hatchkit_audit_registry_drift` MCP Tool：盘点整个已绑定 Figma Library，报告双方缺失、重复身份、无效 Marker、版本／摘要／Locator 冲突以及不完整的 Variable／Variant 集合；
 - 纳入发布门禁的 Agent 黄金路径回归：在同一个公开 Demo 场景中依次验证 MCP 状态、Button 精确搜索与解析、幂等插入编排和三类审计 Tool；
+- 系统级失败矩阵回归：证明资源缺失与 Plugin 断线不会产生 Figma 派发，精确重试不会增加 Operation，同一幂等身份下改变意图会被拒绝；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -236,6 +237,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Instance、Variant 与组件来源审计](docs/AUD-002-Instance-Variant与组件来源审计.md)
 - [Registry 与 Figma 双向差异审计](docs/AUD-003-Registry与Figma双向差异审计.md)
 - [Agent 黄金路径回归测试](docs/QA-001-Agent黄金路径回归测试.md)
+- [系统失败矩阵与零污染回归](docs/QA-002-系统失败矩阵与零污染回归.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
