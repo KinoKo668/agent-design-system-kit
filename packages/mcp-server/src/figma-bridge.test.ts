@@ -391,7 +391,7 @@ describe("local Figma Bridge", () => {
   });
 
   it("dispatches FIFO with one in-flight command and accepts an idempotent result replay", async () => {
-    const { address } = await startBridge();
+    const { address } = await startBridge({ nowMonotonicMs: () => 0 });
     await request(address.url, "/v1/plugin/connect", hello());
     await request(address.url, "/v1/operations", command(OPERATION_IDS[0]));
     await request(address.url, "/v1/operations", command(OPERATION_IDS[1]));
