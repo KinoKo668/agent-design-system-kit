@@ -22,20 +22,23 @@ export default tseslint.config(
     files: ["packages/**/*.ts", "vitest.config.mts"],
     languageOptions: {
       parserOptions: {
-        projectService: {
-          allowDefaultProject: [
-            "packages/*/src/*.test.ts",
-            "vitest.config.mts",
-          ],
-          defaultProject: "tsconfig.test.json",
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 16,
-        },
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-import-type-side-effects": "error",
+    },
+  },
+  {
+    files: ["packages/*/src/*.test.ts", "vitest.config.mts"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.test.json",
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
   {

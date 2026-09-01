@@ -101,7 +101,9 @@ export const componentRegistryEntrySchema = z.strictObject({
   supersedes: strictSemverSchema.nullable(),
 });
 
-type ComponentRegistryEntry = z.infer<typeof componentRegistryEntrySchema>;
+export type ComponentRegistryEntry = z.infer<
+  typeof componentRegistryEntrySchema
+>;
 
 function addIssue(
   context: z.RefinementCtx,
