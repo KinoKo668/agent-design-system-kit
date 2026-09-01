@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 Schema、Registry 与只读查询，并在 M3 建立了首个本地 stdio MCP 入口，但尚未成为可用于生产环境的完整工具。**
+**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口和经过认证的单 Writer Figma Bridge，但尚未成为可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -108,6 +108,8 @@ Registry · 历史             │
 - 精确 Component Resolve 与确定性 Change Request MCP Tools，始终保留审批／审计门禁且不会加入 Figma 写入队列；
 - 真实 Codex Agent 契约 Harness，验证 Status → Search → Resolve、结构化决策、禁止 Shell 绕过和工作区零变更；
 - 紧凑的 Figma Writer 面板，使用版本化边界显示连接、审批、操作、进度、错误恢复和真实写入授权；
+- 只监听回环地址的认证 HTTP Bridge，提供单 Plugin 所有权、FIFO、单在途租约、幂等重放、结构化结果与 30 天脱敏 Operation Log；
+- Session Token 只驻留内存的连接流程，以及不会修改 Figma 的 `writer.ping` 完整往返验证；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -155,6 +157,15 @@ pnpm mcp:smoke
 pnpm --silent hatchkit:mcp --help
 ```
 
+启动当前 Figma Bridge，并把一次性内存 Token 粘贴到 **Hatchkit Writer** 开发插件：
+
+```bash
+pnpm build
+pnpm hatchkit:figma-bridge
+```
+
+请勿重定向、保存、截图或公开终端显示的 Token。FIG-002 只接受无写入的 `writer.ping`，真实基础 Variables 从 FIG-003 开始。
+
 环境要求：
 
 - 主要开发版本为 Node.js `24.20.0` LTS；
@@ -193,6 +204,7 @@ pnpm --silent hatchkit:mcp --help
 - [组件解析与变更申请 MCP Tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [真实 Codex Agent 契约测试](docs/MCP-004-Codex真实Agent契约测试.md)
 - [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
+- [Plugin Bridge 与单 Writer 队列](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

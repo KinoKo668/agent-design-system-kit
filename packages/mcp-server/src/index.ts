@@ -1,10 +1,13 @@
 import { CORE_PACKAGE_NAME } from "@agent-design-system-kit/core";
 
 export * from "./registry-files.js";
+export * from "./figma-bridge.js";
+export * from "./operation-log.js";
 export * from "./query-tools.js";
 export * from "./resolution-tools.js";
 export * from "./server.js";
 export * from "./stdio.js";
+export * from "./writer-queue.js";
 
 export const MCP_SERVER_PACKAGE_NAME =
   "@agent-design-system-kit/mcp-server" as const;

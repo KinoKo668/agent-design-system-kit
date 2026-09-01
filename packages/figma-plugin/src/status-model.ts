@@ -3,7 +3,14 @@ import {
   type ErrorCategory,
   type ErrorCode,
   type RetryDirective,
+  type WriterCommandDelivery,
+  type WriterPluginResult,
 } from "@agent-design-system-kit/core";
+
+import {
+  isWriterCommandDelivery,
+  isWriterPluginResult,
+} from "./writer-message-validation.js";
 
 export const FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -64,7 +71,15 @@ const ERROR_KEYS = new Set([
   "retry",
 ]);
 const UI_MESSAGE_KEYS = new Set(["schemaVersion", "type"]);
+const EXECUTE_MESSAGE_KEYS = new Set([
+  "command",
+  "pluginInstanceId",
+  "schemaVersion",
+  "type",
+]);
 const STATUS_MESSAGE_KEYS = new Set(["schemaVersion", "snapshot", "type"]);
+const CONTEXT_MESSAGE_KEYS = new Set(["context", "schemaVersion", "type"]);
+const RESULT_MESSAGE_KEYS = new Set(["result", "schemaVersion", "type"]);
 
 export interface FigmaDocumentContext {
   readonly fileName: string;
@@ -145,6 +160,12 @@ export type UiToMainMessage =
   | {
       readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
       readonly type: "ui.ready" | "ui.refresh";
+    }
+  | {
+      readonly command: WriterCommandDelivery;
+      readonly pluginInstanceId: string;
+      readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
+      readonly type: "writer.execute";
     };
 
 export interface WriterStatusMessage {
@@ -153,7 +174,20 @@ export interface WriterStatusMessage {
   readonly type: "writer.status";
 }
 
-export type MainToUiMessage = WriterStatusMessage;
+export interface WriterContextMessage {
+  readonly context: FigmaDocumentContext;
+  readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
+  readonly type: "writer.context";
+}
+
+export interface WriterResultMessage {
+  readonly result: WriterPluginResult;
+  readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
+  readonly type: "writer.result";
+}
+
+export type MainToUiMessage =
+  WriterContextMessage | WriterResultMessage | WriterStatusMessage;
 
 export function createInitialWriterStatus(
   context: FigmaDocumentContext,
@@ -306,21 +340,60 @@ export function isUiToMainMessage(value: unknown): value is UiToMainMessage {
   if (!isRecord(value)) {
     return false;
   }
-  return (
+  if (value.schemaVersion !== FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION) {
+    return false;
+  }
+  if (
     hasOnlyKeys(value, UI_MESSAGE_KEYS) &&
-    value.schemaVersion === FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION &&
     (value.type === "ui.close" ||
       value.type === "ui.ready" ||
       value.type === "ui.refresh")
+  ) {
+    return true;
+  }
+  return (
+    value.type === "writer.execute" &&
+    hasOnlyKeys(value, EXECUTE_MESSAGE_KEYS) &&
+    typeof value.pluginInstanceId === "string" &&
+    isWriterCommandDelivery(value.command) &&
+    isWriterPluginResult({
+      ok: true,
+      operationId:
+        isRecord(value.command) && typeof value.command.operationId === "string"
+          ? value.command.operationId
+          : "",
+      pluginInstanceId: value.pluginInstanceId,
+      result: { pong: true },
+      schemaVersion: "1.0.0",
+    })
   );
 }
 
 export function isMainToUiMessage(value: unknown): value is MainToUiMessage {
+  if (
+    !isRecord(value) ||
+    value.schemaVersion !== FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION
+  ) {
+    return false;
+  }
+  if (value.type === "writer.status") {
+    return (
+      hasOnlyKeys(value, STATUS_MESSAGE_KEYS) &&
+      isWriterStatusSnapshot(value.snapshot)
+    );
+  }
+  if (value.type === "writer.context") {
+    return (
+      hasOnlyKeys(value, CONTEXT_MESSAGE_KEYS) &&
+      isRecord(value.context) &&
+      hasOnlyKeys(value.context, CONTEXT_KEYS) &&
+      isString(value.context.fileName) &&
+      isString(value.context.pageName)
+    );
+  }
   return (
-    isRecord(value) &&
-    hasOnlyKeys(value, STATUS_MESSAGE_KEYS) &&
-    value.schemaVersion === FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION &&
-    value.type === "writer.status" &&
-    isWriterStatusSnapshot(value.snapshot)
+    value.type === "writer.result" &&
+    hasOnlyKeys(value, RESULT_MESSAGE_KEYS) &&
+    isWriterPluginResult(value.result)
   );
 }

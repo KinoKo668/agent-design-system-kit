@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结、M1 工程骨架、M2 Schema／Registry／只读查询以及 M3 MCP 查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、Brief／Token 查询、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已提供本地文件加载、stdio 协议入口、初始化治理说明以及 Status、Brief、Token、Component Search、Resolve 与 Change Request 六个只读 Tool，并通过真实 Codex Agent 契约测试；`figma-plugin` 已提供最小 Writer UI、版本化状态消息、完整运行时校验和独立 Bundle Smoke。下一项是 FIG-002 Plugin Bridge 与写入队列。
+项目已完成 M0 架构与风险冻结、M1 工程骨架、M2 Schema／Registry／只读查询，以及 M3 的 MCP 查询、最小 Figma UI 和 FIG-002 Plugin Bridge。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、设计资产 Schema／查询与严格 Writer Protocol；`cli` 已提供只读 validate、search、resolve 与 request-change；`mcp-server` 已提供六个只读 MCP Tool、认证 HTTP Bridge、单 Writer FIFO、租约、幂等恢复和 30 天脱敏 Operation Log；`figma-plugin` 已提供内存 Token 连接、长轮询、版本化消息和只读 `writer.ping` 回执。下一项是 FIG-003 基础 Variables 的确定性创建或更新。
 
 开始工作前请先阅读：
 
@@ -53,6 +53,7 @@
 - `docs/MCP-003-组件解析与变更申请Tools.md`
 - `docs/MCP-004-Codex真实Agent契约测试.md`
 - `docs/FIG-001-最小Figma-Plugin-UI.md`
+- `docs/FIG-002-Plugin-Bridge与单Writer队列.md`
 
 工程规则：
 
@@ -63,6 +64,7 @@
 - 正式 Node Package 使用 ESM；
 - 提交前必须在 Node.js 24 下运行 `pnpm check`，依次通过格式、Lint、类型、测试与构建；
 - Figma 主线程源码由 esbuild 打包为 IIFE，禁止把未打包的跨 Package ESM 当作 Plugin 产物；
+- Figma Plugin Bundle 必须使用轻量深校验；不得把 Core 的 Zod 运行时 Schema 打进主线程或 UI；
 - 不得把 Spike 代码直接搬入正式 Package，必须按正式 Contract 重建并测试。
 
 ## 第一条验证链路

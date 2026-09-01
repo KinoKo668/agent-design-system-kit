@@ -77,6 +77,18 @@ requireCondition(
   uiHtml.includes("Action needed"),
   "UI missing error recovery surface",
 );
+requireCondition(
+  uiHtml.includes("Bridge Session Token"),
+  "UI missing the in-memory Bridge credential field",
+);
+requireCondition(
+  uiHtml.includes("writer.execute"),
+  "UI bundle missing the Writer execution boundary",
+);
+requireCondition(
+  pluginJavaScript.includes("writer.ping"),
+  "main bundle missing the safe diagnostic command",
+);
 requireCondition(pluginStat.size <= 100 * 1024, "main bundle exceeds 100 KiB");
 requireCondition(uiStat.size <= 300 * 1024, "UI bundle exceeds 300 KiB");
 

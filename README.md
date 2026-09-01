@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed M2 schemas and read-only queries. Its first local stdio MCP entry point is now available as part of M3, but the toolkit is not yet production-ready.**
+**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point and the authenticated single-writer Figma Bridge, but the toolkit is not yet production-ready.**
 
 What exists today:
 
@@ -119,6 +119,8 @@ What exists today:
 - exact Component Resolve and deterministic Change Request MCP tools that preserve approval/audit gates and never enqueue a Figma write;
 - a real Codex Agent contract harness that proves status → search → resolve tool use, structured decisions, no shell bypass, and no workspace changes;
 - a compact Figma Writer panel with versioned connection, approval, operation, progress, error-recovery, and write-authorization status boundaries;
+- an authenticated loopback-only HTTP Bridge with one Plugin owner, FIFO dispatch, one in-flight lease, idempotent replay, structured results, and a 30-day redacted operation log;
+- an in-memory Session Token connection flow and a safe `writer.ping` round trip that proves the full Plugin transport without modifying Figma;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -166,6 +168,15 @@ pnpm mcp:smoke
 pnpm --silent hatchkit:mcp --help
 ```
 
+To run the current Figma Bridge and paste its one-time in-memory token into the **Hatchkit Writer** development plugin:
+
+```bash
+pnpm build
+pnpm hatchkit:figma-bridge
+```
+
+Do not redirect, save, screenshot, or publish the displayed token. FIG-002 accepts only the no-write `writer.ping`; managed Figma Variables begin in FIG-003.
+
 Requirements:
 
 - Node.js `24.20.0` LTS is the primary development version;
@@ -206,6 +217,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Component Resolve and Change Request MCP tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [Real Codex Agent contract](docs/MCP-004-Codex真实Agent契约测试.md)
 - [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
+- [Plugin Bridge and single-writer queue](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

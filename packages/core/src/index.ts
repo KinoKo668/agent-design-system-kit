@@ -18,3 +18,4 @@ export * from "./security.js";
 export * from "./schema-primitives.js";
 export * from "./schema-validation.js";
 export * from "./token-set.js";
+export * from "./writer-protocol.js";

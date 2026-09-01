@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Local MCP control plane for Agent Design System Kit.",
   "bin": {
+    "hatchkit-figma-bridge": "./dist/figma-bridge-bin.js",
     "hatchkit-mcp": "./dist/bin.js"
   },
   "main": "./dist/index.js",

@@ -50,6 +50,28 @@
         font: inherit;
       }
 
+      input {
+        width: 100%;
+        min-height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        outline: none;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+      }
+
+      input:focus-visible {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 1px var(--brand);
+      }
+
+      input:disabled {
+        color: var(--text-secondary);
+        background: var(--surface-secondary);
+      }
+
       .app {
         display: flex;
         height: 100vh;
@@ -217,6 +239,28 @@
           monospace;
       }
 
+      .connection-form {
+        display: grid;
+        gap: 7px;
+        margin-top: 9px;
+      }
+
+      .field-label {
+        color: var(--text-secondary);
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .connection-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+      }
+
+      .button-compact {
+        min-height: 34px;
+      }
+
       .progress {
         height: 4px;
         margin-top: 9px;
@@ -369,6 +413,37 @@
             Waiting for the local Bridge connection.
           </p>
           <p id="connection-endpoint" class="meta" hidden></p>
+          <div class="connection-form">
+            <label class="field-label" for="session-token"
+              >Bridge Session Token</label
+            >
+            <input
+              id="session-token"
+              type="password"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Paste the in-memory token"
+              aria-describedby="connection-detail"
+            />
+            <div class="connection-actions">
+              <button
+                id="connect"
+                class="button button-primary button-compact"
+                type="button"
+              >
+                Connect
+              </button>
+              <button
+                id="disconnect"
+                class="button button-compact"
+                type="button"
+                disabled
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
         </section>
 
         <section class="card" aria-labelledby="approval-title">

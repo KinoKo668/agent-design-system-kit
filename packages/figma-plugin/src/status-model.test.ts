@@ -115,6 +115,57 @@ describe("Figma Plugin writer status model", () => {
     ).toBe(false);
   });
 
+  it("deeply validates Writer execution and result messages", () => {
+    const command = {
+      approval: { mode: "not_required", reason: "read_only_diagnostic" },
+      attempt: 1,
+      command: { payload: {}, type: "writer.ping" },
+      idempotencyKey: "status-model-ping",
+      operationId: "2c73620e-29b0-4285-8861-1a65b18f11dc",
+      projectId: "hatch-demo",
+      schemaVersion: "1.0.0",
+      source: { client: "mcp-server" },
+      target: {
+        kind: "plugin-session",
+        stableId: "hatch-demo/plugin-session",
+      },
+    };
+    const pluginInstanceId = "c45c06e8-80ae-4478-ad55-9c49c60ecc56";
+
+    expect(
+      isUiToMainMessage({
+        command,
+        pluginInstanceId,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "writer.execute",
+      }),
+    ).toBe(true);
+    expect(
+      isUiToMainMessage({
+        command: {
+          ...command,
+          command: { payload: {}, type: "variables.ensure" },
+        },
+        pluginInstanceId,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "writer.execute",
+      }),
+    ).toBe(false);
+    expect(
+      isMainToUiMessage({
+        result: {
+          ok: true,
+          operationId: command.operationId,
+          pluginInstanceId,
+          result: { pong: true },
+          schemaVersion: "1.0.0",
+        },
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "writer.result",
+      }),
+    ).toBe(true);
+  });
+
   it("recognizes only versioned status envelopes from the main thread", () => {
     const snapshot = createInitialWriterStatus({
       fileName: "Demo",
