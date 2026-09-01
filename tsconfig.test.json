@@ -4,6 +4,7 @@
     "composite": false,
     "noEmit": true,
     "resolveJsonModule": true,
+    "types": ["node"],
     "paths": {
       "@agent-design-system-kit/core": ["./packages/core/src/index.ts"]
     }

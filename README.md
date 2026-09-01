@@ -110,6 +110,7 @@ What exists today:
 - a versioned DTCG 2025.10 Token Set subset with typed aliases, modes, dependency rules, and Button fixtures;
 - a strict Button v1 Component Contract with properties, a complete Variant matrix, stable slots, and typed Token bindings;
 - a Component Registry schema that connects exact Contract digests, Approval references, lifecycle, and repairable Figma locators;
+- a deterministic local loader that safely discovers managed files, validates cross-asset references, and rejects content-digest drift with relative source paths;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -175,6 +176,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Design Token schema and DTCG subset](docs/SCH-002-基础Token-Schema与DTCG子集.md)
 - [Button Component Contract](docs/SCH-003-Button-Component-Contract.md)
 - [Component Registry schema](docs/SCH-004-Component-Registry-Schema.md)
+- [Local file loading and integrity validation](docs/REG-001-文件加载与完整性校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.
