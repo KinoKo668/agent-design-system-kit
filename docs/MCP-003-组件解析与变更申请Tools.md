@@ -197,7 +197,7 @@ MCP 测试会连续调用两次 Change Request Tool 并比较完整响应。这�
 - 相同调用两次返回完全一致结果；
 - 非法 UUID 在 MCP 输入边界失败；
 - Change Request 不包含 Locator 或 Writer Command；
-- 真实 stdio 子进程在旧版与现代协议下调用全部六个 Tool。
+- 真实 stdio 子进程在旧版与现代协议下调用默认七个只读 Tool。
 
 统一验证命令：
 

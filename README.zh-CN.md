@@ -96,16 +96,17 @@ Registry · 历史             │
 - CLI、MCP Server 与 Figma Plugin 共用的结果、错误、恢复动作和结构化日志契约；
 - 本地凭据保存边界与递归日志脱敏合同；
 - 带正确／错误公开样例的版本化 Design Brief Schema；
+- 带同场景预览、双角色人工选择状态、准确 Brief 摘要绑定和诚实待评审公开样例的三候选 UI Direction Review 契约；
 - 带类型 Alias、Mode、依赖规则和 Button 样例的 DTCG 2025.10 Token Set 子集；
 - 带严格属性、完整 Variant 矩阵、稳定 Slot 和类型化 Token Binding 的 Button v1 Component Contract；
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 根据准确内容、必需人工角色、验证证据、终止事件和上游状态推导结果的严格 Approval Record Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
 - 确定性的组件搜索与精确解析，不模糊猜测、不自动回退旧版本，也不把尚未建成的 Figma 资产冒充为可插入；
-- 环境无关的 Brief 与 Token 查询，支持精确详情、确定性分页、Token Path 限量与已校验的 Alias 依赖闭包；
+- 环境无关的 Brief、Direction 与 Token 查询，支持精确详情、确定性分页、Token Path 限量与已校验的 Alias 依赖闭包；
 - 结构化的缺失组件 Change Request，把真实能力缺口交给人工分诊，同时阻止近似 UI 和 Figma 写入命令；
 - 可显式选择来源文件的只读 `hatchkit` CLI，支持校验、精确搜索、解析与确定性 Change Request；
-- 带初始化治理说明以及 Status、Brief、Token、Component Search 四个只读 Tool 的本地 `hatchkit` stdio MCP Server，并覆盖新旧协议冒烟验证；
+- 带初始化治理说明以及 Status、Brief、Direction、Token、Component Search／Resolve 和 Change Request 七个只读 Tool 的本地 `hatchkit` stdio MCP Server，并覆盖新旧协议冒烟验证；
 - 精确 Component Resolve 与确定性 Change Request MCP Tools，始终保留审批／审计门禁且不会加入 Figma 写入队列；
 - 真实 Codex Agent 契约 Harness，验证 Status → Search → Resolve、结构化决策、禁止 Shell 绕过和工作区零变更；
 - 紧凑的 Figma Writer 面板，使用版本化边界显示连接、审批、操作、进度、错误恢复和真实写入授权；
@@ -210,6 +211,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Agent 设计系统术语入门](docs/Agent设计系统术语入门.md)
 - [Button 垂直验证链路](docs/DIR-001-Button垂直验证链路.md)
 - [人工审批门禁与状态模型](docs/DIR-002-人工审批门禁与状态模型.md)
+- [三套 UI 方向生成与评审](docs/LOOP-004-三套UI方向生成与评审.md)
 - [系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
 - [工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [稳定身份、版本、幂等与迁移策略](docs/ADR-002-稳定身份版本幂等与迁移策略.md)

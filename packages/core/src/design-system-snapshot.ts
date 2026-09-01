@@ -19,6 +19,11 @@ import {
   toDesignBriefDigestSubject,
   type DesignBrief,
 } from "./design-brief.js";
+import {
+  directionReviewSchema,
+  toDirectionReviewDigestSubject,
+  type DirectionReview,
+} from "./direction-review.js";
 import { createToolkitError } from "./errors.js";
 import type { JsonObject, JsonValue } from "./json.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
@@ -37,6 +42,7 @@ export const DESIGN_SYSTEM_DOCUMENT_KINDS = [
   "brief",
   "component",
   "component-registry",
+  "direction",
   "token-set",
 ] as const;
 
@@ -58,6 +64,7 @@ export interface DesignSystemSnapshot {
   readonly approvals: readonly LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: readonly LocatedDesignAsset<DesignBrief>[];
   readonly components: readonly LocatedDesignAsset<ButtonComponentContract>[];
+  readonly directions: readonly LocatedDesignAsset<DirectionReview>[];
   readonly projectId: string;
   readonly registries: readonly LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: readonly LocatedDesignAsset<TokenSet>[];
@@ -77,6 +84,7 @@ interface MutableSnapshot {
   readonly approvals: LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: LocatedDesignAsset<DesignBrief>[];
   readonly components: LocatedDesignAsset<ButtonComponentContract>[];
+  readonly directions: LocatedDesignAsset<DirectionReview>[];
   readonly registries: LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: LocatedDesignAsset<TokenSet>[];
 }
@@ -191,8 +199,50 @@ function briefIdentity(brief: DesignBrief): string {
   return `${brief.projectId}/brief/${brief.assetId}@${brief.assetVersion}`;
 }
 
+function directionIdentity(direction: DirectionReview): string {
+  return `${direction.projectId}/direction/${direction.assetId}@${direction.assetVersion}`;
+}
+
 function approvalIdentity(approval: ApprovalRecord): string {
   return approval.approvalId;
+}
+
+function validateDirectionBriefReferences(
+  snapshot: Pick<DesignSystemSnapshot, "briefs" | "directions">,
+  issues: DesignSystemIntegrityIssue[],
+  calculateDigest?: JsonContentDigestCalculator,
+): void {
+  const briefs = new Map(
+    snapshot.briefs.map((located) => [briefIdentity(located.data), located]),
+  );
+  for (const direction of snapshot.directions) {
+    const source = direction.data.briefSource;
+    const key = `${source.projectId}/brief/${source.assetId}@${source.assetVersion}`;
+    const brief = briefs.get(key);
+    if (brief === undefined) {
+      issues.push({
+        code: "missing_reference",
+        message: `Design Brief '${key}' referenced by the Direction Review was not loaded.`,
+        path: "/briefSource",
+        sourcePath: direction.sourcePath,
+      });
+      continue;
+    }
+    if (
+      calculateDigest !== undefined &&
+      calculateDigest(toDesignBriefDigestSubject(brief.data)) !==
+        source.contentDigest
+    ) {
+      issues.push({
+        code: "content_digest_mismatch",
+        message:
+          "Direction Review briefSource contentDigest does not match the canonical Design Brief.",
+        path: "/briefSource/contentDigest",
+        relatedSourcePath: brief.sourcePath,
+        sourcePath: direction.sourcePath,
+      });
+    }
+  }
 }
 
 function validateComponentTokenReferences(
@@ -300,7 +350,6 @@ function validateRegistryComponentReferences(
       located,
     ]),
   );
-
   for (const registry of snapshot.registries) {
     registry.data.entries.forEach((entry, entryIndex) => {
       const key = `${registry.data.projectId}/component/${entry.asset.id}@${entry.asset.version}`;
@@ -381,13 +430,47 @@ function validateApprovalReferences(
       located,
     ]),
   );
+  const directions = new Map(
+    snapshot.directions.map((located) => [
+      directionIdentity(located.data),
+      located,
+    ]),
+  );
 
   for (const located of snapshot.approvals) {
     const approval = located.data;
     const subjectKey = approvalSubjectIdentity(approval);
     let subjectDigest: string | undefined;
     let subjectSourcePath: string | undefined;
-    if (approval.subject.type === "token-set") {
+    if (approval.subject.type === "direction") {
+      const asset = directions.get(subjectKey);
+      if (asset === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/subject",
+          subjectKey,
+        );
+      } else {
+        subjectDigest = calculateDigest(
+          toDirectionReviewDigestSubject(asset.data),
+        );
+        subjectSourcePath = asset.sourcePath;
+        if (
+          wasApproved(approval.status) &&
+          asset.data.selection.status !== "selected"
+        ) {
+          issues.push({
+            code: "approval_subject_not_selected",
+            message:
+              "A Direction Approval cannot be approved until both required human roles select the same candidate.",
+            path: "/subject",
+            relatedSourcePath: asset.sourcePath,
+            sourcePath: located.sourcePath,
+          });
+        }
+      }
+    } else if (approval.subject.type === "token-set") {
       const asset = tokenSets.get(subjectKey);
       if (asset === undefined) {
         addMissingApprovalReference(
@@ -602,6 +685,7 @@ export function validateDesignSystemSnapshot(
     approvals: [],
     briefs: [],
     components: [],
+    directions: [],
     registries: [],
     tokenSets: [],
   };
@@ -681,6 +765,24 @@ export function validateDesignSystemSnapshot(
       }
       continue;
     }
+    if (document.kind === "direction") {
+      const result = directionReviewSchema.safeParse(document.value);
+      if (!result.success) {
+        addZodIssues(issues, document.sourcePath, result.error);
+      } else {
+        addProjectMismatch(
+          issues,
+          expectedProjectId,
+          document.sourcePath,
+          result.data.projectId,
+        );
+        snapshot.directions.push({
+          data: result.data,
+          sourcePath: document.sourcePath,
+        });
+      }
+      continue;
+    }
     if (document.kind === "component") {
       const result = buttonComponentContractSchema.safeParse(document.value);
       if (!result.success) {
@@ -737,12 +839,18 @@ export function validateDesignSystemSnapshot(
     ({ data }) => componentIdentity(data),
     issues,
   );
+  addDuplicateAssetIssues(
+    snapshot.directions,
+    ({ data }) => directionIdentity(data),
+    issues,
+  );
 
   if (issues.length > 0) {
     return createDesignSystemIntegrityFailure(issues);
   }
 
   validateComponentTokenReferences(snapshot, issues);
+  validateDirectionBriefReferences(snapshot, issues);
   validateMergedRegistries(expectedProjectId, snapshot, issues);
   validateRegistryComponentReferences(snapshot, issues);
   if (issues.length > 0) {
@@ -753,6 +861,7 @@ export function validateDesignSystemSnapshot(
     approvals: snapshot.approvals,
     briefs: snapshot.briefs,
     components: snapshot.components,
+    directions: snapshot.directions,
     projectId: expectedProjectId,
     registries: snapshot.registries,
     tokenSets: snapshot.tokenSets,
@@ -807,6 +916,21 @@ export function verifyDesignSystemContentDigests(
         });
       }
     }
+    for (const direction of snapshot.directions) {
+      if (
+        direction.data.contentDigest !== undefined &&
+        calculateDigest(toDirectionReviewDigestSubject(direction.data)) !==
+          direction.data.contentDigest
+      ) {
+        issues.push({
+          code: "content_digest_mismatch",
+          message:
+            "Stored Direction Review contentDigest does not match its canonical content.",
+          path: "/contentDigest",
+          sourcePath: direction.sourcePath,
+        });
+      }
+    }
     for (const component of snapshot.components) {
       if (
         component.data.contentDigest !== undefined &&
@@ -823,6 +947,7 @@ export function verifyDesignSystemContentDigests(
         });
       }
     }
+    validateDirectionBriefReferences(snapshot, issues, calculateDigest);
     validateApprovalReferences(snapshot, issues, calculateDigest);
   } catch {
     return digestComputationFailure();

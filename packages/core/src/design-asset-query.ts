@@ -6,6 +6,10 @@ import type {
   LocatedDesignAsset,
 } from "./design-system-snapshot.js";
 import type { DesignBrief } from "./design-brief.js";
+import {
+  DIRECTION_REVIEW_STATUSES,
+  type DirectionReview,
+} from "./direction-review.js";
 import { createToolkitError } from "./errors.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
@@ -74,6 +78,43 @@ export const designBriefQuerySchema = z
       context.addIssue({
         code: "custom",
         message: "Full Brief detail requires offset 0.",
+        path: ["offset"],
+      });
+    }
+  });
+
+export const directionReviewQuerySchema = z
+  .strictObject({
+    assetId: stableAssetIdSchema.optional(),
+    assetVersion: strictSemverSchema.optional(),
+    detail: z.enum(DESIGN_ASSET_QUERY_DETAILS).default("summary"),
+    projectId: stableIdSegmentSchema,
+    status: z.enum([...DIRECTION_REVIEW_STATUSES, "any"]).default("any"),
+    ...paginationShape,
+  })
+  .superRefine((query, context) => {
+    if (query.assetVersion !== undefined && query.assetId === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "assetVersion requires an exact assetId.",
+        path: ["assetVersion"],
+      });
+    }
+    if (
+      query.detail === "full" &&
+      (query.assetId === undefined || query.assetVersion === undefined)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Full Direction Review detail requires exact assetId and assetVersion.",
+        path: ["detail"],
+      });
+    }
+    if (query.detail === "full" && query.offset !== 0) {
+      context.addIssue({
+        code: "custom",
+        message: "Full Direction Review detail requires offset 0.",
         path: ["offset"],
       });
     }
@@ -149,6 +190,10 @@ export type NormalizedDesignBriefQuery = z.output<
 >;
 export type TokenSetQuery = z.input<typeof tokenSetQuerySchema>;
 export type NormalizedTokenSetQuery = z.output<typeof tokenSetQuerySchema>;
+export type DirectionReviewQuery = z.input<typeof directionReviewQuerySchema>;
+export type NormalizedDirectionReviewQuery = z.output<
+  typeof directionReviewQuerySchema
+>;
 
 export interface QueryPage {
   readonly limit: number;
@@ -161,7 +206,7 @@ export interface QueryPage {
 export interface DesignAssetReference {
   readonly contentDigest: string | null;
   readonly id: string;
-  readonly type: "brief" | "token-set";
+  readonly type: "brief" | "direction" | "token-set";
   readonly version: string;
 }
 
@@ -177,6 +222,31 @@ export interface DesignBriefQueryResults {
   readonly items: readonly DesignBriefQueryItem[];
   readonly page: QueryPage;
   readonly query: NormalizedDesignBriefQuery;
+}
+
+export interface DirectionCandidateSummary {
+  readonly density: DirectionReview["candidates"][number]["density"]["scale"];
+  readonly id: string;
+  readonly name: string;
+  readonly preview: DirectionReview["candidates"][number]["preview"];
+}
+
+export interface DirectionReviewQueryItem {
+  readonly asset: DesignAssetReference & { readonly type: "direction" };
+  readonly briefSource: DirectionReview["briefSource"];
+  readonly candidates: readonly DirectionCandidateSummary[];
+  readonly directionReview: DirectionReview | null;
+  readonly selectedCandidateId: string | null;
+  readonly sourcePath: string;
+  readonly status: DirectionReview["selection"]["status"];
+  readonly summary: string;
+  readonly title: string;
+}
+
+export interface DirectionReviewQueryResults {
+  readonly items: readonly DirectionReviewQueryItem[];
+  readonly page: QueryPage;
+  readonly query: NormalizedDirectionReviewQuery;
 }
 
 type TokenDefinition = TokenSet["modes"][number]["tokens"][number];
@@ -213,7 +283,7 @@ export interface TokenSetQueryResults {
 }
 
 function queryValidationFailure(
-  kind: "brief" | "token-set",
+  kind: "brief" | "direction" | "token-set",
   error: z.ZodError,
 ): FailureResult {
   const issues = toValidationIssues(error);
@@ -226,7 +296,7 @@ function queryValidationFailure(
         "Correct the fields listed in context.details.issues and query again.",
       target: {
         logicalId: `${kind}-query`,
-        type: kind === "brief" ? "brief" : "token-set",
+        type: kind,
       },
     }),
   );
@@ -273,7 +343,7 @@ function pageItems<T>(
 }
 
 function exactIdentityNotFound(
-  kind: "brief" | "token-set",
+  kind: "brief" | "direction" | "token-set",
   assetId: string,
   assetVersion: string,
 ): FailureResult {
@@ -299,13 +369,66 @@ function exactIdentityNotFound(
   );
 }
 
-function assetReference(asset: DesignBrief | TokenSet): DesignAssetReference {
+function assetReference(
+  asset: DesignBrief | DirectionReview | TokenSet,
+): DesignAssetReference {
   return {
     contentDigest: asset.contentDigest ?? null,
     id: asset.assetId,
     type: asset.assetType,
     version: asset.assetVersion,
   };
+}
+
+export function queryDirectionReviews(
+  snapshot: DesignSystemSnapshot,
+  input: unknown,
+): ToolkitResult<DirectionReviewQueryResults> {
+  const parsed = directionReviewQuerySchema.safeParse(input);
+  if (!parsed.success) {
+    return queryValidationFailure("direction", parsed.error);
+  }
+  const query = parsed.data;
+  const matches = [...snapshot.directions]
+    .sort(compareLocatedAssets)
+    .filter(
+      ({ data }) =>
+        data.projectId === query.projectId &&
+        (query.assetId === undefined || data.assetId === query.assetId) &&
+        (query.assetVersion === undefined ||
+          data.assetVersion === query.assetVersion) &&
+        (query.status === "any" || data.selection.status === query.status),
+    );
+  if (
+    query.detail === "full" &&
+    matches.length === 0 &&
+    query.assetId !== undefined &&
+    query.assetVersion !== undefined
+  ) {
+    return exactIdentityNotFound(
+      "direction",
+      query.assetId,
+      query.assetVersion,
+    );
+  }
+  const items = matches.map(({ data, sourcePath }) => ({
+    asset: { ...assetReference(data), type: "direction" as const },
+    briefSource: data.briefSource,
+    candidates: data.candidates.map(({ density, id, name, preview }) => ({
+      density: density.scale,
+      id,
+      name,
+      preview,
+    })),
+    directionReview: query.detail === "full" ? data : null,
+    selectedCandidateId: data.selection.selectedCandidateId,
+    sourcePath,
+    status: data.selection.status,
+    summary: data.summary,
+    title: data.title,
+  }));
+  const page = pageItems(items, query.offset, query.limit);
+  return createSuccessResult({ ...page, query });
 }
 
 export function queryDesignBriefs(

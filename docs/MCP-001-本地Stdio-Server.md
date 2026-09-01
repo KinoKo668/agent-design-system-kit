@@ -57,7 +57,7 @@ Codex 会在初始化时读取 MCP `instructions`。配置与能力依据 [OpenA
 - `status: ready`；
 - Server 名称、版本、stdio 与只读状态；
 - Catalog Project ID；
-- Brief、Token Set、Component、Registry 数量；
+- Brief、Direction Review、Token Set、Component、Registry 数量；
 - Root 内的相对来源路径。
 
 Tool Annotation 固定为：
@@ -166,10 +166,10 @@ pnpm mcp:smoke
 
 MCP-001 不实现：
 
-- Brief、Token 与 Component 查询 Tool；
+- Brief、Direction、Token 与 Component 查询 Tool；
 - Resolve 与 Change Request Tool；
 - Codex Agent 自动选择 Tool 的端到端契约；
 - HTTP MCP Server、OAuth 或远程部署；
 - Figma Bridge 与 Writer。
 
-其中 Brief、Token 与 Component Search 已在 MCP-002 完成；其余分别进入 MCP-003、MCP-004 与 FIG 系列任务。
+其中 Brief、Direction、Token 与 Component Search 已在 MCP-002／LOOP-004 完成；其余分别进入 MCP-003、MCP-004 与 FIG 系列任务。

@@ -262,6 +262,7 @@ function snapshot(approvals: readonly ApprovalRecord[]): DesignSystemSnapshot {
         sourcePath: "design-system/hatch-demo/components/button.component.json",
       },
     ],
+    directions: [],
     projectId: "hatch-demo",
     registries: [
       {

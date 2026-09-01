@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="title desc">
+  <title id="title">Signal Layer direction preview</title>
+  <desc id="desc">Cool modular UI foundation card with blue controls and citrus workflow signal.</desc>
+  <rect width="960" height="600" fill="#F4F7FB"/>
+  <rect x="96" y="56" width="768" height="488" rx="20" fill="#FFFFFF" stroke="#B9C7DA" stroke-width="2"/>
+  <rect x="128" y="88" width="704" height="100" rx="12" fill="#101828"/>
+  <rect x="152" y="112" width="52" height="52" rx="8" fill="#C4F042"/>
+  <path d="m166 138 8 8 17-19" fill="none" stroke="#101828" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="228" y="138" fill="#FFFFFF" font-family="Space Grotesk, sans-serif" font-size="28" font-weight="650">Create the UI foundation</text>
+  <text x="228" y="163" fill="#B9C7DA" font-family="Inter, sans-serif" font-size="14">LAYER 01 · SHARED DIRECTION SCENARIO</text>
+  <text x="152" y="241" fill="#344054" font-family="Inter, sans-serif" font-size="14" font-weight="600">Foundation name</text>
+  <rect x="152" y="256" width="656" height="52" rx="8" fill="#FFFFFF" stroke="#7D91AB"/>
+  <text x="170" y="288" fill="#101828" font-family="Inter, sans-serif" font-size="16">Hatch product foundation</text>
+  <rect x="152" y="340" width="656" height="72" rx="10" fill="#EAF2FF" stroke="#175CD3"/>
+  <rect x="152" y="340" width="12" height="72" rx="6" fill="#C4F042"/>
+  <text x="188" y="371" fill="#101828" font-family="Inter, sans-serif" font-size="15" font-weight="650">Ready for direction review</text>
+  <text x="188" y="393" fill="#344054" font-family="Inter, sans-serif" font-size="13">Agent proposal is visible. Human authority remains required.</text>
+  <rect x="555" y="448" width="253" height="52" rx="8" fill="#175CD3"/>
+  <text x="681.5" y="480" fill="#FFFFFF" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="650">Submit for review</text>
+</svg>

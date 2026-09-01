@@ -30,6 +30,11 @@ interface DirectorySpec {
 const DIRECTORY_SPECS: readonly DirectorySpec[] = [
   { directory: "approvals", kind: "approval", suffix: ".approval.json" },
   { directory: "briefs", kind: "brief", suffix: ".brief.json" },
+  {
+    directory: "directions",
+    kind: "direction",
+    suffix: ".direction-review.json",
+  },
   { directory: "tokens", kind: "token-set", suffix: ".tokens.json" },
   { directory: "components", kind: "component", suffix: ".component.json" },
   {

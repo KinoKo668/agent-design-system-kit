@@ -14,6 +14,7 @@ const SERVER_ARGUMENTS = [
 const EXPECTED_TOOL_NAMES = [
   "hatchkit_status",
   "hatchkit_query_briefs",
+  "hatchkit_query_directions",
   "hatchkit_query_tokens",
   "hatchkit_search_components",
   "hatchkit_resolve_component",

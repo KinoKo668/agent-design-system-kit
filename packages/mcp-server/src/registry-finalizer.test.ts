@@ -168,6 +168,7 @@ function snapshot(registry: ComponentRegistry): DesignSystemSnapshot {
     approvals: [],
     briefs: [],
     components: [],
+    directions: [],
     projectId: "hatch-demo",
     registries: [{ data: registry, sourcePath: SOURCE_PATH }],
     tokenSets: [],

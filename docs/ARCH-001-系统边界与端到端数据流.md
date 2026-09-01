@@ -65,7 +65,7 @@ Agent 可以提出对 Git 中设计事实的变更，但该变更必须经过 Sc
 | 模块 | 职责 |
 | --- | --- |
 | Tool Router | 向 Agent 暴露稳定 MCP Tools，并验证请求结构 |
-| Schema Validator | 校验 Brief、Token、Contract、Registry 和 Approval |
+| Schema Validator | 校验 Brief、Direction、Token、Contract、Registry 和 Approval |
 | Approval Guard | 按 DIR-002 检查版本、摘要、角色决定和上游依赖 |
 | Registry Resolver | 从逻辑组件解析到准确的 Figma 资产 |
 | Audit Engine | 对比 Git 规则与 Figma 视觉资产，生成合规结果 |

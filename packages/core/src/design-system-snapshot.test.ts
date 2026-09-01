@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import validBrief from "../../../design-system/hatch-demo/briefs/hatch-demo.brief.json" with { type: "json" };
 import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validDirectionReview from "../../../design-system/hatch-demo/directions/hatch-demo.direction-review.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
@@ -14,6 +15,9 @@ import {
 import { isFailureResult, isSuccessResult } from "./results.js";
 
 const CONTRACT_DIGEST = validButtonContract.contentDigest;
+const PUBLIC_BRIEF_DIGEST_SUBJECT: Record<string, unknown> = { ...validBrief };
+delete PUBLIC_BRIEF_DIGEST_SUBJECT.contentDigest;
+const BRIEF_DIGEST_SUBJECT = canonicalizeJson(PUBLIC_BRIEF_DIGEST_SUBJECT);
 const PUBLIC_CONTRACT_DIGEST_SUBJECT: Record<string, unknown> = {
   ...validButtonContract,
 };
@@ -21,11 +25,24 @@ delete PUBLIC_CONTRACT_DIGEST_SUBJECT.contentDigest;
 const CONTRACT_DIGEST_SUBJECT = canonicalizeJson(
   PUBLIC_CONTRACT_DIGEST_SUBJECT,
 );
+const PUBLIC_DIRECTION_DIGEST_SUBJECT: Record<string, unknown> = {
+  ...validDirectionReview,
+};
+delete PUBLIC_DIRECTION_DIGEST_SUBJECT.contentDigest;
+const DIRECTION_DIGEST_SUBJECT = canonicalizeJson(
+  PUBLIC_DIRECTION_DIGEST_SUBJECT,
+);
 
 function computeDigest(value: unknown): string {
-  return canonicalizeJson(value) === CONTRACT_DIGEST_SUBJECT
-    ? CONTRACT_DIGEST
-    : `sha256:${"e".repeat(64)}`;
+  const canonical = canonicalizeJson(value);
+  if (canonical === BRIEF_DIGEST_SUBJECT) {
+    return validDirectionReview.briefSource.contentDigest;
+  }
+  if (canonical === CONTRACT_DIGEST_SUBJECT) return CONTRACT_DIGEST;
+  if (canonical === DIRECTION_DIGEST_SUBJECT) {
+    return validDirectionReview.contentDigest;
+  }
+  return `sha256:${"e".repeat(64)}`;
 }
 
 function validDocuments(): DesignSystemSourceDocument[] {
@@ -34,6 +51,11 @@ function validDocuments(): DesignSystemSourceDocument[] {
       kind: "brief",
       sourcePath: "briefs/product.brief.json",
       value: validBrief,
+    },
+    {
+      kind: "direction",
+      sourcePath: "directions/foundation.direction-review.json",
+      value: validDirectionReview,
     },
     {
       kind: "token-set",
@@ -79,6 +101,9 @@ describe("validateDesignSystemSnapshot", () => {
       briefs: [{ sourcePath: "briefs/product.brief.json" }],
       tokenSets: [{ sourcePath: "tokens/foundation.tokens.json" }],
       components: [{ sourcePath: "components/button.component.json" }],
+      directions: [
+        { sourcePath: "directions/foundation.direction-review.json" },
+      ],
       registries: [{ sourcePath: "registry/components.registry.json" }],
     });
   });

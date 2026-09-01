@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   HATCHKIT_BRIEF_QUERY_TOOL_NAME,
   HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+  HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
   HATCHKIT_TOKEN_QUERY_TOOL_NAME,
 } from "./query-tools.js";
 import { createHatchkitMcpServer } from "./server.js";
@@ -108,6 +109,48 @@ describe("Hatchkit MCP query tools", () => {
       },
       ok: true,
     });
+  });
+
+  it("compares three Directions and returns full evidence only by exact identity", async () => {
+    const summary = await client.callTool({
+      arguments: {},
+      name: HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
+    });
+    const full = await client.callTool({
+      arguments: {
+        assetId: "product-foundation-directions",
+        assetVersion: "1.0.0",
+        detail: "full",
+      },
+      name: HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
+    });
+
+    expect(summary.isError).not.toBe(true);
+    expect(summary.structuredContent).toMatchObject({
+      data: {
+        items: [
+          {
+            asset: {
+              id: "product-foundation-directions",
+              type: "direction",
+              version: "1.0.0",
+            },
+            candidates: [
+              { id: "precision-grid" },
+              { id: "warm-studio" },
+              { id: "signal-layer" },
+            ],
+            directionReview: null,
+            selectedCandidateId: null,
+            status: "in_review",
+          },
+        ],
+        page: { returned: 1, total: 1 },
+      },
+      ok: true,
+    });
+    expect(full.isError).not.toBe(true);
+    expect(JSON.stringify(full.structuredContent)).toContain('"benefits"');
   });
 
   it("searches Components exactly and never returns Figma locators", async () => {

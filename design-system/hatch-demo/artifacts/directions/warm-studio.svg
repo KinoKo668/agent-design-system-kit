@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="title desc">
+  <title id="title">Warm Studio direction preview</title>
+  <desc id="desc">Warm editorial UI foundation card with generous spacing and terracotta action.</desc>
+  <rect width="960" height="600" fill="#F6F2EA"/>
+  <circle cx="820" cy="92" r="116" fill="#EEDCCF" opacity=".75"/>
+  <rect x="112" y="64" width="736" height="472" rx="16" fill="#FFFCF7" stroke="#D8D0C5"/>
+  <rect x="168" y="116" width="52" height="52" rx="14" fill="#F1D8CF"/>
+  <path d="m181 142 8 8 18-20" fill="none" stroke="#B9472E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="248" y="145" fill="#24221F" font-family="Manrope, sans-serif" font-size="29" font-weight="650">Create the UI foundation</text>
+  <text x="248" y="170" fill="#716B63" font-family="Inter, sans-serif" font-size="14">A shared starting point for designers and agents</text>
+  <text x="168" y="230" fill="#4F4A44" font-family="Inter, sans-serif" font-size="14" font-weight="600">Foundation name</text>
+  <rect x="168" y="246" width="624" height="54" rx="10" fill="#FFFFFF" stroke="#AFA69C"/>
+  <text x="186" y="279" fill="#24221F" font-family="Inter, sans-serif" font-size="16">Hatch product foundation</text>
+  <rect x="168" y="336" width="624" height="72" rx="12" fill="#F7EAE3"/>
+  <circle cx="194" cy="372" r="8" fill="#B9472E"/>
+  <text x="218" y="367" fill="#24221F" font-family="Inter, sans-serif" font-size="15" font-weight="600">Ready for direction review</text>
+  <text x="218" y="389" fill="#716B63" font-family="Inter, sans-serif" font-size="13">Three thoughtful options are waiting for your decision.</text>
+  <rect x="560" y="444" width="232" height="52" rx="10" fill="#B9472E"/>
+  <text x="676" y="476" fill="#FFFFFF" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="650">Submit for review</text>
+</svg>

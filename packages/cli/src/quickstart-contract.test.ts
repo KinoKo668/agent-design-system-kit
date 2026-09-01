@@ -17,6 +17,8 @@ const CATALOG_ARGUMENTS = [
   "design-system/hatch-demo",
   "--brief",
   "briefs/hatch-demo.brief.json",
+  "--direction-review",
+  "directions/hatch-demo.direction-review.json",
   "--token-set",
   "tokens/button-foundation.tokens.json",
   "--component",
@@ -44,7 +46,13 @@ describe("DOC-001 CLI Quickstart contract", () => {
     );
     expect(validation).toMatchObject({
       data: {
-        counts: { briefs: 1, components: 1, registries: 1, tokenSets: 1 },
+        counts: {
+          briefs: 1,
+          components: 1,
+          directions: 1,
+          registries: 1,
+          tokenSets: 1,
+        },
         projectId: "hatch-demo",
         status: "valid",
       },

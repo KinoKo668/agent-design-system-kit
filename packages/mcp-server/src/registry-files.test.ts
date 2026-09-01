@@ -8,15 +8,18 @@ import {
   isSuccessResult,
   toButtonComponentContractDigestSubject,
   toDesignBriefDigestSubject,
+  toDirectionReviewDigestSubject,
   toTokenSetDigestSubject,
   validateButtonComponentContract,
   validateDesignBrief,
+  validateDirectionReview,
   validateTokenSet,
 } from "@agent-design-system-kit/core";
 import { describe, expect, it } from "vitest";
 
 import validBrief from "../../../design-system/hatch-demo/briefs/hatch-demo.brief.json" with { type: "json" };
 import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import publicDirectionReview from "../../../design-system/hatch-demo/directions/hatch-demo.direction-review.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
@@ -56,6 +59,43 @@ function registryWithDigest(digest: string): unknown {
   };
 }
 
+function selectedDirectionReview(assetVersion = "1.0.0") {
+  const { contentDigest: _storedDigest, ...directionSource } =
+    publicDirectionReview;
+  void _storedDigest;
+  const result = validateDirectionReview({
+    ...directionSource,
+    assetVersion,
+    selection: {
+      ...publicDirectionReview.selection,
+      decisions: [
+        {
+          candidateId: "signal-layer",
+          decidedAt: "2026-09-01T13:00:00-04:00",
+          decision: "selected",
+          reviewer: "human:product-lead",
+          role: "product_owner",
+          summary: "The product boundary is clear and memorable.",
+        },
+        {
+          candidateId: "signal-layer",
+          decidedAt: "2026-09-01T13:05:00-04:00",
+          decision: "selected",
+          reviewer: "github:design-lead",
+          role: "design_owner",
+          summary: "The visual system is coherent and governable.",
+        },
+      ],
+      selectedCandidateId: "signal-layer",
+      status: "selected",
+    },
+  });
+  if (!result.ok) {
+    throw new Error("Expected a selected Direction Review fixture.");
+  }
+  return result.data;
+}
+
 async function writeValidDesignSystem(root: string): Promise<string> {
   const contractResult = validateButtonComponentContract(validButtonContract);
   if (!isSuccessResult(contractResult)) {
@@ -66,6 +106,11 @@ async function writeValidDesignSystem(root: string): Promise<string> {
   );
   await Promise.all([
     writeJson(root, "briefs/product.brief.json", validBrief),
+    writeJson(
+      root,
+      "directions/product-foundation.direction-review.json",
+      selectedDirectionReview(),
+    ),
     writeJson(root, "tokens/foundation.tokens.json", validTokenSet),
     writeJson(root, "components/button.component.json", {
       ...validButtonContract,
@@ -92,7 +137,10 @@ function approvalFixtureData() {
   const tokenDigest = computeJsonContentDigest(
     toTokenSetDigestSubject(tokenResult.data),
   );
-  const directionDigest = `sha256:${"d".repeat(64)}`;
+  const direction = selectedDirectionReview();
+  const directionDigest = computeJsonContentDigest(
+    toDirectionReviewDigestSubject(direction),
+  );
   const commonValidation = {
     evidence: "artifacts://validation/schema.json",
     priority: "P0",
@@ -100,7 +148,7 @@ function approvalFixtureData() {
     validatedAt: "2026-09-01T12:05:00Z",
   } as const;
   const directionApproval = approvalRecordSchema.parse({
-    approvalId: "approval.direction.precise-friendly.1.0.0",
+    approvalId: "approval.direction.product-foundation-directions.1.0.0",
     decisions: [
       {
         decidedAt: "2026-09-01T12:20:00Z",
@@ -137,7 +185,7 @@ function approvalFixtureData() {
     schemaVersion: "1.0.0",
     status: "approved",
     subject: {
-      assetId: "precise-friendly",
+      assetId: direction.assetId,
       assetVersion: "1.0.0",
       contentDigest: directionDigest,
       gitCommit: "c".repeat(40),
@@ -326,12 +374,16 @@ describe("loadDesignSystemFromDirectory", () => {
     try {
       await writeValidDesignSystem(root);
       const { directionApproval } = approvalFixtureData();
+      const replacementDirection = selectedDirectionReview("2.0.0");
       const replacement = approvalRecordSchema.parse({
         ...directionApproval,
-        approvalId: "approval.direction.precise-friendly.2.0.0",
+        approvalId: "approval.direction.product-foundation-directions.2.0.0",
         subject: {
           ...directionApproval.subject,
           assetVersion: "2.0.0",
+          contentDigest: computeJsonContentDigest(
+            toDirectionReviewDigestSubject(replacementDirection),
+          ),
         },
         supersedes: directionApproval.approvalId,
       });
@@ -357,6 +409,11 @@ describe("loadDesignSystemFromDirectory", () => {
           "approvals/directions/precise-friendly/2.0.0.approval.json",
           replacement,
         ),
+        writeJson(
+          root,
+          "directions/product-foundation-v2.direction-review.json",
+          replacementDirection,
+        ),
       ]);
 
       const result = await loadDesignSystemFromDirectory({
@@ -375,12 +432,16 @@ describe("loadDesignSystemFromDirectory", () => {
     try {
       await writeValidDesignSystem(root);
       const { directionApproval } = approvalFixtureData();
+      const newerDirection = selectedDirectionReview("2.0.0");
       const newerApproval = approvalRecordSchema.parse({
         ...directionApproval,
-        approvalId: "approval.direction.precise-friendly.2.0.0",
+        approvalId: "approval.direction.product-foundation-directions.2.0.0",
         subject: {
           ...directionApproval.subject,
           assetVersion: "2.0.0",
+          contentDigest: computeJsonContentDigest(
+            toDirectionReviewDigestSubject(newerDirection),
+          ),
         },
       });
       const invalidOlderApproval = approvalRecordSchema.parse({
@@ -397,6 +458,11 @@ describe("loadDesignSystemFromDirectory", () => {
           root,
           "approvals/directions/precise-friendly/2.0.0.approval.json",
           newerApproval,
+        ),
+        writeJson(
+          root,
+          "directions/product-foundation-v2.direction-review.json",
+          newerDirection,
         ),
       ]);
 

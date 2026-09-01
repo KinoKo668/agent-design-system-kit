@@ -11,6 +11,7 @@ import {
 import {
   HATCHKIT_BRIEF_QUERY_TOOL_NAME,
   HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+  HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
   HATCHKIT_TOKEN_QUERY_TOOL_NAME,
 } from "./query-tools.js";
 import {
@@ -70,6 +71,7 @@ describe("createHatchkitMcpServer", () => {
     expect(tools.tools.map(({ name }) => name)).toEqual([
       HATCHKIT_STATUS_TOOL_NAME,
       HATCHKIT_BRIEF_QUERY_TOOL_NAME,
+      HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
       HATCHKIT_TOKEN_QUERY_TOOL_NAME,
       HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
       HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
@@ -122,6 +124,7 @@ describe("createHatchkitMcpServer", () => {
           counts: {
             briefs: 1,
             components: 1,
+            directions: 1,
             registries: 1,
             tokenSets: 1,
           },
@@ -129,6 +132,7 @@ describe("createHatchkitMcpServer", () => {
           sources: [
             "briefs/hatch-demo.brief.json",
             "components/button.component.json",
+            "directions/hatch-demo.direction-review.json",
             "registry/components.registry.json",
             "tokens/button-foundation.tokens.json",
           ],

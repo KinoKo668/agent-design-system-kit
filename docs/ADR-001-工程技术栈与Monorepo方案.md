@@ -101,7 +101,7 @@ packages/
 
 保存环境无关的领域能力：
 
-- Brief、Token、Contract、Registry 和 Approval Schema；
+- Brief、Direction、Token、Contract、Registry 和 Approval Schema；
 - Writer Command、Operation Result 和错误模型；
 - 稳定身份、版本、摘要与幂等算法；
 - 组件解析和审计的纯逻辑。

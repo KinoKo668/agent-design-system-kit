@@ -107,16 +107,17 @@ What exists today:
 - a shared, JSON-safe result, error, recovery, and structured-log contract;
 - a local credential boundary and recursive log-redaction contract;
 - a versioned Design Brief schema with valid and invalid public fixtures;
+- a versioned three-candidate UI Direction Review contract with same-scenario previews, derived two-role human selection, exact Brief digest binding, and an honest in-review public fixture;
 - a versioned DTCG 2025.10 Token Set subset with typed aliases, modes, dependency rules, and Button fixtures;
 - a strict Button v1 Component Contract with properties, a complete Variant matrix, stable slots, and typed Token bindings;
 - a Component Registry schema that connects exact Contract digests, Approval references, lifecycle, and repairable Figma locators;
 - a strict Approval Record schema whose status is derived from exact content, required human roles, validation evidence, terminal events, and upstream approval state;
 - a deterministic local loader that safely discovers managed files, validates cross-asset references, and rejects content-digest drift with relative source paths;
 - deterministic component search and exact resolution that never fuzzy-matches, silently falls back to inactive versions, or treats an unbuilt Figma asset as insertable;
-- environment-neutral Brief and Token queries with exact detail selection, deterministic pagination, bounded Token paths, and validated alias dependency closure;
+- environment-neutral Brief, Direction, and Token queries with exact detail selection, deterministic pagination, bounded Token paths, and validated alias dependency closure;
 - a structured Component Change Request outcome that stops execution and routes real capability gaps to human triage without emitting approximate UI or Figma write commands;
 - a read-only `hatchkit` CLI for explicit-source validation, exact search, resolution, and deterministic Change Request generation;
-- a local `hatchkit` stdio MCP server with governance instructions plus read-only status, Brief, Token, and Component search tools, covered by legacy/modern protocol smoke tests;
+- a local `hatchkit` stdio MCP server with governance instructions plus read-only status, Brief, Direction, Token, and Component search tools, covered by legacy/modern protocol smoke tests;
 - exact Component Resolve and deterministic Change Request MCP tools that preserve approval/audit gates and never enqueue a Figma write;
 - a real Codex Agent contract harness that proves status → search → resolve tool use, structured decisions, no shell bypass, and no workspace changes;
 - a compact Figma Writer panel with versioned connection, approval, operation, progress, error-recovery, and write-authorization status boundaries;
@@ -223,6 +224,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Agent design-system terminology primer](docs/Agent设计系统术语入门.md)
 - [Button vertical validation path](docs/DIR-001-Button垂直验证链路.md)
 - [Human approval gates and state model](docs/DIR-002-人工审批门禁与状态模型.md)
+- [Three-candidate UI direction generation and review](docs/LOOP-004-三套UI方向生成与评审.md)
 - [System boundaries and end-to-end data flow](docs/ARCH-001-系统边界与端到端数据流.md)
 - [Engineering stack and monorepo decision](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [Identity, versioning, idempotency, and migration](docs/ADR-002-稳定身份版本幂等与迁移策略.md)

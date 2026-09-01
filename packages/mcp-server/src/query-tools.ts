@@ -3,6 +3,8 @@ import * as z from "zod";
 
 import {
   DESIGN_ASSET_QUERY_DETAILS,
+  DIRECTION_DENSITIES,
+  DIRECTION_REVIEW_STATUSES,
   FIGMA_BINDING_STATUSES,
   MAX_QUERY_PAGE_SIZE,
   MAX_TOKEN_QUERY_PATHS,
@@ -10,7 +12,9 @@ import {
   TOKEN_QUERY_DETAILS,
   createSuccessResult,
   designBriefSchema,
+  directionReviewSchema,
   queryDesignBriefs,
+  queryDirectionReviews,
   queryTokenSets,
   searchComponents,
   stableAssetIdSchema,
@@ -29,6 +33,8 @@ import {
 
 export const HATCHKIT_BRIEF_QUERY_TOOL_NAME = "hatchkit_query_briefs" as const;
 export const HATCHKIT_TOKEN_QUERY_TOOL_NAME = "hatchkit_query_tokens" as const;
+export const HATCHKIT_DIRECTION_QUERY_TOOL_NAME =
+  "hatchkit_query_directions" as const;
 export const HATCHKIT_COMPONENT_SEARCH_TOOL_NAME =
   "hatchkit_search_components" as const;
 
@@ -64,6 +70,53 @@ export const hatchkitBriefQueryInputSchema = z
       .describe(
         "summary lists bounded metadata; full requires exact assetId and assetVersion.",
       ),
+    ...paginationInputShape,
+  })
+  .superRefine((query, context) => {
+    if (query.assetVersion !== undefined && query.assetId === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "assetVersion requires assetId.",
+        path: ["assetVersion"],
+      });
+    }
+    if (
+      query.detail === "full" &&
+      (query.assetId === undefined || query.assetVersion === undefined)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "full detail requires exact assetId and assetVersion.",
+        path: ["detail"],
+      });
+    }
+    if (query.detail === "full" && query.offset !== 0) {
+      context.addIssue({
+        code: "custom",
+        message: "full detail requires offset 0.",
+        path: ["offset"],
+      });
+    }
+  });
+
+export const hatchkitDirectionQueryInputSchema = z
+  .strictObject({
+    assetId: stableAssetIdSchema
+      .optional()
+      .describe("Exact Direction Review asset ID."),
+    assetVersion: strictSemverSchema
+      .optional()
+      .describe("Exact Direction Review SemVer. Requires assetId."),
+    detail: z
+      .enum(DESIGN_ASSET_QUERY_DETAILS)
+      .default("summary")
+      .describe(
+        "summary compares candidate metadata; full requires exact assetId and assetVersion.",
+      ),
+    status: z
+      .enum([...DIRECTION_REVIEW_STATUSES, "any"])
+      .default("any")
+      .describe("Filter by derived review status."),
     ...paginationInputShape,
   })
   .superRefine((query, context) => {
@@ -243,6 +296,62 @@ export const hatchkitBriefQueryOutputSchema = z.strictObject({
   ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
 });
 
+const directionAssetSchema = z.strictObject({
+  contentDigest: z.string().nullable(),
+  id: stableAssetIdSchema,
+  type: z.literal("direction"),
+  version: strictSemverSchema,
+});
+
+const directionQueryDataSchema = z.strictObject({
+  items: z.array(
+    z.strictObject({
+      asset: directionAssetSchema,
+      briefSource: z.strictObject({
+        assetId: stableAssetIdSchema,
+        assetVersion: strictSemverSchema,
+        contentDigest: z.string(),
+        projectId: stableIdSegmentSchema,
+        type: z.literal("brief"),
+      }),
+      candidates: z.array(
+        z.strictObject({
+          density: z.enum(DIRECTION_DENSITIES),
+          id: stableIdSegmentSchema,
+          name: z.string(),
+          preview: z.strictObject({
+            altText: z.string(),
+            scenarioId: stableIdSegmentSchema,
+            title: z.string(),
+            uri: z.string(),
+          }),
+        }),
+      ),
+      directionReview: directionReviewSchema.nullable(),
+      selectedCandidateId: stableIdSegmentSchema.nullable(),
+      sourcePath: z.string(),
+      status: z.enum(DIRECTION_REVIEW_STATUSES),
+      summary: z.string(),
+      title: z.string(),
+    }),
+  ),
+  page: queryPageSchema,
+  query: z.strictObject({
+    assetId: stableAssetIdSchema.optional(),
+    assetVersion: strictSemverSchema.optional(),
+    detail: z.enum(DESIGN_ASSET_QUERY_DETAILS),
+    limit: z.number().int().positive(),
+    offset: z.number().int().nonnegative(),
+    projectId: stableIdSegmentSchema,
+    status: z.enum([...DIRECTION_REVIEW_STATUSES, "any"]),
+  }),
+});
+
+export const hatchkitDirectionQueryOutputSchema = z.strictObject({
+  data: directionQueryDataSchema,
+  ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
+});
+
 const tokenAssetSchema = z.strictObject({
   contentDigest: z.string().nullable(),
   id: stableAssetIdSchema,
@@ -382,6 +491,27 @@ export function registerHatchkitQueryTools(
       toMcpToolResponse(
         await withDesignSystemSnapshot(options, (snapshot) =>
           queryDesignBriefs(snapshot, {
+            ...input,
+            projectId: options.expectedProjectId,
+          }),
+        ),
+      ),
+  );
+
+  server.registerTool(
+    HATCHKIT_DIRECTION_QUERY_TOOL_NAME,
+    {
+      annotations: HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
+      description:
+        "List three-candidate UI Direction Review summaries or retrieve one exact full review with comparison evidence and derived human-selection state. This tool cannot record or impersonate a human decision.",
+      inputSchema: hatchkitDirectionQueryInputSchema,
+      outputSchema: hatchkitDirectionQueryOutputSchema,
+      title: "Query Hatchkit UI Directions",
+    },
+    async (input) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          queryDirectionReviews(snapshot, {
             ...input,
             projectId: options.expectedProjectId,
           }),

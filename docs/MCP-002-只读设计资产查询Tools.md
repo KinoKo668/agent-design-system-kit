@@ -2,7 +2,7 @@
 
 ## 1. 目标
 
-MCP-002 把已经通过 Core 校验的 Design Brief、Design Token 与 Component Registry 查询能力暴露给 Agent：
+MCP-002 把已经通过 Core 校验的 Design Brief、UI Direction Review、Design Token 与 Component Registry 查询能力暴露给 Agent：
 
 ```text
 Agent
@@ -19,10 +19,11 @@ Agent
 | Tool                         | 用途                            | 默认行为                    |
 | ---------------------------- | ------------------------------- | --------------------------- |
 | `hatchkit_query_briefs`      | 查询产品与品牌 Brief            | 返回分页摘要                |
+| `hatchkit_query_directions`  | 比较三套 UI 方向与人工选择状态  | 返回分页摘要                |
 | `hatchkit_query_tokens`      | 查询 Token Set、Mode 与精确定义 | 返回分页摘要                |
 | `hatchkit_search_components` | 搜索已登记 Component            | 只返回 Active，禁止模糊匹配 |
 
-加上 MCP-001 的 `hatchkit_status`，当前 Server 共暴露四个 Tool。
+加上 MCP-001 的 `hatchkit_status` 以及后续 Resolve／Change Request，默认只读 Server 当前共暴露七个 Tool。
 
 ## 3. 公共契约
 
@@ -55,7 +56,7 @@ Project ID 由 Server 启动配置确定，不允许 Agent 在每次 Tool 调用
 
 ### 3.4 Tool Annotation
 
-三个 Tool 与状态 Tool 一致：
+四个查询 Tool 与状态 Tool 一致：
 
 ```json
 {
@@ -97,9 +98,15 @@ Project ID 由 Server 启动配置确定，不允许 Agent 在每次 Tool 调用
 
 缺少身份、版本或使用非零 Offset 会在输入边界被拒绝。准确身份不存在时返回 `IDENTITY_NOT_FOUND`，不会自动选择其他版本。
 
-## 5. Token 查询
+## 5. UI Direction Review 查询
 
-### 5.1 Token Set 摘要
+无参数时返回每份评审资产的三套候选摘要、同场景预览、Brief 来源、派生状态与当前选择。完整内容必须提供准确 Asset ID 和 SemVer，并使用 `detail: full`。
+
+公开 Demo 保持 `in_review`，因为仓库没有伪造产品负责人或设计负责人的决定。该 Tool 只读，不能记录人类选择，也不能创建正式 Approval。完整契约见 [LOOP-004](LOOP-004-三套UI方向生成与评审.md)。
+
+## 6. Token 查询
+
+### 6.1 Token Set 摘要
 
 无参数时返回：
 
@@ -109,7 +116,7 @@ Project ID 由 Server 启动配置确定，不允许 Agent 在每次 Tool 调用
 - Git 相对来源；
 - 空的 `definitions`，避免一次输出整个 Token 库。
 
-### 5.2 精确定义
+### 6.2 精确定义
 
 精确定义必须提供 Token Set 身份、版本、Mode 和一至 64 条完整 Token Path：
 
@@ -127,7 +134,7 @@ Project ID 由 Server 启动配置确定，不允许 Agent 在每次 Tool 调用
 
 无法匹配的准确 Path 会进入 `unmatchedPaths`，系统不会用相似名字代替。单次依赖闭包最多 256 条；超过时整个请求失败并要求缩小范围，不返回不完整结果。
 
-## 6. Component 搜索
+## 7. Component 搜索
 
 示例：
 
@@ -149,11 +156,11 @@ Project ID 由 Server 启动配置确定，不允许 Agent 在每次 Tool 调用
 
 拼写错误如 `buton` 会得到零结果，不会返回近似 Button。
 
-## 7. 分层实现
+## 8. 分层实现
 
 ```text
 packages/core/src/design-asset-query.ts
-→ 环境无关的 Brief / Token 查询、分页、Alias 依赖和错误
+→ 环境无关的 Brief / Direction / Token 查询、分页、Alias 依赖和错误
 
 packages/mcp-server/src/query-tools.ts
 → MCP 输入输出 Schema、项目绑定、Catalog 重载和协议响应
@@ -161,7 +168,7 @@ packages/mcp-server/src/query-tools.ts
 
 Component 搜索继续复用 `core` 的 `searchComponents`。MCP 层不复制 Registry 匹配规则。
 
-## 8. 安全边界
+## 9. 安全边界
 
 - 输入使用 Strict Object，拒绝未知字段；
 - 精确详情不自动回退版本；
@@ -171,14 +178,15 @@ Component 搜索继续复用 `core` 的 `searchComponents`。MCP 层不复制 Re
 - 输出有页大小、Token Path 数量和依赖闭包上限；
 - 所有操作均不写文件、不写 Git、不写 Figma、不访问网络。
 
-## 9. 验证
+## 10. 验证
 
 正式测试覆盖：
 
 - Brief 摘要、精确全文、版本排序、分页、非法与缺失身份；
+- Direction 三候选摘要、精确全文、状态筛选、人工选择边界与缺失身份；
 - Token Set 摘要、Mode、准确 Path、Alias 依赖、未知 Path、未知 Mode、重复 Path 与超限闭包；
 - Component 准确搜索、拼写错误零结果和 Figma Locator 隐私边界；
-- 四个 Tool 的只读 Annotation、严格输入与结构化输出；
+- 默认七个 Tool 的只读 Annotation、严格输入与结构化输出；
 - 真实 stdio 子进程在旧版与现代 MCP 协商下发现并调用全部 Tool。
 
 统一验证命令：
@@ -187,7 +195,7 @@ Component 搜索继续复用 `core` 的 `searchComponents`。MCP 层不复制 Re
 pnpm check
 ```
 
-## 10. 当前不做
+## 11. 当前不做
 
 MCP-002 不实现：
 

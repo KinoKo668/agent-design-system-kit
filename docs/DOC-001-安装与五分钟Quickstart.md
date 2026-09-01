@@ -6,7 +6,7 @@
 
 完成“只读五分钟流程”后，你会确认：
 
-- Hatchkit 能加载并校验 Git 中的 Brief、Token、Button Contract 与 Registry；
+- Hatchkit 能加载并校验 Git 中的 Brief、三套 UI Direction、Token、Button Contract 与 Registry；
 - CLI 能准确搜索 Button 并解析一个 Contract 中真实存在的 Variant；
 - Agent 面向的 MCP 黄金路径和失败矩阵均可复现；
 - 全程不需要云服务器、数据库、账号或 Figma 文件。
@@ -45,12 +45,13 @@ pnpm --silent hatchkit validate \
   --project hatch-demo \
   --root design-system/hatch-demo \
   --brief briefs/hatch-demo.brief.json \
+  --direction-review directions/hatch-demo.direction-review.json \
   --token-set tokens/button-foundation.tokens.json \
   --component components/button.component.json \
   --registry registry/components.registry.json
 ```
 
-成功时 JSON 中应包含 `"status": "valid"`，并且 Brief、Token Set、Component、Registry 各有一份。
+成功时 JSON 中应包含 `"status": "valid"`，并且 Brief、Direction Review、Token Set、Component、Registry 各有一份。
 
 ### 4.2 精确搜索 Button
 
@@ -59,6 +60,7 @@ pnpm --silent hatchkit search \
   --project hatch-demo \
   --root design-system/hatch-demo \
   --brief briefs/hatch-demo.brief.json \
+  --direction-review directions/hatch-demo.direction-review.json \
   --token-set tokens/button-foundation.tokens.json \
   --component components/button.component.json \
   --registry registry/components.registry.json \
@@ -74,6 +76,7 @@ pnpm --silent hatchkit resolve \
   --project hatch-demo \
   --root design-system/hatch-demo \
   --brief briefs/hatch-demo.brief.json \
+  --direction-review directions/hatch-demo.direction-review.json \
   --token-set tokens/button-foundation.tokens.json \
   --component components/button.component.json \
   --registry registry/components.registry.json \
@@ -123,7 +126,7 @@ args:
   design-system/hatch-demo
 ```
 
-默认只读配置只提供 Status、Brief、Token、Component Search／Resolve 和 Change Request，不暴露 Figma Writer 或 Audit Tools。
+默认只读配置只提供 Status、Brief、Direction、Token、Component Search／Resolve 和 Change Request，不暴露 Figma Writer 或 Audit Tools。
 
 ## 6. 可选：连接 Figma Development Plugin
 

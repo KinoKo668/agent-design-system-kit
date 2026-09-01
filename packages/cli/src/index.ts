@@ -41,6 +41,7 @@ Catalog options (repeat source options when needed):
   --root <directory>      Root containing all source paths (default: current directory)
   --approval <path>       Relative *.approval.json source
   --brief <path>          Relative *.brief.json source
+  --direction-review <path> Relative *.direction-review.json source
   --token-set <path>      Relative *.tokens.json source
   --component <path>      Relative *.component.json source
   --registry <path>       Relative *.registry.json source
@@ -94,6 +95,7 @@ const COMMON_OPTIONS = new Set([
   "--approval",
   "--brief",
   "--component",
+  "--direction-review",
   "--project",
   "--registry",
   "--root",
@@ -103,6 +105,7 @@ const SOURCE_OPTIONS = new Set([
   "--approval",
   "--brief",
   "--component",
+  "--direction-review",
   "--registry",
   "--token-set",
 ]);
@@ -243,6 +246,7 @@ function toSources(
     ["--approval", "approval"],
     ["--brief", "brief"],
     ["--component", "component"],
+    ["--direction-review", "direction"],
     ["--registry", "component-registry"],
     ["--token-set", "token-set"],
   ];
@@ -293,6 +297,7 @@ function validationSummary(snapshot: DesignSystemSnapshot): JsonObject {
       approvals: snapshot.approvals.length,
       briefs: snapshot.briefs.length,
       components: snapshot.components.length,
+      directions: snapshot.directions.length,
       registries: snapshot.registries.length,
       tokenSets: snapshot.tokenSets.length,
     },
@@ -301,6 +306,7 @@ function validationSummary(snapshot: DesignSystemSnapshot): JsonObject {
       ...snapshot.approvals.map(({ sourcePath }) => sourcePath),
       ...snapshot.briefs.map(({ sourcePath }) => sourcePath),
       ...snapshot.components.map(({ sourcePath }) => sourcePath),
+      ...snapshot.directions.map(({ sourcePath }) => sourcePath),
       ...snapshot.registries.map(({ sourcePath }) => sourcePath),
       ...snapshot.tokenSets.map(({ sourcePath }) => sourcePath),
     ].sort(),
@@ -319,7 +325,7 @@ async function executeParsed(
       issue(
         "sources",
         "missing_sources",
-        "At least one Approval, Brief, Token Set, Component, or Registry source is required.",
+        "At least one Approval, Brief, Direction Review, Token Set, Component, or Registry source is required.",
       ),
     );
   }

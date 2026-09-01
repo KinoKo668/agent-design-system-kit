@@ -23,6 +23,8 @@ const CATALOG_ARGUMENTS = [
   "design-system/hatch-demo",
   "--brief",
   "briefs/hatch-demo.brief.json",
+  "--direction-review",
+  "directions/hatch-demo.direction-review.json",
   "--token-set",
   "tokens/button-foundation.tokens.json",
   "--component",
@@ -87,6 +89,7 @@ describe("runCli", () => {
         counts: {
           briefs: 1,
           components: 1,
+          directions: 1,
           registries: 1,
           tokenSets: 1,
         },

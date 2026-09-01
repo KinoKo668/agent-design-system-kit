@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "direction",
+  "projectId": "hatch-demo",
+  "assetId": "product-foundation-directions",
+  "assetVersion": "1.0.0",
+  "contentDigest": "sha256:141bc7ac01494b2730d1b066d6d222c529cea67ef1a4aa20f55589fe69235211",
+  "title": "Hatch product foundation direction review",
+  "summary": "Three intentionally distinct directions for a trustworthy, local-first Agent design-system toolkit.",
+  "briefSource": {
+    "type": "brief",
+    "projectId": "hatch-demo",
+    "assetId": "product-foundation",
+    "assetVersion": "1.0.0",
+    "contentDigest": "sha256:16ab9c1f488b9017e512c94c9bba9435315a597ecf72145b9821efaf513bc92c"
+  },
+  "comparisonScenario": {
+    "id": "ui-foundation-card",
+    "title": "Create the UI foundation",
+    "description": "A fixed desktop card shows the same Icon, Input, status message and primary Button so reviewers compare visual language instead of different content.",
+    "requiredElements": ["icon", "input", "status", "button"]
+  },
+  "candidates": [
+    {
+      "id": "precision-grid",
+      "name": "Precision Grid",
+      "designRationale": "A dark, rational workspace makes system boundaries, machine-readable status and deterministic actions feel explicit. A strict grid and restrained green signal color support a technical tool without imitating a terminal.",
+      "differentiation": "The most technical and information-dense option, using squared geometry, tabular rhythm and one operational accent.",
+      "colorStrategy": {
+        "rationale": "Near-black slate establishes focus; white text preserves readability; green is reserved for verified or ready states and never carries meaning alone.",
+        "palette": [
+          {
+            "role": "background",
+            "value": "#0F172A",
+            "rationale": "Deep slate reduces glare while keeping the workspace neutral."
+          },
+          {
+            "role": "surface",
+            "value": "#1E293B",
+            "rationale": "A visible but restrained elevation step for panels."
+          },
+          {
+            "role": "text",
+            "value": "#F8FAFC",
+            "rationale": "High-contrast primary copy on dark surfaces."
+          },
+          {
+            "role": "muted",
+            "value": "#94A3B8",
+            "rationale": "Secondary information remains readable without competing."
+          },
+          {
+            "role": "accent",
+            "value": "#22C55E",
+            "rationale": "Operational green marks ready and successful actions."
+          }
+        ]
+      },
+      "typography": {
+        "heading": "Inter Variable 650",
+        "body": "Inter Variable 400",
+        "rationale": "One variable family keeps the system economical; tabular numerals and clear weights support identifiers and status."
+      },
+      "radius": {
+        "strategy": "Small radii communicate precision while preserving enough softness for approachable controls.",
+        "examples": [0, 4, 8]
+      },
+      "density": {
+        "scale": "compact",
+        "rationale": "Compact vertical rhythm favors professional workflows while maintaining 44-pixel interactive targets.",
+        "spacingExamples": [4, 8, 12, 16, 24]
+      },
+      "graphicLanguage": "Twelve-column alignment, one-pixel dividers, quiet panels and small uppercase metadata labels. Decoration is replaced by meaningful state structure.",
+      "iconography": "Two-pixel outline SVG icons on a 24-pixel grid, with rounded joins and text labels for critical actions.",
+      "motion": "Subtle 150–200 millisecond opacity and 8-pixel translation for state changes, with reduced-motion support and no decorative loops.",
+      "accessibilityPlan": [
+        "Target WCAG 2.2 AA contrast and verify accent-on-dark combinations before Token approval.",
+        "Pair every status color with an icon and visible text; preserve keyboard focus rings."
+      ],
+      "benefits": [
+        "Makes deterministic system state and engineering precision immediately credible.",
+        "Supports dense desktop workflows without introducing many visual primitives."
+      ],
+      "risks": [
+        "A dark technical tone may feel intimidating to designers who expect a visual studio.",
+        "Compact rhythm needs disciplined hierarchy to avoid appearing like a developer console."
+      ],
+      "preview": {
+        "scenarioId": "ui-foundation-card",
+        "title": "Precision Grid foundation card",
+        "altText": "Dark slate foundation card with a green status accent, compact input and squared primary action.",
+        "uri": "git://design-system/hatch-demo/artifacts/directions/precision-grid.svg"
+      }
+    },
+    {
+      "id": "warm-studio",
+      "name": "Warm Studio",
+      "designRationale": "A light, editorial workspace frames Hatch as a collaboration surface shared by designers and agents. Warm neutrals, generous spacing and confident type reduce the emotional distance of governance tasks.",
+      "differentiation": "The most human and design-led option, favoring editorial hierarchy, soft surfaces and calm conversational guidance.",
+      "colorStrategy": {
+        "rationale": "Warm paper tones create a studio feel; dark ink anchors information; terracotta highlights deliberate human actions rather than machine status.",
+        "palette": [
+          {
+            "role": "background",
+            "value": "#F6F2EA",
+            "rationale": "Warm neutral canvas avoids sterile pure white."
+          },
+          {
+            "role": "surface",
+            "value": "#FFFCF7",
+            "rationale": "Near-white cards preserve separation without heavy shadows."
+          },
+          {
+            "role": "text",
+            "value": "#24221F",
+            "rationale": "Soft black keeps long-form guidance comfortable and clear."
+          },
+          {
+            "role": "muted",
+            "value": "#716B63",
+            "rationale": "Warm gray maintains hierarchy for supporting information."
+          },
+          {
+            "role": "accent",
+            "value": "#B9472E",
+            "rationale": "Terracotta gives human approvals and primary actions distinction."
+          }
+        ]
+      },
+      "typography": {
+        "heading": "Manrope Variable 650",
+        "body": "Inter Variable 400",
+        "rationale": "Expressive rounded headings signal approachability while a neutral body face protects interface clarity."
+      },
+      "radius": {
+        "strategy": "Moderate radii create tactility without turning professional controls into playful capsules.",
+        "examples": [4, 10, 16]
+      },
+      "density": {
+        "scale": "relaxed",
+        "rationale": "Generous grouping helps mixed technical and design audiences understand one decision at a time.",
+        "spacingExamples": [8, 16, 24, 32, 48]
+      },
+      "graphicLanguage": "Editorial blocks, warm hairline borders, modest paper-like depth and short explanatory annotations around important decisions.",
+      "iconography": "Rounded outline SVG icons with slightly wider optical proportions, always paired with direct labels in approval flows.",
+      "motion": "Calm 180–240 millisecond fades and scale shifts for panels; motion reinforces conversational progress and honors reduced-motion preferences.",
+      "accessibilityPlan": [
+        "Verify terracotta text and controls against both warm backgrounds at WCAG 2.2 AA thresholds.",
+        "Keep body text at 16 pixels or larger with 1.5 line height and a persistent keyboard focus treatment."
+      ],
+      "benefits": [
+        "Feels welcoming to professional designers while keeping governance understandable.",
+        "Creates room for rationale and review notes without resembling infrastructure software."
+      ],
+      "risks": [
+        "Relaxed spacing may reduce efficiency in future component inventories and audit views.",
+        "The editorial tone could understate technical precision if status details are not carefully structured."
+      ],
+      "preview": {
+        "scenarioId": "ui-foundation-card",
+        "title": "Warm Studio foundation card",
+        "altText": "Warm cream foundation card with terracotta action, generous spacing and editorial typography.",
+        "uri": "git://design-system/hatch-demo/artifacts/directions/warm-studio.svg"
+      }
+    },
+    {
+      "id": "signal-layer",
+      "name": "Signal Layer",
+      "designRationale": "A bright modular direction treats every design-system decision as a visible layer. Strong blue and citrus accents, bold labels and structured cards make Agent activity legible while preserving a serious core.",
+      "differentiation": "The most distinctive and product-forward option, using modular composition, high contrast and visible state layers to create a recognizable identity.",
+      "colorStrategy": {
+        "rationale": "A cool white canvas protects clarity; navy carries text; electric blue owns primary actions; citrus is limited to attention and progress indicators.",
+        "palette": [
+          {
+            "role": "background",
+            "value": "#F4F7FB",
+            "rationale": "Cool near-white supports clean modular grouping."
+          },
+          {
+            "role": "surface",
+            "value": "#FFFFFF",
+            "rationale": "Pure white makes cards crisp against the cool canvas."
+          },
+          {
+            "role": "text",
+            "value": "#101828",
+            "rationale": "Deep navy creates strong readable hierarchy."
+          },
+          {
+            "role": "accent",
+            "value": "#175CD3",
+            "rationale": "Accessible blue defines links and primary controls."
+          },
+          {
+            "role": "signal",
+            "value": "#C4F042",
+            "rationale": "Citrus highlights progress only when accompanied by dark text and shape."
+          }
+        ]
+      },
+      "typography": {
+        "heading": "Space Grotesk Variable 650",
+        "body": "Inter Variable 400",
+        "rationale": "A geometric display face adds product character; neutral body typography keeps contracts and status text stable."
+      },
+      "radius": {
+        "strategy": "A stepped radius system distinguishes small controls from larger workflow surfaces.",
+        "examples": [4, 8, 20]
+      },
+      "density": {
+        "scale": "balanced",
+        "rationale": "Balanced spacing supports both onboarding explanations and operational catalogs without switching visual systems.",
+        "spacingExamples": [4, 8, 16, 24, 32]
+      },
+      "graphicLanguage": "Stacked modules, offset status tags, strong border contrast and occasional signal blocks that reveal the boundary between Agent proposal and human approval.",
+      "iconography": "Geometric two-pixel SVG icons with a consistent 24-pixel box; filled signal badges are reserved for workflow status.",
+      "motion": "Purposeful 160–220 millisecond layer transitions show state replacement and provenance; all movement degrades to opacity under reduced motion.",
+      "accessibilityPlan": [
+        "Use citrus only with dark foreground and never as the sole carrier of pending or warning status.",
+        "Test modular reading order, focus order and 44-pixel action targets at desktop and narrow widths."
+      ],
+      "benefits": [
+        "Builds a recognizable identity suited to demos, documentation and future product surfaces.",
+        "Makes Agent-versus-human workflow boundaries visually memorable and easy to explain."
+      ],
+      "risks": [
+        "Strong accents can become noisy if every module competes for attention.",
+        "The display typography and signal color require tighter governance than the neutral alternatives."
+      ],
+      "preview": {
+        "scenarioId": "ui-foundation-card",
+        "title": "Signal Layer foundation card",
+        "altText": "Cool white modular card with strong blue controls and a citrus workflow status layer.",
+        "uri": "git://design-system/hatch-demo/artifacts/directions/signal-layer.svg"
+      }
+    }
+  ],
+  "selection": {
+    "submission": {
+      "submittedAt": "2026-09-01T12:00:00-04:00",
+      "submittedBy": "agent:hatchkit-demo"
+    },
+    "decisions": [],
+    "status": "in_review",
+    "selectedCandidateId": null
+  }
+}

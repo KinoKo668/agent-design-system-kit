@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import validBrief from "../../../design-system/hatch-demo/briefs/hatch-demo.brief.json" with { type: "json" };
 import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validDirectionReview from "../../../design-system/hatch-demo/directions/hatch-demo.direction-review.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
-import { queryDesignBriefs, queryTokenSets } from "./design-asset-query.js";
+import {
+  queryDesignBriefs,
+  queryDirectionReviews,
+  queryTokenSets,
+} from "./design-asset-query.js";
 import {
   validateDesignSystemSnapshot,
   type DesignSystemSnapshot,
@@ -21,6 +26,11 @@ function createSnapshot(
       kind: "brief",
       sourcePath: "briefs/product.brief.json",
       value: validBrief,
+    },
+    {
+      kind: "direction",
+      sourcePath: "directions/foundation.direction-review.json",
+      value: validDirectionReview,
     },
     {
       kind: "token-set",
@@ -141,6 +151,83 @@ describe("queryDesignBriefs", () => {
     expect(isFailureResult(missing)).toBe(true);
     if (isFailureResult(malformed) && isFailureResult(missing)) {
       expect(malformed.error.code).toBe("VALIDATION_FAILED");
+      expect(missing.error.code).toBe("IDENTITY_NOT_FOUND");
+    }
+  });
+});
+
+describe("queryDirectionReviews", () => {
+  it("returns comparable summaries without the full review payload", () => {
+    const result = queryDirectionReviews(createSnapshot(), {
+      projectId: "hatch-demo",
+    });
+
+    expect(isSuccessResult(result)).toBe(true);
+    if (!isSuccessResult(result)) {
+      throw new Error("Expected the Direction Review query to succeed.");
+    }
+    expect(result.data).toMatchObject({
+      items: [
+        {
+          asset: {
+            contentDigest:
+              "sha256:141bc7ac01494b2730d1b066d6d222c529cea67ef1a4aa20f55589fe69235211",
+            id: "product-foundation-directions",
+            type: "direction",
+            version: "1.0.0",
+          },
+          directionReview: null,
+          selectedCandidateId: null,
+          sourcePath: "directions/foundation.direction-review.json",
+          status: "in_review",
+          title: "Hatch product foundation direction review",
+        },
+      ],
+      page: { returned: 1, total: 1 },
+      query: { detail: "summary", status: "any" },
+    });
+    expect(result.data.items[0]?.candidates).toEqual([
+      expect.objectContaining({ id: "precision-grid", density: "compact" }),
+      expect.objectContaining({ id: "warm-studio", density: "relaxed" }),
+      expect.objectContaining({ id: "signal-layer", density: "balanced" }),
+    ]);
+  });
+
+  it("returns the full candidate evidence only for an exact identity", () => {
+    const result = queryDirectionReviews(createSnapshot(), {
+      assetId: "product-foundation-directions",
+      assetVersion: "1.0.0",
+      detail: "full",
+      projectId: "hatch-demo",
+      status: "in_review",
+    });
+
+    expect(isSuccessResult(result)).toBe(true);
+    if (!isSuccessResult(result)) {
+      throw new Error("Expected the full Direction Review query to succeed.");
+    }
+    expect(result.data.items[0]?.directionReview?.candidates).toHaveLength(3);
+    expect(
+      result.data.items[0]?.directionReview?.candidates[0]?.benefits,
+    ).toHaveLength(2);
+  });
+
+  it("rejects broad full queries and missing exact identities", () => {
+    const broad = queryDirectionReviews(createSnapshot(), {
+      detail: "full",
+      projectId: "hatch-demo",
+    });
+    const missing = queryDirectionReviews(createSnapshot(), {
+      assetId: "missing-direction",
+      assetVersion: "1.0.0",
+      detail: "full",
+      projectId: "hatch-demo",
+    });
+
+    expect(isFailureResult(broad)).toBe(true);
+    expect(isFailureResult(missing)).toBe(true);
+    if (isFailureResult(broad) && isFailureResult(missing)) {
+      expect(broad.error.code).toBe("VALIDATION_FAILED");
       expect(missing.error.code).toBe("IDENTITY_NOT_FOUND");
     }
   });
