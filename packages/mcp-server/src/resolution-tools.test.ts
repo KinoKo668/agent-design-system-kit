@@ -95,6 +95,39 @@ describe("Hatchkit MCP resolution tools", () => {
     expect(JSON.stringify(result)).not.toContain("enqueue-figma-write");
   });
 
+  it("resolves an exact unbuilt Icon size without inventing a Figma asset", async () => {
+    const result = await client.callTool({
+      arguments: {
+        assetId: "icon/check",
+        variantSelections: { size: "large" },
+      },
+      name: HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      data: {
+        contract: { profile: "icon-v1" },
+        nextAction: "verify-approval-then-ensure-library-asset",
+        selectedVariant: { id: "size-large" },
+        sources: {
+          contractSourcePath: "components/icon-check.component.json",
+          registrySourcePath: "registry/icons.registry.json",
+        },
+        status: "ensure-required",
+        variantSelections: { size: "large" },
+      },
+      ok: true,
+    });
+    expect(resultWarnings(result)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "APPROVAL_GUARD_REQUIRED" }),
+        expect.objectContaining({ code: "FIGMA_ENSURE_REQUIRED" }),
+      ]),
+    );
+    expect(JSON.stringify(result)).not.toContain("nodeId");
+  });
+
   it("returns the original Not Found failure from exact Resolve", async () => {
     const result = await client.callTool({
       arguments: { assetId: "select" },

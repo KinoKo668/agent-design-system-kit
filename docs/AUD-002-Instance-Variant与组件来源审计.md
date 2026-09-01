@@ -69,6 +69,6 @@ Agent 调用 hatchkit_audit_components
 
 Core 保存权威 Plan、Observation、Finding 与 Result Schema。Figma Plugin 使用与 Core 结果做对照测试的轻量分类实现，避免把 Zod 审计运行时打入主线程。
 
-新增协议后，Figma UI 改为生产压缩且不内嵌 Source Map，避免仅调试元数据占用发布体积；主线程继续输出独立 Source Map。两者仍由 Bundle Smoke 分别执行 100 KiB 与 300 KiB 上限。
+新增协议后，Figma UI 改为生产压缩且不内嵌 Source Map，避免仅调试元数据占用发布体积；主线程继续输出独立 Source Map。Icon Writer 接入后，Bundle Smoke 对主线程执行 128 KiB 原始体积与 32 KiB gzip 双门禁，对 UI 执行 300 KiB 上限。双指标既约束 Figma 实际加载文件，也防止只靠调高原始上限掩盖代码膨胀。
 
 自动测试覆盖 Git 来源计划、真实 Instance、受管理 Detach、外部 Component Set、未知 Variant、属性漂移、Marker 漂移、错误文件绑定、Core／Plugin 分类一致性、轻量协议对照、Bridge 只读绕过写审批、MCP Tool 发现与完整报告返回。

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
+import iconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
+import iconTokens from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
 
 import { createFigmaButtonPlan } from "./figma-button-plan.js";
+import { createFigmaIconPlan } from "./figma-icon-plan.js";
 
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
@@ -120,6 +123,37 @@ function buttonCommand(): unknown {
     },
     idempotencyKey: "components-button-1.0.0",
     operationId: "39d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
+function iconCommand(): unknown {
+  const planned = createFigmaIconPlan(
+    iconContract,
+    iconTokens,
+    "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260",
+    "sha256:3e6525097fe95c63b373adf9b7a6797e3153a4670665c0da9563fc971f62315e",
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.icon.check.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "components.icon.ensure",
+    },
+    idempotencyKey: "components-icon-check-1.0.0",
+    operationId: "79d4aa88-67a2-4de3-bf64-2b51509316be",
     projectId: "hatch-demo",
     schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
     source: { client: "mcp-server" },
@@ -276,6 +310,9 @@ describe("Writer protocol", () => {
       writerCommandEnvelopeSchema.safeParse(variablesCommand()).success,
     ).toBe(true);
     expect(writerCommandEnvelopeSchema.safeParse(buttonCommand()).success).toBe(
+      true,
+    );
+    expect(writerCommandEnvelopeSchema.safeParse(iconCommand()).success).toBe(
       true,
     );
     expect(

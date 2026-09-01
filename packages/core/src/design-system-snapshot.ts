@@ -5,11 +5,11 @@ import {
   type ApprovalRecord,
 } from "./approval-record.js";
 import {
-  buttonComponentContractSchema,
-  toButtonComponentContractDigestSubject,
-  validateButtonComponentContractWithTokenSet,
-  type ButtonComponentContract,
-} from "./button-contract.js";
+  componentContractSchema,
+  toComponentContractDigestSubject,
+  validateComponentContractWithTokenSet,
+  type ComponentContract,
+} from "./component-contract.js";
 import {
   componentRegistrySchema,
   type ComponentRegistry,
@@ -63,7 +63,7 @@ export interface LocatedDesignAsset<T> {
 export interface DesignSystemSnapshot {
   readonly approvals: readonly LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: readonly LocatedDesignAsset<DesignBrief>[];
-  readonly components: readonly LocatedDesignAsset<ButtonComponentContract>[];
+  readonly components: readonly LocatedDesignAsset<ComponentContract>[];
   readonly directions: readonly LocatedDesignAsset<DirectionReview>[];
   readonly projectId: string;
   readonly registries: readonly LocatedDesignAsset<ComponentRegistry>[];
@@ -83,7 +83,7 @@ export interface DesignSystemIntegrityIssue extends JsonObject {
 interface MutableSnapshot {
   readonly approvals: LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: LocatedDesignAsset<DesignBrief>[];
-  readonly components: LocatedDesignAsset<ButtonComponentContract>[];
+  readonly components: LocatedDesignAsset<ComponentContract>[];
   readonly directions: LocatedDesignAsset<DirectionReview>[];
   readonly registries: LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: LocatedDesignAsset<TokenSet>[];
@@ -191,7 +191,7 @@ function tokenIdentity(tokenSet: TokenSet): string {
   return `${tokenSet.projectId}/token-set/${tokenSet.assetId}@${tokenSet.assetVersion}`;
 }
 
-function componentIdentity(component: ButtonComponentContract): string {
+function componentIdentity(component: ComponentContract): string {
   return `${component.projectId}/component/${component.assetId}@${component.assetVersion}`;
 }
 
@@ -267,7 +267,7 @@ function validateComponentTokenReferences(
       continue;
     }
 
-    const result = validateButtonComponentContractWithTokenSet(
+    const result = validateComponentContractWithTokenSet(
       component.data,
       tokenSet.data,
     );
@@ -494,7 +494,7 @@ function validateApprovalReferences(
         );
       } else {
         subjectDigest = calculateDigest(
-          toButtonComponentContractDigestSubject(asset.data),
+          toComponentContractDigestSubject(asset.data),
         );
         subjectSourcePath = asset.sourcePath;
       }
@@ -784,7 +784,7 @@ export function validateDesignSystemSnapshot(
       continue;
     }
     if (document.kind === "component") {
-      const result = buttonComponentContractSchema.safeParse(document.value);
+      const result = componentContractSchema.safeParse(document.value);
       if (!result.success) {
         addZodIssues(issues, document.sourcePath, result.error);
       } else {
@@ -934,9 +934,8 @@ export function verifyDesignSystemContentDigests(
     for (const component of snapshot.components) {
       if (
         component.data.contentDigest !== undefined &&
-        calculateDigest(
-          toButtonComponentContractDigestSubject(component.data),
-        ) !== component.data.contentDigest
+        calculateDigest(toComponentContractDigestSubject(component.data)) !==
+          component.data.contentDigest
       ) {
         issues.push({
           code: "content_digest_mismatch",

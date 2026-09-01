@@ -99,6 +99,7 @@ Registry · 历史             │
 - 带同场景预览、双角色人工选择状态、准确 Brief 摘要绑定和诚实待评审公开样例的三候选 UI Direction Review 契约；
 - 带类型 Alias、Mode、依赖规则和 Button 样例的 DTCG 2025.10 Token Set 子集；
 - 带严格属性、完整 Variant 矩阵、稳定 Slot 和类型化 Token Binding 的 Button v1 Component Contract；
+- 带 Token 驱动的 16／24／32 尺寸、固定光学几何、无障碍规则、精确 Registry 解析和诚实 `unbuilt` 公开样例的 Icon v1 垂直切片；
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 根据准确内容、必需人工角色、验证证据、终止事件和上游状态推导结果的严格 Approval Record Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
@@ -116,6 +117,7 @@ Registry · 历史             │
 - 需要设计师二次确认的 Figma 文件绑定入口：未绑定库文件只初始化一次，同一身份可安全重放，不同身份或损坏记录不会被自动覆盖或改绑；
 - 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
 - 确定性的 Button Writer：建立或收敛一个真实 Main Component Set、四个已批准 Variant、Label 属性与准确 Variable Binding，不重复创建近似资产；
+- 确定性的 Icon Writer 与 `components.icon.ensure` 协议链路：建立或收敛一个三尺寸 Component Set、真实 Vector Glyph、准确 Variable Binding 与稳定 Marker，并支持无变化重试和部分恢复；
 - 原子 Registry 最终化：只在 Figma 审计成功后登记 Button Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
@@ -220,6 +222,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Design Brief Schema](docs/SCH-001-Design-Brief-Schema.md)
 - [基础 Token Schema 与 DTCG 子集](docs/SCH-002-基础Token-Schema与DTCG子集.md)
 - [Button Component Contract](docs/SCH-003-Button-Component-Contract.md)
+- [Icon 契约与 Figma 组件链路](docs/COMP-001-Icon契约与Figma组件链路.md)
 - [Component Registry Schema](docs/SCH-004-Component-Registry-Schema.md)
 - [文件加载与完整性校验](docs/REG-001-文件加载与完整性校验.md)
 - [组件搜索与精确解析](docs/REG-002-组件搜索与精确解析.md)

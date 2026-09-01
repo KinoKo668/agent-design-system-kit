@@ -11,6 +11,7 @@ import {
 import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
 import { figmaButtonPlanSchema } from "./figma-button-plan.js";
 import { figmaButtonInstancePlanSchema } from "./figma-button-instance-plan.js";
+import { figmaIconPlanSchema } from "./figma-icon-plan.js";
 import {
   figmaStyleAuditPlanSchema,
   figmaStyleAuditResultSchema,
@@ -31,6 +32,7 @@ export const WRITER_COMMAND_TYPES = {
   auditRegistryDrift: "audit.registry-drift.scan",
   auditStyles: "audit.styles.scan",
   ensureButton: "components.button.ensure",
+  ensureIcon: "components.icon.ensure",
   ensureVariables: "variables.ensure",
   insertButtonInstance: "instances.button.insert",
   ping: "writer.ping",
@@ -148,6 +150,13 @@ export const writerEnsureButtonCommandSchema = z
   })
   .strict();
 
+export const writerEnsureIconCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaIconPlanSchema }).strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureIcon),
+  })
+  .strict();
+
 export const writerInsertButtonInstanceCommandSchema = z
   .object({
     payload: z.object({ plan: figmaButtonInstancePlanSchema }).strict(),
@@ -181,6 +190,7 @@ export const writerCommandSchema = z.discriminatedUnion("type", [
   writerAuditComponentsCommandSchema,
   writerAuditStylesCommandSchema,
   writerInsertButtonInstanceCommandSchema,
+  writerEnsureIconCommandSchema,
   writerEnsureButtonCommandSchema,
   writerEnsureVariablesCommandSchema,
   writerPingCommandSchema,
@@ -395,6 +405,29 @@ export const writerButtonResultSchema = z
   })
   .strict();
 
+export const writerIconResultSchema = z
+  .object({
+    componentSet: z
+      .object({
+        action: z.enum(["created", "unchanged", "updated"]),
+        nodeId: z
+          .string()
+          .max(128, "Must contain at most 128 characters.")
+          .regex(/^\d+:\d+$/u, "Must be a Figma Plugin node ID."),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureIcon),
+    variants: z
+      .object({
+        created: z.number().int().nonnegative(),
+        unchanged: z.number().int().nonnegative(),
+        updated: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export const writerButtonInstanceResultSchema = z
   .object({
     componentSet: z
@@ -427,6 +460,7 @@ export const writerSuccessResultSchema = z.union([
   figmaComponentAuditResultSchema,
   figmaStyleAuditResultSchema,
   writerButtonResultSchema,
+  writerIconResultSchema,
   writerButtonInstanceResultSchema,
   writerVariablesResultSchema,
 ]);

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-import type { ButtonComponentContract } from "./button-contract.js";
+import type { ComponentContract } from "./component-contract.js";
 import {
   FIGMA_BINDING_STATUSES,
   REGISTRY_LIFECYCLES,
@@ -78,14 +78,14 @@ export interface ComponentSearchItem {
   readonly approvalId: string;
   readonly asset: ComponentRegistryEntry["asset"];
   readonly availability: ComponentAvailability;
-  readonly componentKind: ButtonComponentContract["componentKind"];
+  readonly componentKind: ComponentContract["componentKind"];
   readonly figmaStatus: ComponentRegistryEntry["figma"]["status"];
   readonly lifecycle: ComponentRegistryEntry["lifecycle"];
   readonly lifecycleReason: string | null;
   readonly matchFields: readonly ("assetId" | "name" | "profile")[];
-  readonly name: ButtonComponentContract["name"];
-  readonly profile: ButtonComponentContract["profile"];
-  readonly size: ButtonComponentContract["size"];
+  readonly name: ComponentContract["name"];
+  readonly profile: ComponentContract["profile"];
+  readonly size: ComponentContract["size"];
   readonly sources: ComponentSourceReferences;
 }
 
@@ -95,7 +95,23 @@ export interface ComponentSearchResults {
   readonly total: number;
 }
 
-type ButtonVariant = ButtonComponentContract["variants"][number];
+type ComponentVariant = ComponentContract["variants"][number];
+type ComponentProperty = ComponentContract["properties"][number];
+type VariantProperty = Extract<ComponentProperty, { readonly kind: "variant" }>;
+
+function isVariantProperty(
+  property: ComponentProperty,
+): property is VariantProperty {
+  return property.kind === "variant";
+}
+
+function variantSelection(
+  variant: ComponentVariant,
+  propertyId: string,
+): string | undefined {
+  const selections: Readonly<Record<string, string>> = variant.selections;
+  return selections[propertyId];
+}
 type ReadyRegistryEntry = ComponentRegistryEntry & {
   readonly figma: Extract<
     ComponentRegistryEntry["figma"],
@@ -112,8 +128,8 @@ type UnbuiltRegistryEntry = ComponentRegistryEntry & {
 };
 
 interface ComponentResolutionBase {
-  readonly contract: ButtonComponentContract;
-  readonly selectedVariant: ButtonVariant;
+  readonly contract: ComponentContract;
+  readonly selectedVariant: ComponentVariant;
   readonly sources: ComponentSourceReferences;
   readonly variantSelections: Readonly<Record<string, string>>;
 }
@@ -134,7 +150,7 @@ export type ComponentResolution =
   EnsureRequiredComponentResolution | FigmaReadyComponentResolution;
 
 interface ComponentCandidate {
-  readonly contract: LocatedDesignAsset<ButtonComponentContract>;
+  readonly contract: LocatedDesignAsset<ComponentContract>;
   readonly entry: ComponentRegistryEntry;
   readonly registrySourcePath: string;
 }
@@ -397,17 +413,17 @@ function conflictFailure(
 
 interface VariantSelectionResult {
   readonly selections: Readonly<Record<string, string>>;
-  readonly variant: ButtonVariant;
+  readonly variant: ComponentVariant;
 }
 
 function resolveVariant(
-  contract: ButtonComponentContract,
+  contract: ComponentContract,
   requested: Readonly<Record<string, string>>,
 ): ToolkitResult<VariantSelectionResult> {
   const issues: Array<{ code: string; message: string; path: string }> = [];
   const variantProperties = contract.properties.filter(
-    (property) => property.kind === "variant",
-  );
+    isVariantProperty,
+  ) as readonly VariantProperty[];
   const properties = new Map(
     variantProperties.map((property) => [property.id, property]),
   );
@@ -453,7 +469,8 @@ function resolveVariant(
 
   const variant = contract.variants.find((candidate) =>
     Object.entries(selections).every(
-      ([propertyId, value]) => candidate.selections[propertyId] === value,
+      ([propertyId, value]) =>
+        variantSelection(candidate, propertyId) === value,
     ),
   );
   if (variant === undefined) {

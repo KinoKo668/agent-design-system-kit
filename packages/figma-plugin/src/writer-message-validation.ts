@@ -118,6 +118,15 @@ const BUTTON_PLAN_KEYS = new Set([
   "typography",
   "variants",
 ]);
+const ICON_PLAN_KEYS = new Set([
+  "accessibility",
+  "componentSet",
+  "glyph",
+  "schemaVersion",
+  "source",
+  "tokenSource",
+  "variants",
+]);
 const STYLE_AUDIT_PLAN_KEYS = new Set([
   "fileBindingId",
   "projectId",
@@ -292,6 +301,35 @@ const BUTTON_VARIANT_KEYS = new Set([
   "figmaName",
   "id",
   "selections",
+  "slotId",
+  "stableId",
+]);
+const ICON_SET_KEYS = new Set([
+  "defaultSize",
+  "description",
+  "majorVersion",
+  "name",
+  "sizeOptions",
+  "sizePropertyName",
+  "slotId",
+  "stableId",
+]);
+const ICON_GLYPH_KEYS = new Set([
+  "color",
+  "name",
+  "opticalGrid",
+  "pathData",
+  "safeArea",
+  "strokeCap",
+  "strokeJoin",
+  "strokeWidth",
+]);
+const ICON_VARIANT_KEYS = new Set([
+  "figmaName",
+  "frame",
+  "glyph",
+  "id",
+  "size",
   "slotId",
   "stableId",
 ]);
@@ -787,6 +825,142 @@ function isFigmaButtonPlan(value: unknown): value is Record<string, unknown> {
   );
 }
 
+function isUnitColor(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, new Set(["a", "b", "g", "r"])) &&
+    [value.a, value.b, value.g, value.r].every(
+      (channel) => typeof channel === "number" && channel >= 0 && channel <= 1,
+    )
+  );
+}
+
+function isFigmaIconPlan(value: unknown): value is Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, ICON_PLAN_KEYS) ||
+    value.schemaVersion !== "1.0.0" ||
+    !isPlanSource(value.source) ||
+    !isRecord(value.tokenSource) ||
+    !hasOnlyKeys(value.tokenSource, BUTTON_TOKEN_SOURCE_KEYS) ||
+    !isStableAssetId(value.tokenSource.assetId) ||
+    !isBoundedString(value.tokenSource.assetVersion, 1, 128) ||
+    !SEMVER_PATTERN.test(value.tokenSource.assetVersion) ||
+    !isStableAssetId(value.tokenSource.collectionStableId) ||
+    !CONTENT_DIGEST_PATTERN.test(String(value.tokenSource.contentDigest)) ||
+    !isStableIdSegment(value.tokenSource.projectId) ||
+    !isRecord(value.componentSet) ||
+    !hasOnlyKeys(value.componentSet, ICON_SET_KEYS) ||
+    value.componentSet.defaultSize !== "Medium" ||
+    !isBoundedString(value.componentSet.description, 1, 2_000) ||
+    !Number.isSafeInteger(value.componentSet.majorVersion) ||
+    Number(value.componentSet.majorVersion) < 0 ||
+    !isBoundedString(value.componentSet.name, 1, 120) ||
+    !Array.isArray(value.componentSet.sizeOptions) ||
+    JSON.stringify(value.componentSet.sizeOptions) !==
+      JSON.stringify(["Small", "Medium", "Large"]) ||
+    value.componentSet.sizePropertyName !== "Size" ||
+    value.componentSet.slotId !== "root" ||
+    !isStableAssetId(value.componentSet.stableId) ||
+    !isRecord(value.glyph) ||
+    !hasOnlyKeys(value.glyph, ICON_GLYPH_KEYS) ||
+    value.glyph.name !== "Glyph" ||
+    value.glyph.opticalGrid !== 24 ||
+    value.glyph.pathData !== "M5 12.5L10 17.5L19 7.5" ||
+    value.glyph.safeArea !== 2 ||
+    value.glyph.strokeCap !== "ROUND" ||
+    value.glyph.strokeJoin !== "ROUND" ||
+    value.glyph.strokeWidth !== 2 ||
+    !isRecord(value.glyph.color) ||
+    !hasOnlyKeys(
+      value.glyph.color,
+      new Set(["fallback", "variableStableId"]),
+    ) ||
+    !isUnitColor(value.glyph.color.fallback) ||
+    !isStableAssetId(value.glyph.color.variableStableId) ||
+    !isRecord(value.accessibility) ||
+    !hasOnlyKeys(
+      value.accessibility,
+      new Set([
+        "defaultPresentation",
+        "interactiveTargetOwner",
+        "minimumInteractiveTarget",
+        "semanticUsageRequiresAccessibleName",
+      ]),
+    ) ||
+    value.accessibility.defaultPresentation !== "decorative" ||
+    value.accessibility.interactiveTargetOwner !== "consumer" ||
+    value.accessibility.minimumInteractiveTarget !== 44 ||
+    value.accessibility.semanticUsageRequiresAccessibleName !== true ||
+    !Array.isArray(value.variants) ||
+    value.variants.length !== 3
+  ) {
+    return false;
+  }
+  const source = value.source;
+  const tokenSource = value.tokenSource;
+  const componentSet = value.componentSet;
+  const root = `${String(source.projectId)}/component/${String(source.assetId)}/component-set/major-${String(componentSet.majorVersion)}`;
+  const collection = `${String(tokenSource.projectId)}/token-set/${String(tokenSource.assetId)}/variables/major-${String(tokenSource.assetVersion).split(".")[0]}`;
+  const variablePrefix = `${collection}/variable/`;
+  if (
+    componentSet.stableId !== root ||
+    Number(String(source.assetVersion).split(".")[0]) !==
+      componentSet.majorVersion ||
+    tokenSource.collectionStableId !== collection ||
+    !String(value.glyph.color.variableStableId).startsWith(variablePrefix)
+  ) {
+    return false;
+  }
+  const expected = new Map([
+    ["small", { figma: "Size=Small", size: 16 }],
+    ["medium", { figma: "Size=Medium", size: 24 }],
+    ["large", { figma: "Size=Large", size: 32 }],
+  ]);
+  const seen = new Set<string>();
+  for (const variant of value.variants) {
+    if (
+      !isRecord(variant) ||
+      !hasOnlyKeys(variant, ICON_VARIANT_KEYS) ||
+      typeof variant.size !== "string" ||
+      !expected.has(variant.size) ||
+      seen.has(variant.size) ||
+      !isStableAssetId(variant.id) ||
+      !isStableAssetId(variant.slotId) ||
+      !isStableAssetId(variant.stableId) ||
+      variant.stableId !== `${root}/${String(variant.slotId)}` ||
+      !isRecord(variant.frame) ||
+      !hasOnlyKeys(variant.frame, new Set(["size", "variableStableId"])) ||
+      !isStableAssetId(variant.frame.variableStableId) ||
+      !String(variant.frame.variableStableId).startsWith(variablePrefix) ||
+      !isRecord(variant.glyph) ||
+      !hasOnlyKeys(
+        variant.glyph,
+        new Set(["height", "scale", "strokeWidth", "width", "x", "y"]),
+      )
+    ) {
+      return false;
+    }
+    const specification = expected.get(variant.size);
+    if (specification === undefined) return false;
+    const scale = specification.size / 24;
+    if (
+      variant.figmaName !== specification.figma ||
+      variant.frame.size !== specification.size ||
+      variant.glyph.scale !== scale ||
+      variant.glyph.width !== 14 * scale ||
+      variant.glyph.height !== 10 * scale ||
+      variant.glyph.strokeWidth !== 2 * scale ||
+      variant.glyph.x !== 5 * scale ||
+      variant.glyph.y !== 7.5 * scale
+    ) {
+      return false;
+    }
+    seen.add(variant.size);
+  }
+  return seen.size === 3;
+}
+
 function isFigmaButtonInstancePlan(
   value: unknown,
 ): value is Record<string, unknown> {
@@ -991,6 +1165,51 @@ function isButtonCommand(
     !isStableAssetId(target.stableId)
   )
     return false;
+  const source = value.payload.plan.source;
+  return (
+    isRecord(source) &&
+    approval.subject.projectId === source.projectId &&
+    approval.subject.assetId === source.assetId &&
+    approval.subject.assetVersion === source.assetVersion &&
+    approval.subject.contentDigest === source.contentDigest &&
+    projectId === source.projectId
+  );
+}
+
+function isIconCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "components.icon.ensure" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isFigmaIconPlan(value.payload.plan) ||
+    approval.mode !== "approved" ||
+    !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
+    !isBoundedString(approval.approvalId, 1, 320) ||
+    !COMPONENT_APPROVAL_ID_PATTERN.test(approval.approvalId) ||
+    !isRecord(approval.subject) ||
+    !hasOnlyKeys(
+      approval.subject,
+      new Set([
+        "assetId",
+        "assetVersion",
+        "contentDigest",
+        "projectId",
+        "type",
+      ]),
+    ) ||
+    approval.subject.type !== "component" ||
+    target.kind !== "figma-file" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  ) {
+    return false;
+  }
   const source = value.payload.plan.source;
   return (
     isRecord(source) &&
@@ -1382,6 +1601,12 @@ export function isWriterCommandDelivery(
       value.target,
       value.projectId,
     ) ||
+    isIconCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    ) ||
     isButtonInstanceCommand(
       value.command,
       value.approval,
@@ -1451,6 +1676,31 @@ function isButtonResult(value: Record<string, unknown>): boolean {
     ) &&
     value.typography.lineHeightStrategy === "resolved-percent" &&
     value.typography.variableBindings === 4 &&
+    isRecord(value.variants) &&
+    hasOnlyKeys(value.variants, new Set(["created", "unchanged", "updated"])) &&
+    [
+      value.variants.created,
+      value.variants.unchanged,
+      value.variants.updated,
+    ].every((count) => Number.isSafeInteger(count) && Number(count) >= 0)
+  );
+}
+
+function isIconResult(value: Record<string, unknown>): boolean {
+  return (
+    hasOnlyKeys(value, new Set(["componentSet", "type", "variants"])) &&
+    value.type === "components.icon.ensure" &&
+    isRecord(value.componentSet) &&
+    hasOnlyKeys(
+      value.componentSet,
+      new Set(["action", "nodeId", "stableId"]),
+    ) &&
+    ["created", "unchanged", "updated"].includes(
+      String(value.componentSet.action),
+    ) &&
+    isBoundedString(value.componentSet.nodeId, 1, 128) &&
+    /^\d+:\d+$/u.test(value.componentSet.nodeId) &&
+    isStableAssetId(value.componentSet.stableId) &&
     isRecord(value.variants) &&
     hasOnlyKeys(value.variants, new Set(["created", "unchanged", "updated"])) &&
     [
@@ -1729,6 +1979,7 @@ export function isWriterPluginResult(
       ((Object.keys(value.result).length === 1 && value.result.pong === true) ||
         isVariablesResult(value.result) ||
         isButtonResult(value.result) ||
+        isIconResult(value.result) ||
         isButtonInstanceResult(value.result) ||
         isRegistryDriftAuditResult(value.result) ||
         isComponentAuditResult(value.result) ||

@@ -5,9 +5,11 @@ import {
   createFailureResult,
   createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
+  createFigmaIconPlan,
   createFigmaVariablePlan,
   createSuccessResult,
   createToolkitError,
+  iconComponentContractSchema,
   tokenSetSchema,
   writerCommandEnvelopeSchema,
   type ApprovalRecord,
@@ -18,6 +20,8 @@ import { describe, expect, it, vi } from "vitest";
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
+import iconContractFixture from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
+import iconTokenFixture from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
 
 import { createGitApprovalVerifier } from "./approval-verifier.js";
 
@@ -27,6 +31,12 @@ const TOKEN_SET = tokenSetSchema.parse(validTokenSet);
 const BUTTON_CONTRACT = buttonComponentContractSchema.parse(validContract);
 const COMPONENT_DIGEST =
   "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78";
+const ICON_COMPONENT_DIGEST =
+  "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260";
+const ICON_TOKEN_DIGEST =
+  "sha256:3e6525097fe95c63b373adf9b7a6797e3153a4670665c0da9563fc971f62315e";
+const ICON_CONTRACT = iconComponentContractSchema.parse(iconContractFixture);
+const ICON_TOKENS = tokenSetSchema.parse(iconTokenFixture);
 
 function approvedDirection(): ApprovalRecord {
   return approvalRecordSchema.parse({
@@ -249,6 +259,22 @@ function approvedComponent(token: ApprovalRecord): ApprovalRecord {
   });
 }
 
+function approvedIconToken(direction: ApprovalRecord): ApprovalRecord {
+  const record = structuredClone(approvedToken(direction));
+  record.approvalId = "approval.tokens.icon-foundation.1.0.0";
+  record.subject.assetId = "icon-foundation";
+  record.subject.contentDigest = ICON_TOKEN_DIGEST;
+  return approvalRecordSchema.parse(record);
+}
+
+function approvedIconComponent(token: ApprovalRecord): ApprovalRecord {
+  const record = structuredClone(approvedComponent(token));
+  record.approvalId = "approval.component.icon.check.1.0.0";
+  record.subject.assetId = "icon/check";
+  record.subject.contentDigest = ICON_COMPONENT_DIGEST;
+  return approvalRecordSchema.parse(record);
+}
+
 function snapshot(approvals: readonly ApprovalRecord[]): DesignSystemSnapshot {
   return {
     approvals: approvals.map((data) => ({
@@ -324,6 +350,37 @@ function buttonCommand() {
     },
     idempotencyKey: "button-approval-verifier-command",
     operationId: "4d73620e-29b0-4285-8861-1a65b18f11dc",
+    projectId: "hatch-demo",
+    schemaVersion: "1.0.0",
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  });
+}
+
+function iconCommand() {
+  const plan = createFigmaIconPlan(
+    ICON_CONTRACT,
+    ICON_TOKENS,
+    ICON_COMPONENT_DIGEST,
+    ICON_TOKEN_DIGEST,
+  );
+  if (!plan.ok) throw new Error(plan.error.message);
+  return writerCommandEnvelopeSchema.parse({
+    approval: {
+      approvalId: "approval.component.icon.check.1.0.0",
+      mode: "approved",
+      subject: { ...plan.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: plan.data },
+      type: "components.icon.ensure",
+    },
+    idempotencyKey: "icon-approval-verifier-command",
+    operationId: "6d73620e-29b0-4285-8861-1a65b18f11dc",
     projectId: "hatch-demo",
     schemaVersion: "1.0.0",
     source: { client: "mcp-server" },
@@ -494,6 +551,47 @@ describe("Git Approval verifier", () => {
     }
     changed.command.payload.plan.componentSet.description =
       "A schema-valid but unapproved Button plan.";
+    expect(
+      await verify(writerCommandEnvelopeSchema.parse(changed)),
+    ).toMatchObject({ code: "APPROVAL_STALE" });
+  });
+
+  it("rebuilds an approved Icon plan with its exact Token dependency", async () => {
+    const direction = approvedDirection();
+    const token = approvedIconToken(direction);
+    const component = approvedIconComponent(token);
+    const base = snapshot([direction, token, component]);
+    const current: DesignSystemSnapshot = {
+      ...base,
+      components: [
+        ...base.components,
+        {
+          data: ICON_CONTRACT,
+          sourcePath: "components/icon-check.component.json",
+        },
+      ],
+      tokenSets: [
+        ...base.tokenSets,
+        {
+          data: ICON_TOKENS,
+          sourcePath: "tokens/icon-foundation.tokens.json",
+        },
+      ],
+    };
+    const verify = createGitApprovalVerifier(
+      { designSystemRoot: "/unused", expectedProjectId: "hatch-demo" },
+      {
+        loadSnapshot: vi.fn().mockResolvedValue(createSuccessResult(current)),
+      },
+    );
+
+    expect(await verify(iconCommand())).toBeNull();
+    const changed = structuredClone(iconCommand());
+    if (changed.command.type !== "components.icon.ensure") {
+      throw new Error("Icon command fixture drifted.");
+    }
+    changed.command.payload.plan.componentSet.description =
+      "A schema-valid but unapproved Icon plan.";
     expect(
       await verify(writerCommandEnvelopeSchema.parse(changed)),
     ).toMatchObject({ code: "APPROVAL_STALE" });

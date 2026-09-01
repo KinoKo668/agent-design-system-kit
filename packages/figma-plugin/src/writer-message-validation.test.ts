@@ -2,6 +2,7 @@ import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
   createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
+  createFigmaIconPlan,
   createFigmaVariablePlan,
   validateDesignSystemSnapshot,
   writerCommandDeliverySchema,
@@ -224,6 +225,56 @@ function buttonDelivery() {
   };
 }
 
+function iconDelivery() {
+  const tokens = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/tokens/icon-foundation.tokens.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const contract = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/components/icon-check.component.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const planned = createFigmaIconPlan(
+    contract,
+    tokens,
+    "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260",
+    "sha256:3e6525097fe95c63b373adf9b7a6797e3153a4670665c0da9563fc971f62315e",
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.icon.check.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "components.icon.ensure",
+    },
+    idempotencyKey: "components-icon-check-1.0.0",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function variablesDelivery() {
   const fixture = JSON.parse(
     readFileSync(
@@ -360,6 +411,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(buttonDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(buttonDelivery())).toBe(true);
+    expect(writerCommandDeliverySchema.safeParse(iconDelivery()).success).toBe(
+      true,
+    );
+    expect(isWriterCommandDelivery(iconDelivery())).toBe(true);
     expect(
       writerCommandDeliverySchema.safeParse(instanceDelivery()).success,
     ).toBe(true);
@@ -415,6 +470,16 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(wrongComponentApproval).success,
     ).toBe(false);
     expect(isWriterCommandDelivery(wrongComponentApproval)).toBe(false);
+
+    const changedIconGeometry = structuredClone(iconDelivery()) as unknown as {
+      command: { payload: { plan: { glyph: { pathData: string } } } };
+    };
+    changedIconGeometry.command.payload.plan.glyph.pathData =
+      "M4 12L10 18L20 6";
+    expect(
+      writerCommandDeliverySchema.safeParse(changedIconGeometry).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(changedIconGeometry)).toBe(false);
   });
 
   it("matches strict success and failure Result envelopes", () => {
@@ -465,10 +530,24 @@ describe("lightweight Figma Writer boundary validation", () => {
         variants: { created: 4, unchanged: 0, updated: 0 },
       },
     };
+    const icon = {
+      ...success,
+      result: {
+        componentSet: {
+          action: "created",
+          nodeId: "3:4",
+          stableId: "hatch-demo/component/icon/check/component-set/major-1",
+        },
+        type: "components.icon.ensure",
+        variants: { created: 3, unchanged: 0, updated: 0 },
+      },
+    };
     expect(writerPluginResultSchema.safeParse(success).success).toBe(true);
     expect(writerPluginResultSchema.safeParse(failure).success).toBe(true);
     expect(isWriterPluginResult(success)).toBe(true);
     expect(isWriterPluginResult(failure)).toBe(true);
+    expect(writerPluginResultSchema.safeParse(icon).success).toBe(true);
+    expect(isWriterPluginResult(icon)).toBe(true);
 
     const instanceSuccess = {
       ok: true,

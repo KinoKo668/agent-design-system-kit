@@ -1,5 +1,9 @@
 import * as z from "zod";
 
+import {
+  BUTTON_CONTRACT_PROFILE,
+  type ButtonComponentContract,
+} from "./button-contract.js";
 import { resolveComponent } from "./component-query.js";
 import type { DesignSystemSnapshot } from "./design-system-snapshot.js";
 import { createToolkitError } from "./errors.js";
@@ -226,6 +230,19 @@ export function createFigmaButtonInstancePlan(
     );
   }
   const { contract, registryEntry, selectedVariant } = resolved.data;
+  if (contract.profile !== BUTTON_CONTRACT_PROFILE) {
+    return createFailureResult(
+      createToolkitError({
+        code: "IDENTITY_CONFLICT",
+        message: "The Button request resolved a non-Button Component profile.",
+        recoveryInstruction:
+          "Repair the Registry and resolve the exact Button Contract before planning insertion.",
+        target: { logicalId: contract.assetId, type: "component" },
+      }),
+    );
+  }
+  const buttonVariant =
+    selectedVariant as ButtonComponentContract["variants"][number];
   const property = (id: string) =>
     contract.properties.find((candidate) => candidate.id === id);
   const appearance = property("appearance");
@@ -246,10 +263,10 @@ export function createFigmaButtonInstancePlan(
     );
   }
   const appearanceValue = appearance.options.find(
-    ({ id }) => id === selectedVariant.selections.appearance,
+    ({ id }) => id === buttonVariant.selections.appearance,
   )?.figmaValue;
   const stateValue = state.options.find(
-    ({ id }) => id === selectedVariant.selections.state,
+    ({ id }) => id === buttonVariant.selections.state,
   )?.figmaValue;
   if (appearanceValue === undefined || stateValue === undefined) {
     return createFailureResult(
@@ -286,8 +303,8 @@ export function createFigmaButtonInstancePlan(
     selectedVariant: {
       figmaName: `${appearance.figmaName}=${appearanceValue}, ${state.figmaName}=${stateValue}`,
       selections: {
-        appearance: selectedVariant.selections.appearance,
-        state: selectedVariant.selections.state,
+        appearance: buttonVariant.selections.appearance,
+        state: buttonVariant.selections.state,
       },
       slotId: selectedVariant.slotId,
       stableId: `${root}/${selectedVariant.slotId}`,

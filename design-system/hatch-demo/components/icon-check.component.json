@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "component",
+  "projectId": "hatch-demo",
+  "assetId": "icon/check",
+  "assetVersion": "1.0.0",
+  "contentDigest": "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260",
+  "name": "Icon / Check",
+  "description": "A precise rounded-stroke Check icon with small, medium and large Figma variants.",
+  "componentKind": "component-set",
+  "profile": "icon-v1",
+  "size": "multi-size",
+  "tokenSource": {
+    "assetType": "token-set",
+    "projectId": "hatch-demo",
+    "assetId": "icon-foundation",
+    "assetVersion": "1.0.0"
+  },
+  "properties": [
+    {
+      "kind": "variant",
+      "id": "size",
+      "figmaName": "Size",
+      "description": "Selects the optical Icon frame size.",
+      "defaultOptionId": "medium",
+      "options": [
+        {
+          "id": "small",
+          "figmaValue": "Small",
+          "description": "Sixteen-pixel Icon for compact supporting UI."
+        },
+        {
+          "id": "medium",
+          "figmaValue": "Medium",
+          "description": "Twenty-four-pixel default interface Icon."
+        },
+        {
+          "id": "large",
+          "figmaValue": "Large",
+          "description": "Thirty-two-pixel Icon for prominent visual anchors."
+        }
+      ]
+    }
+  ],
+  "geometry": {
+    "opticalGrid": 24,
+    "safeArea": 2,
+    "strokeWidth": 2,
+    "cap": "round",
+    "join": "round",
+    "pathData": "M5 12.5L10 17.5L19 7.5"
+  },
+  "sharedBindings": [
+    {
+      "target": "glyph.stroke",
+      "token": "{semantic.color.icon-default}"
+    }
+  ],
+  "variants": [
+    {
+      "id": "size-small",
+      "name": "Small",
+      "slotId": "variant/size-small",
+      "selections": { "size": "small" },
+      "bindings": [
+        {
+          "target": "frame.size",
+          "token": "{semantic.dimension.icon-size-small}"
+        }
+      ]
+    },
+    {
+      "id": "size-medium",
+      "name": "Medium",
+      "slotId": "variant/size-medium",
+      "selections": { "size": "medium" },
+      "bindings": [
+        {
+          "target": "frame.size",
+          "token": "{semantic.dimension.icon-size-medium}"
+        }
+      ]
+    },
+    {
+      "id": "size-large",
+      "name": "Large",
+      "slotId": "variant/size-large",
+      "selections": { "size": "large" },
+      "bindings": [
+        {
+          "target": "frame.size",
+          "token": "{semantic.dimension.icon-size-large}"
+        }
+      ]
+    }
+  ],
+  "accessibility": {
+    "defaultPresentation": "decorative",
+    "semanticUsageRequiresAccessibleName": true,
+    "interactiveTargetOwner": "consumer",
+    "minimumInteractiveTarget": 44
+  }
+}

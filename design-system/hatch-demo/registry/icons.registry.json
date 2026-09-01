@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryType": "component-registry",
+  "projectId": "hatch-demo",
+  "entries": [
+    {
+      "asset": {
+        "type": "component",
+        "id": "icon/check",
+        "version": "1.0.0",
+        "contentDigest": "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260"
+      },
+      "approvalId": "approval.component.icon.check.1.0.0",
+      "lifecycle": "active",
+      "lifecycleReason": null,
+      "figma": {
+        "status": "unbuilt",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 1,
+        "role": "component-set",
+        "slotId": "root"
+      },
+      "supersedes": null,
+      "replacedBy": null
+    }
+  ]
+}

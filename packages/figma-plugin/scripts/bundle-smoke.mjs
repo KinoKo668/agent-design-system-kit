@@ -1,6 +1,7 @@
 import { stat, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -17,6 +18,7 @@ const [manifestText, pluginJavaScript, uiHtml, pluginStat, uiStat] =
     stat(uiPath),
   ]);
 const manifest = JSON.parse(manifestText);
+const pluginGzipBytes = gzipSync(pluginJavaScript).byteLength;
 
 const failures = [];
 function requireCondition(condition, message) {
@@ -102,7 +104,11 @@ requireCondition(
     pluginJavaScript.includes("FILE_BINDING_MISMATCH"),
   "main bundle missing fail-closed Figma file binding",
 );
-requireCondition(pluginStat.size <= 100 * 1024, "main bundle exceeds 100 KiB");
+requireCondition(pluginStat.size <= 128 * 1024, "main bundle exceeds 128 KiB");
+requireCondition(
+  pluginGzipBytes <= 32 * 1024,
+  "main bundle exceeds 32 KiB gzip",
+);
 requireCondition(uiStat.size <= 300 * 1024, "UI bundle exceeds 300 KiB");
 
 if (failures.length > 0) {
@@ -112,5 +118,5 @@ if (failures.length > 0) {
 }
 
 process.stdout.write(
-  `Hatchkit Figma Plugin bundle passed (${String(pluginStat.size)} byte main, ${String(uiStat.size)} byte UI).\n`,
+  `Hatchkit Figma Plugin bundle passed (${String(pluginStat.size)} byte main, ${String(pluginGzipBytes)} byte gzip, ${String(uiStat.size)} byte UI).\n`,
 );

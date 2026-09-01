@@ -32,6 +32,18 @@ const CATALOG_ARGUMENTS = [
   "--registry",
   "registry/components.registry.json",
 ] as const;
+const ICON_CATALOG_ARGUMENTS = [
+  "--project",
+  "hatch-demo",
+  "--root",
+  "design-system/hatch-demo",
+  "--token-set",
+  "tokens/icon-foundation.tokens.json",
+  "--component",
+  "components/icon-check.component.json",
+  "--registry",
+  "registry/icons.registry.json",
+] as const;
 
 function parseOutput(result: Awaited<ReturnType<typeof runCli>>): unknown {
   return JSON.parse(result.output) as unknown;
@@ -119,6 +131,47 @@ describe("runCli", () => {
         ],
         total: 1,
       },
+    });
+  });
+
+  it("searches and resolves the exact unbuilt Icon Contract", async () => {
+    const search = await runCli(
+      ["search", ...ICON_CATALOG_ARGUMENTS, "--term", "Icon / Check"],
+      { cwd: WORKSPACE_ROOT },
+    );
+    const resolved = await runCli(
+      [
+        "resolve",
+        ...ICON_CATALOG_ARGUMENTS,
+        "--asset-id",
+        "icon/check",
+        "--variant",
+        "size=large",
+      ],
+      { cwd: WORKSPACE_ROOT },
+    );
+
+    expect(search.exitCode).toBe(CLI_EXIT_CODES.success);
+    expect(parseOutput(search)).toMatchObject({
+      data: {
+        items: [
+          {
+            asset: { id: "icon/check", version: "1.0.0" },
+            availability: "ensure-required",
+            profile: "icon-v1",
+          },
+        ],
+      },
+      ok: true,
+    });
+    expect(resolved.exitCode).toBe(CLI_EXIT_CODES.success);
+    expect(parseOutput(resolved)).toMatchObject({
+      data: {
+        selectedVariant: { id: "size-large" },
+        status: "ensure-required",
+        variantSelections: { size: "large" },
+      },
+      ok: true,
     });
   });
 

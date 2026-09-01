@@ -123,18 +123,21 @@ describe("createHatchkitMcpServer", () => {
         catalog: {
           counts: {
             briefs: 1,
-            components: 1,
+            components: 2,
             directions: 1,
-            registries: 1,
-            tokenSets: 1,
+            registries: 2,
+            tokenSets: 2,
           },
           projectId: "hatch-demo",
           sources: [
             "briefs/hatch-demo.brief.json",
             "components/button.component.json",
+            "components/icon-check.component.json",
             "directions/hatch-demo.direction-review.json",
             "registry/components.registry.json",
+            "registry/icons.registry.json",
             "tokens/button-foundation.tokens.json",
+            "tokens/icon-foundation.tokens.json",
           ],
         },
         server: {

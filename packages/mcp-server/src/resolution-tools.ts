@@ -2,11 +2,12 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
 
 import {
-  buttonComponentContractSchema,
   buttonVariantSchema,
+  componentContractSchema,
   componentChangeRequestSchema,
   componentChangeRequestSubmissionSchema,
   componentRegistryEntrySchema,
+  iconVariantSchema,
   resolveComponent,
   resolveComponentOrRequestChange,
   stableAssetIdSchema,
@@ -62,8 +63,8 @@ const componentSourcesSchema = z.strictObject({
 });
 
 const componentResolutionCommonShape = {
-  contract: buttonComponentContractSchema,
-  selectedVariant: buttonVariantSchema,
+  contract: componentContractSchema,
+  selectedVariant: z.union([buttonVariantSchema, iconVariantSchema]),
   sources: componentSourcesSchema,
   variantSelections: z.record(stableIdSegmentSchema, stableIdSegmentSchema),
 };

@@ -1,5 +1,6 @@
 import * as z from "zod";
 
+import type { ComponentContract } from "./component-contract.js";
 import type { DesignSystemSnapshot } from "./design-system-snapshot.js";
 import { createToolkitError } from "./errors.js";
 import type { JsonObject, JsonValue } from "./json.js";
@@ -21,6 +22,22 @@ export const COMPONENT_AUDIT_FINDING_CODES = [
   "VARIANT_PROPERTY_MISMATCH",
   "INSTANCE_PROVENANCE_MISMATCH",
 ] as const;
+
+type ComponentProperty = ComponentContract["properties"][number];
+type VariantProperty = Extract<ComponentProperty, { readonly kind: "variant" }>;
+
+function isVariantProperty(
+  property: ComponentProperty,
+): property is VariantProperty {
+  return property.kind === "variant";
+}
+
+function selectionValue(
+  selections: Readonly<Record<string, string>>,
+  propertyId: string,
+): string | undefined {
+  return selections[propertyId];
+}
 
 const nodeIdSchema = z
   .string()
@@ -287,8 +304,8 @@ export function createFigmaComponentAuditPlan(
     )?.data;
     if (contract === undefined) return [];
     const variantProperties = contract.properties.filter(
-      (property) => property.kind === "variant",
-    );
+      isVariantProperty,
+    ) as readonly VariantProperty[];
     return [
       {
         assetId: contract.assetId,
@@ -300,7 +317,8 @@ export function createFigmaComponentAuditPlan(
           figmaName: variantProperties
             .map((property) => {
               const option = property.options.find(
-                ({ id }) => id === variant.selections[property.id],
+                ({ id }) =>
+                  id === selectionValue(variant.selections, property.id),
               );
               return `${property.figmaName}=${option?.figmaValue ?? ""}`;
             })
@@ -308,7 +326,8 @@ export function createFigmaComponentAuditPlan(
           properties: Object.fromEntries(
             variantProperties.map((property) => {
               const option = property.options.find(
-                ({ id }) => id === variant.selections[property.id],
+                ({ id }) =>
+                  id === selectionValue(variant.selections, property.id),
               );
               return [property.figmaName, option?.figmaValue ?? ""];
             }),

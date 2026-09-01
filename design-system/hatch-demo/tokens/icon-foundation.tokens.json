@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "token-set",
+  "projectId": "hatch-demo",
+  "assetId": "icon-foundation",
+  "assetVersion": "1.0.0",
+  "contentDigest": "sha256:3e6525097fe95c63b373adf9b7a6797e3153a4670665c0da9563fc971f62315e",
+  "name": "Icon foundation",
+  "description": "The minimum color and size tokens required by the Hatch Icon vertical slice.",
+  "dtcgVersion": "2025.10",
+  "defaultMode": "light",
+  "modes": [
+    {
+      "id": "light",
+      "name": "Light",
+      "tokens": [
+        {
+          "path": ["primitive", "color", "neutral-900"],
+          "$type": "color",
+          "$description": "Dark neutral used by default interface iconography.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1, 0.1, 0.1],
+            "alpha": 1,
+            "hex": "#1a1a1a"
+          }
+        },
+        {
+          "path": ["primitive", "dimension", "icon-size-16"],
+          "$type": "dimension",
+          "$description": "Small Icon frame size.",
+          "$value": { "value": 16, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "icon-size-24"],
+          "$type": "dimension",
+          "$description": "Default Icon frame size.",
+          "$value": { "value": 24, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "icon-size-32"],
+          "$type": "dimension",
+          "$description": "Large Icon frame size.",
+          "$value": { "value": 32, "unit": "px" }
+        },
+        {
+          "path": ["semantic", "color", "icon-default"],
+          "$type": "color",
+          "$description": "Default foreground color for interface Icons.",
+          "$value": "{primitive.color.neutral-900}"
+        },
+        {
+          "path": ["semantic", "dimension", "icon-size-small"],
+          "$type": "dimension",
+          "$description": "Semantic small Icon size.",
+          "$value": "{primitive.dimension.icon-size-16}"
+        },
+        {
+          "path": ["semantic", "dimension", "icon-size-medium"],
+          "$type": "dimension",
+          "$description": "Semantic default Icon size.",
+          "$value": "{primitive.dimension.icon-size-24}"
+        },
+        {
+          "path": ["semantic", "dimension", "icon-size-large"],
+          "$type": "dimension",
+          "$description": "Semantic large Icon size.",
+          "$value": "{primitive.dimension.icon-size-32}"
+        }
+      ]
+    }
+  ]
+}

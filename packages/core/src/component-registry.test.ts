@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validIconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
 import invalidRegistry from "../../../design-system/examples/registry/invalid-components.registry.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
+import validIconRegistry from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
 
 import {
   COMPONENT_REGISTRY_SCHEMA_VERSION,
   COMPONENT_REGISTRY_TYPE,
   markComponentRegistryReady,
   validateComponentRegistry,
+  validateComponentRegistryWithContract,
   validateComponentRegistryWithButtonContract,
 } from "./component-registry.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
@@ -73,6 +76,15 @@ describe("validateComponentRegistry", () => {
       ...validButtonContract,
       contentDigest: CONTRACT_DIGEST,
     });
+
+    expect(isSuccessResult(result)).toBe(true);
+  });
+
+  it("associates the exact Icon Contract with its unbuilt Registry track", () => {
+    const result = validateComponentRegistryWithContract(
+      validIconRegistry,
+      validIconContract,
+    );
 
     expect(isSuccessResult(result)).toBe(true);
   });

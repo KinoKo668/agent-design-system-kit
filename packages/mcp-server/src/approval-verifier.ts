@@ -3,6 +3,7 @@ import {
   checkApprovalForUse,
   createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
+  createFigmaIconPlan,
   createFigmaVariablePlan,
   createToolkitError,
   type DesignSystemSnapshot,
@@ -131,12 +132,28 @@ function verifyDeterministicPlan(
     tokenDependency === undefined
   )
     return planMismatchError(command);
-  const expected = createFigmaButtonPlan(
-    component.data,
-    tokenSet.data,
-    subject.contentDigest,
-    tokenDependency.contentDigest,
-  );
+  if (
+    (component.data.profile === "button-v1" &&
+      command.command.type !== "components.button.ensure") ||
+    (component.data.profile === "icon-v1" &&
+      command.command.type !== "components.icon.ensure")
+  ) {
+    return planMismatchError(command);
+  }
+  const expected =
+    component.data.profile === "button-v1"
+      ? createFigmaButtonPlan(
+          component.data,
+          tokenSet.data,
+          subject.contentDigest,
+          tokenDependency.contentDigest,
+        )
+      : createFigmaIconPlan(
+          component.data,
+          tokenSet.data,
+          subject.contentDigest,
+          tokenDependency.contentDigest,
+        );
   return !expected.ok ||
     canonicalizeJson(expected.data) !==
       canonicalizeJson(command.command.payload.plan)

@@ -1,9 +1,10 @@
 import * as z from "zod";
 
+import { validateButtonComponentContract } from "./button-contract.js";
 import {
-  validateButtonComponentContract,
-  type ButtonComponentContract,
-} from "./button-contract.js";
+  validateComponentContract,
+  type ComponentContract,
+} from "./component-contract.js";
 import { createToolkitError } from "./errors.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
@@ -639,7 +640,7 @@ export function validateComponentRegistry(
 
 function validateContractAssociation(
   registry: ComponentRegistry,
-  contract: ButtonComponentContract,
+  contract: ComponentContract,
 ): readonly SchemaValidationIssue[] {
   const issues: SchemaValidationIssue[] = [];
   if (registry.projectId !== contract.projectId) {
@@ -683,6 +684,26 @@ function validateContractAssociation(
     });
   }
   return issues;
+}
+
+export function validateComponentRegistryWithContract(
+  registryInput: unknown,
+  contractInput: unknown,
+): ToolkitResult<ComponentRegistry> {
+  const registryResult = validateComponentRegistry(registryInput);
+  if (!registryResult.ok) return registryResult;
+  const contractResult = validateComponentContract(contractInput);
+  if (!contractResult.ok) return contractResult;
+  const issues = validateContractAssociation(
+    registryResult.data,
+    contractResult.data,
+  );
+  return issues.length === 0
+    ? createSuccessResult(registryResult.data)
+    : validationFailure(
+        issues,
+        `The Component Registry has ${String(issues.length)} Contract association issue(s).`,
+      );
 }
 
 export function validateComponentRegistryWithButtonContract(

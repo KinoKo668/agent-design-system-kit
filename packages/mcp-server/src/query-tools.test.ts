@@ -189,6 +189,34 @@ describe("Hatchkit MCP query tools", () => {
     expect(JSON.stringify(exact)).not.toContain("fileBindingId");
   });
 
+  it("finds the registered Icon exactly without treating it as Figma-ready", async () => {
+    const result = await client.callTool({
+      arguments: { term: "Icon / Check" },
+      name: HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      data: {
+        items: [
+          {
+            asset: { id: "icon/check", version: "1.0.0" },
+            availability: "ensure-required",
+            profile: "icon-v1",
+            size: "multi-size",
+            sources: {
+              contractSourcePath: "components/icon-check.component.json",
+              registrySourcePath: "registry/icons.registry.json",
+            },
+          },
+        ],
+        page: { returned: 1, total: 1 },
+      },
+      ok: true,
+    });
+    expect(JSON.stringify(result)).not.toContain("nodeId");
+  });
+
   it("returns a Toolkit Failure for a well-formed missing exact Brief", async () => {
     const result = await client.callTool({
       arguments: {

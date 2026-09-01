@@ -194,7 +194,7 @@ function partialRegistryError(command: WriterCommandEnvelope): ToolkitError {
   return createToolkitError({
     code: "PARTIAL_WRITE",
     message:
-      "The Figma Button was audited successfully, but its Registry locator was not committed.",
+      "The Figma Component was audited successfully, but its Registry locator was not committed.",
     recoveryInstruction:
       "Keep the Figma asset, resolve the Registry conflict, then retry the same approved command and idempotency key.",
     target: {
@@ -215,13 +215,15 @@ export function createRegistryWriteFinalizer(
     if (
       !("type" in result) ||
       (result.type !== "components.button.ensure" &&
+        result.type !== "components.icon.ensure" &&
         result.type !== "instances.button.insert")
     ) {
       return null;
     }
     const plan =
-      result.type === "components.button.ensure" &&
-      command.command.type === "components.button.ensure"
+      (result.type === "components.button.ensure" ||
+        result.type === "components.icon.ensure") &&
+      command.command.type === result.type
         ? command.command.payload.plan
         : result.type === "instances.button.insert" &&
             command.command.type === "instances.button.insert"
