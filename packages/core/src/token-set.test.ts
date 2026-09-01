@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import invalidAliases from "../../../design-system/examples/tokens/invalid-aliases.tokens.json" with { type: "json" };
-import validTokenSet from "../../../design-system/examples/tokens/button-foundation.tokens.json" with { type: "json" };
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
 import { isFailureResult, isSuccessResult } from "./results.js";
 import {

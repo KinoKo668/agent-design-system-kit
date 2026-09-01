@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import validButtonContract from "../../../design-system/examples/components/button.component.json" with { type: "json" };
+import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import invalidButtonContract from "../../../design-system/examples/components/invalid-button.component.json" with { type: "json" };
-import validTokenSet from "../../../design-system/examples/tokens/button-foundation.tokens.json" with { type: "json" };
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
 import {
   BUTTON_BINDING_TARGET_TYPES,

@@ -222,9 +222,9 @@ Contract 不保存 Figma Node ID、Component Key、Page 名称或坐标。这些
 
 ## 12. Fixture 与公共代码入口
 
-- `design-system/examples/components/button.component.json`：正确 Button v1 Contract；
+- `design-system/hatch-demo/components/button.component.json`：正确 Button v1 Contract；
 - `design-system/examples/components/invalid-button.component.json`：故意包含错误默认值、未批准选项、重复 Binding、非法状态、错误 Slot 和缺失 Variant；
-- `design-system/examples/tokens/button-foundation.tokens.json`：跨资产引用校验使用的 Token Set。
+- `design-system/hatch-demo/tokens/button-foundation.tokens.json`：跨资产引用校验使用的 Token Set。
 
 `@agent-design-system-kit/core` 导出：
 

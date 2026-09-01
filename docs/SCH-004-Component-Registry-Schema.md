@@ -232,7 +232,7 @@ Registry 可以保存 Figma 物理定位信息，但这些字段：
 
 ## 11. Fixture 与公共代码入口
 
-- `design-system/examples/registry/components.registry.json`：一个 Active、Ready 的 Button 映射，所有物理 ID 均为虚构值；
+- `design-system/hatch-demo/registry/components.registry.json`：一个 Active、Ready 的 Button 映射，所有物理 ID 均为虚构值；
 - `design-system/examples/registry/invalid-components.registry.json`：故意包含审批错配、版本／摘要漂移、非法生命周期、错误历史关系、重复 Active 与跨组件 Locator 冲突。
 
 `@agent-design-system-kit/core` 导出：

@@ -213,7 +213,7 @@ const result = validateTokenSet(input);
 
 ## 11. Fixture
 
-- `design-system/examples/tokens/button-foundation.tokens.json`：Button 最小基础 Token Set；
+- `design-system/hatch-demo/tokens/button-foundation.tokens.json`：Button 最小基础 Token Set；
 - `design-system/examples/tokens/invalid-aliases.tokens.json`：故意包含默认 Mode 丢失、重复路径、非法分层、断裂 Alias、类型不匹配、循环和跨 Mode 不一致。
 
 正式测试直接读取两份 JSON，避免文档示例与运行时 Schema 漂移。

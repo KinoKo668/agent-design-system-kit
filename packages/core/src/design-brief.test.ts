@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import invalidCrossReferences from "../../../design-system/examples/briefs/invalid-cross-references.brief.json" with { type: "json" };
-import validBrief from "../../../design-system/examples/briefs/hatch-demo.brief.json" with { type: "json" };
+import validBrief from "../../../design-system/hatch-demo/briefs/hatch-demo.brief.json" with { type: "json" };
 
 import {
   DESIGN_BRIEF_ASSET_TYPE,

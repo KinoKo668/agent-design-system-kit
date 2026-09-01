@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed M2 schemas and read-only queries and is entering M3 MCP integration. It is not yet a production-ready toolkit.**
+**Hatch has completed M2 schemas and read-only queries. Its first local stdio MCP entry point is now available as part of M3, but the toolkit is not yet production-ready.**
 
 What exists today:
 
@@ -114,6 +114,7 @@ What exists today:
 - deterministic component search and exact resolution that never fuzzy-matches, silently falls back to inactive versions, or treats an unbuilt Figma asset as insertable;
 - a structured Component Change Request outcome that stops execution and routes real capability gaps to human triage without emitting approximate UI or Figma write commands;
 - a read-only `hatchkit` CLI for explicit-source validation, exact search, resolution, and deterministic Change Request generation;
+- a local `hatchkit` stdio MCP server with initialization governance instructions, a read-only Catalog status tool, and legacy/modern protocol smoke coverage;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -154,6 +155,13 @@ After building, inspect the read-only CLI with:
 pnpm --silent hatchkit --help
 ```
 
+To verify the local MCP process and inspect its configuration:
+
+```bash
+pnpm mcp:smoke
+pnpm --silent hatchkit:mcp --help
+```
+
 Requirements:
 
 - Node.js `24.20.0` LTS is the primary development version;
@@ -189,6 +197,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Component search and exact resolution](docs/REG-002-组件搜索与精确解析.md)
 - [Missing-component Change Requests](docs/REG-003-缺失组件Change-Request.md)
 - [Read-only local CLI](docs/CLI-001-本地只读命令.md)
+- [Local stdio MCP server](docs/MCP-001-本地Stdio-Server.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

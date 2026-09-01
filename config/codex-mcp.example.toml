@@ -1,0 +1,15 @@
+[mcp_servers.hatchkit]
+command = "node"
+args = [
+  "packages/mcp-server/dist/bin.js",
+  "--project",
+  "hatch-demo",
+  "--root",
+  "design-system/hatch-demo",
+]
+cwd = "."
+enabled = true
+startup_timeout_sec = 10
+tool_timeout_sec = 60
+enabled_tools = ["hatchkit_status"]
+default_tools_approval_mode = "auto"

@@ -151,7 +151,7 @@ Draft 可以在尚未计算摘要时通过结构校验；进入评审或批准�
 
 仓库提供两份真实 JSON Fixture，并由正式测试直接读取：
 
-- `design-system/examples/briefs/hatch-demo.brief.json`：正确的最小公开 Brief；
+- `design-system/hatch-demo/briefs/hatch-demo.brief.json`：正确的最小公开 Brief；
 - `design-system/examples/briefs/invalid-cross-references.brief.json`：故意包含重复 ID、断裂引用、重复能力和私有 Figma URL。
 
 错误 Fixture 不是可复制模板，只用于证明系统会拒绝危险或自相矛盾的数据。

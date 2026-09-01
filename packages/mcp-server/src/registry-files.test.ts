@@ -10,10 +10,10 @@ import {
 } from "@agent-design-system-kit/core";
 import { describe, expect, it } from "vitest";
 
-import validBrief from "../../../design-system/examples/briefs/hatch-demo.brief.json" with { type: "json" };
-import validButtonContract from "../../../design-system/examples/components/button.component.json" with { type: "json" };
-import validRegistry from "../../../design-system/examples/registry/components.registry.json" with { type: "json" };
-import validTokenSet from "../../../design-system/examples/tokens/button-foundation.tokens.json" with { type: "json" };
+import validBrief from "../../../design-system/hatch-demo/briefs/hatch-demo.brief.json" with { type: "json" };
+import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
 import {
   computeJsonContentDigest,

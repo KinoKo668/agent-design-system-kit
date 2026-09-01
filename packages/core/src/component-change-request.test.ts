@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import validButtonContract from "../../../design-system/examples/components/button.component.json" with { type: "json" };
+import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import invalidChangeRequest from "../../../design-system/examples/change-requests/invalid-component.change-request.json" with { type: "json" };
 import validChangeRequest from "../../../design-system/examples/change-requests/tertiary-button.change-request.json" with { type: "json" };
-import validRegistry from "../../../design-system/examples/registry/components.registry.json" with { type: "json" };
-import validTokenSet from "../../../design-system/examples/tokens/button-foundation.tokens.json" with { type: "json" };
+import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
 import {
   COMPONENT_CHANGE_REQUEST_PROHIBITED_ACTIONS,

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import validButtonContract from "../../../design-system/examples/components/button.component.json" with { type: "json" };
+import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import invalidRegistry from "../../../design-system/examples/registry/invalid-components.registry.json" with { type: "json" };
-import validRegistry from "../../../design-system/examples/registry/components.registry.json" with { type: "json" };
+import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 
 import {
   COMPONENT_REGISTRY_SCHEMA_VERSION,
