@@ -107,6 +107,7 @@ Registry · 历史             │
 - 带初始化治理说明以及 Status、Brief、Token、Component Search 四个只读 Tool 的本地 `hatchkit` stdio MCP Server，并覆盖新旧协议冒烟验证；
 - 精确 Component Resolve 与确定性 Change Request MCP Tools，始终保留审批／审计门禁且不会加入 Figma 写入队列；
 - 真实 Codex Agent 契约 Harness，验证 Status → Search → Resolve、结构化决策、禁止 Shell 绕过和工作区零变更；
+- 紧凑的 Figma Writer 面板，使用版本化边界显示连接、审批、操作、进度、错误恢复和真实写入授权；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -191,6 +192,7 @@ pnpm --silent hatchkit:mcp --help
 - [只读设计资产 MCP 查询](docs/MCP-002-只读设计资产查询Tools.md)
 - [组件解析与变更申请 MCP Tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [真实 Codex Agent 契约测试](docs/MCP-004-Codex真实Agent契约测试.md)
+- [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

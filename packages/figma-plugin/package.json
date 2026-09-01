@@ -13,6 +13,7 @@
     }
   },
   "files": [
+    "manifest.json",
     "dist"
   ],
   "scripts": {

@@ -118,6 +118,7 @@ What exists today:
 - a local `hatchkit` stdio MCP server with governance instructions plus read-only status, Brief, Token, and Component search tools, covered by legacy/modern protocol smoke tests;
 - exact Component Resolve and deterministic Change Request MCP tools that preserve approval/audit gates and never enqueue a Figma write;
 - a real Codex Agent contract harness that proves status → search → resolve tool use, structured decisions, no shell bypass, and no workspace changes;
+- a compact Figma Writer panel with versioned connection, approval, operation, progress, error-recovery, and write-authorization status boundaries;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -204,6 +205,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Read-only design-asset MCP queries](docs/MCP-002-只读设计资产查询Tools.md)
 - [Component Resolve and Change Request MCP tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [Real Codex Agent contract](docs/MCP-004-Codex真实Agent契约测试.md)
+- [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

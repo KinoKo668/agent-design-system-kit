@@ -15,9 +15,10 @@
   "packageManager": "pnpm@11.24.0",
   "scripts": {
     "build": "tsc --build && pnpm --filter @agent-design-system-kit/figma-plugin build:bundle",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm mcp:smoke",
-    "format": "prettier --write package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"design-system/**/*.{json,md}\" \"packages/**/*.{json,md,mjs,ts}\"",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"design-system/**/*.{json,md}\" \"packages/**/*.{json,md,mjs,ts}\"",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm mcp:smoke && pnpm figma:smoke",
+    "figma:smoke": "node packages/figma-plugin/scripts/bundle-smoke.mjs",
+    "format": "prettier --write package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"design-system/**/*.{json,md}\" \"packages/**/*.{html,json,md,mjs,ts}\"",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml \"tsconfig*.json\" eslint.config.mjs vitest.config.mts \".github/**/*.{yaml,yml}\" \"design-system/**/*.{json,md}\" \"packages/**/*.{html,json,md,mjs,ts}\"",
     "hatchkit": "node packages/cli/dist/bin.js",
     "hatchkit:mcp": "node packages/mcp-server/dist/bin.js",
     "lint": "eslint . --max-warnings 0",

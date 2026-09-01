@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结、M1 工程骨架、M2 Schema／Registry／只读查询以及 M3 MCP 查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、Brief／Token 查询、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已提供本地文件加载、stdio 协议入口、初始化治理说明以及 Status、Brief、Token、Component Search、Resolve 与 Change Request 六个只读 Tool，并通过真实 Codex Agent 契约测试。下一项是 FIG-001 最小 Figma Plugin UI。
+项目已完成 M0 架构与风险冻结、M1 工程骨架、M2 Schema／Registry／只读查询以及 M3 MCP 查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、Brief／Token 查询、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已提供本地文件加载、stdio 协议入口、初始化治理说明以及 Status、Brief、Token、Component Search、Resolve 与 Change Request 六个只读 Tool，并通过真实 Codex Agent 契约测试；`figma-plugin` 已提供最小 Writer UI、版本化状态消息、完整运行时校验和独立 Bundle Smoke。下一项是 FIG-002 Plugin Bridge 与写入队列。
 
 开始工作前请先阅读：
 
@@ -52,6 +52,7 @@
 - `docs/MCP-002-只读设计资产查询Tools.md`
 - `docs/MCP-003-组件解析与变更申请Tools.md`
 - `docs/MCP-004-Codex真实Agent契约测试.md`
+- `docs/FIG-001-最小Figma-Plugin-UI.md`
 
 工程规则：
 
