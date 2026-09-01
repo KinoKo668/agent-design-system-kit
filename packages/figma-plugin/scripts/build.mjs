@@ -30,9 +30,10 @@ const uiBuild = await build({
   format: "iife",
   legalComments: "none",
   logLevel: "silent",
+  minify: true,
   outfile: "ui.js",
   platform: "browser",
-  sourcemap: "inline",
+  sourcemap: false,
   target: "es2022",
   write: false,
 });

@@ -74,6 +74,53 @@ function auditDelivery() {
   };
 }
 
+function componentAuditDelivery() {
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    attempt: 1,
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          sources: [
+            {
+              assetId: "button",
+              assetVersion: "1.0.0",
+              componentSetNodeId: "100:200",
+              componentSetStableId:
+                "hatch-demo/component/button/component-set/major-1",
+              contentDigest: `sha256:${"a".repeat(64)}`,
+              variants: [
+                {
+                  figmaName: "Appearance=Primary, State=Default",
+                  properties: { Appearance: "Primary", State: "Default" },
+                  slotId: "variant/appearance-primary/state-default",
+                  stableId:
+                    "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      type: "audit.components.scan",
+    },
+    idempotencyKey: "component-audit-page-1",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function buttonDelivery() {
   const tokens = JSON.parse(
     readFileSync(
@@ -244,6 +291,10 @@ describe("lightweight Figma Writer boundary validation", () => {
     );
     expect(isWriterCommandDelivery(auditDelivery())).toBe(true);
     expect(
+      writerCommandDeliverySchema.safeParse(componentAuditDelivery()).success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(componentAuditDelivery())).toBe(true);
+    expect(
       writerCommandDeliverySchema.safeParse(variablesDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(variablesDelivery())).toBe(true);
@@ -288,6 +339,17 @@ describe("lightweight Figma Writer boundary validation", () => {
       false,
     );
     expect(isWriterCommandDelivery(missingAlias)).toBe(false);
+
+    const wrongVariantIdentity = structuredClone(componentAuditDelivery());
+    const auditVariant =
+      wrongVariantIdentity.command.payload.plan.sources[0]?.variants[0];
+    if (auditVariant === undefined) throw new Error("Audit Variant missing.");
+    auditVariant.stableId =
+      "hatch-demo/component/button/component-set/major-1/variant/wrong";
+    expect(
+      writerCommandDeliverySchema.safeParse(wrongVariantIdentity).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(wrongVariantIdentity)).toBe(false);
 
     const wrongComponentApproval = structuredClone(buttonDelivery());
     wrongComponentApproval.approval.approvalId = "approval.tokens.button.1.0.0";
@@ -405,6 +467,39 @@ describe("lightweight Figma Writer boundary validation", () => {
         result: { ...auditSuccess.result, passed: false },
       }),
     ).toBe(false);
+    const componentAuditSuccess = {
+      ok: true,
+      operationId: OPERATION_ID,
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        page: { id: "1:2", name: "Page 1" },
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "current-page",
+        summary: {
+          auditedNodes: 5,
+          compliantInstances: 5,
+          detachedOrApproximate: 0,
+          provenanceMismatches: 0,
+          unregisteredSources: 0,
+          unregisteredVariants: 0,
+          variantPropertyMismatches: 0,
+        },
+        type: "audit.components.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    };
+    expect(
+      writerPluginResultSchema.safeParse(componentAuditSuccess).success,
+    ).toBe(true);
+    expect(isWriterPluginResult(componentAuditSuccess)).toBe(true);
+    const inconsistentComponentAudit = structuredClone(componentAuditSuccess);
+    inconsistentComponentAudit.result.summary.auditedNodes = 4;
+    expect(
+      writerPluginResultSchema.safeParse(inconsistentComponentAudit).success,
+    ).toBe(false);
+    expect(isWriterPluginResult(inconsistentComponentAudit)).toBe(false);
     expect(writerPluginResultSchema.safeParse(variables).success).toBe(true);
     expect(isWriterPluginResult(variables)).toBe(true);
     expect(writerPluginResultSchema.safeParse(button).success).toBe(true);

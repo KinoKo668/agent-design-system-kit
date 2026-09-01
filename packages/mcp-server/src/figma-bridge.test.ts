@@ -177,6 +177,52 @@ function styleAuditCommand(operationId: string) {
   };
 }
 
+function componentAuditCommand(operationId: string) {
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: FILE_BINDING_ID,
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          sources: [
+            {
+              assetId: "button",
+              assetVersion: "1.0.0",
+              componentSetNodeId: "100:200",
+              componentSetStableId:
+                "hatch-demo/component/button/component-set/major-1",
+              contentDigest: COMPONENT_DIGEST,
+              variants: [
+                {
+                  figmaName: "Appearance=Primary, State=Default",
+                  properties: { Appearance: "Primary", State: "Default" },
+                  slotId: "variant/appearance-primary/state-default",
+                  stableId:
+                    "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      type: "audit.components.scan",
+    },
+    idempotencyKey: `component-audit-${operationId}`,
+    operationId,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function hello(pluginInstanceId = PLUGIN_INSTANCE_ID) {
   return {
     context: { fileName: "Bridge Contract", pageName: "Page 1" },
@@ -406,7 +452,7 @@ describe("local Figma Bridge", () => {
     });
   });
 
-  it("carries a read-only style audit without invoking write authorization", async () => {
+  it("carries read-only audits without invoking write authorization", async () => {
     const authorizeWrite = vi.fn(() =>
       createToolkitError({
         code: "APPROVAL_REQUIRED",
@@ -451,6 +497,46 @@ describe("local Figma Bridge", () => {
     });
     expect(reported.response.status).toBe(202);
     expect(reported.body).toMatchObject({
+      data: { operation: { status: "succeeded" } },
+      ok: true,
+    });
+
+    const componentSubmitted = await request(
+      address.url,
+      "/v1/operations",
+      componentAuditCommand(OPERATION_IDS[1]),
+    );
+    expect(componentSubmitted.response.status).toBe(202);
+    expect(authorizeWrite).not.toHaveBeenCalled();
+    await request(address.url, "/v1/plugin/next", {
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    const componentReported = await request(address.url, "/v1/plugin/results", {
+      ok: true,
+      operationId: OPERATION_IDS[1],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        page: { id: "1:2", name: "Page 1" },
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "current-page",
+        summary: {
+          auditedNodes: 5,
+          compliantInstances: 5,
+          detachedOrApproximate: 0,
+          provenanceMismatches: 0,
+          unregisteredSources: 0,
+          unregisteredVariants: 0,
+          variantPropertyMismatches: 0,
+        },
+        type: "audit.components.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(componentReported.response.status).toBe(202);
+    expect(componentReported.body).toMatchObject({
       data: { operation: { status: "succeeded" } },
       ok: true,
     });

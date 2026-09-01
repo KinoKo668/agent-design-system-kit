@@ -15,6 +15,10 @@ import {
   figmaStyleAuditPlanSchema,
   figmaStyleAuditResultSchema,
 } from "./style-audit.js";
+import {
+  figmaComponentAuditPlanSchema,
+  figmaComponentAuditResultSchema,
+} from "./component-audit.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -144,7 +148,15 @@ export const writerAuditStylesCommandSchema = z
   })
   .strict();
 
+export const writerAuditComponentsCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaComponentAuditPlanSchema }).strict(),
+    type: z.literal("audit.components.scan"),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerAuditComponentsCommandSchema,
   writerAuditStylesCommandSchema,
   writerInsertButtonInstanceCommandSchema,
   writerEnsureButtonCommandSchema,
@@ -183,11 +195,14 @@ export const writerCommandEnvelopeSchema = z
       return;
     }
 
-    if (envelope.command.type === "audit.styles.scan") {
+    if (
+      envelope.command.type === "audit.styles.scan" ||
+      envelope.command.type === "audit.components.scan"
+    ) {
       if (envelope.approval.mode !== "not_required") {
         context.addIssue({
           code: "custom",
-          message: "audit.styles.scan must use read-only diagnostic approval.",
+          message: `${envelope.command.type} must use read-only diagnostic approval.`,
           path: ["approval"],
         });
       }
@@ -200,8 +215,7 @@ export const writerCommandEnvelopeSchema = z
       ) {
         context.addIssue({
           code: "custom",
-          message:
-            "audit.styles.scan must target its exact planned Figma file binding.",
+          message: `${envelope.command.type} must target its exact planned Figma file binding.`,
           path: ["target"],
         });
       }
@@ -384,6 +398,7 @@ export const writerButtonInstanceResultSchema = z
 
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
+  figmaComponentAuditResultSchema,
   figmaStyleAuditResultSchema,
   writerButtonResultSchema,
   writerButtonInstanceResultSchema,

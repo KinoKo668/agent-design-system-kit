@@ -168,6 +168,52 @@ function styleAuditCommand(): unknown {
   };
 }
 
+function componentAuditCommand(): unknown {
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    command: {
+      payload: {
+        plan: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          sources: [
+            {
+              assetId: "button",
+              assetVersion: "1.0.0",
+              componentSetNodeId: "100:200",
+              componentSetStableId:
+                "hatch-demo/component/button/component-set/major-1",
+              contentDigest: `sha256:${"a".repeat(64)}`,
+              variants: [
+                {
+                  figmaName: "Appearance=Primary, State=Default",
+                  properties: { Appearance: "Primary", State: "Default" },
+                  slotId: "variant/appearance-primary/state-default",
+                  stableId:
+                    "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      type: "audit.components.scan",
+    },
+    idempotencyKey: "component-audit-page-1",
+    operationId: "59d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("Writer protocol", () => {
   it("accepts diagnostic, audit, and approved Variable commands", () => {
     expect(writerCommandEnvelopeSchema.parse(validCommand())).toEqual(
@@ -182,6 +228,9 @@ describe("Writer protocol", () => {
     );
     expect(
       writerCommandEnvelopeSchema.safeParse(styleAuditCommand()).success,
+    ).toBe(true);
+    expect(
+      writerCommandEnvelopeSchema.safeParse(componentAuditCommand()).success,
     ).toBe(true);
     const mismatchedTokenPath = structuredClone(styleAuditCommand()) as {
       command: {
@@ -258,6 +307,31 @@ describe("Writer protocol", () => {
           deferredTypographyCount: 1,
           type: "variables.ensure",
           variables: { created: 30, unchanged: 0, updated: 0 },
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }).success,
+    ).toBe(true);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          findings: [],
+          page: { id: "1:2", name: "Page 1" },
+          passed: true,
+          schemaVersion: "1.0.0",
+          scope: "current-page",
+          summary: {
+            auditedNodes: 5,
+            compliantInstances: 5,
+            detachedOrApproximate: 0,
+            provenanceMismatches: 0,
+            unregisteredSources: 0,
+            unregisteredVariants: 0,
+            variantPropertyMismatches: 0,
+          },
+          type: "audit.components.scan",
         },
         schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
       }).success,

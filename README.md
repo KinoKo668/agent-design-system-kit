@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed the M2 query contracts and the M3 automated Writer foundation, and is implementing the M4 Agent Loop and M5 audits. Optional MCP calls can now insert a Registry-backed Button Instance and run a read-only current-page audit for hard-coded styles or unregistered Variables. Real approvals and independent Figma-file acceptance are still outstanding, so the toolkit is not production-ready.**
+**Hatch has completed the M2 query contracts and the M3 automated Writer foundation, and is implementing the M4 Agent Loop and M5 audits. Optional MCP calls can now insert a Registry-backed Button Instance and run read-only current-page audits for style bindings, component provenance, and Variant integrity. Real approvals and independent Figma-file acceptance are still outstanding, so the toolkit is not production-ready.**
 
 What exists today:
 
@@ -132,6 +132,7 @@ What exists today:
 - an optional `hatchkit_insert_button_instance` MCP tool that performs exact Registry/Variant resolution, deterministic planning, authenticated Bridge submission, Plugin waiting, and audited Instance reporting in one call while remaining absent in the default read-only configuration;
 - an end-to-end negative approval gate proving that missing, in-review, changes-requested, incomplete, rejected, stale, superseded, and revoked approvals are stopped before queueing while preserving exact Agent recovery actions;
 - a read-only `hatchkit_audit_styles` MCP tool that derives the registered Variable allowlist from current Git facts, scans the bound Figma page, and reports hard-coded styles or foreign Variables with exact node and field evidence;
+- a read-only `hatchkit_audit_components` MCP tool that cross-checks real Instances, managed markers, Component Set sources, approved Variants, and current Variant properties against the active Git Registry;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -243,6 +244,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Single-call Registry-to-Figma write loop](docs/LOOP-002-Registry到Figma单次写入流程.md)
 - [End-to-end approval rejection boundary](docs/LOOP-003-审批拒绝端到端阻断.md)
 - [Hard-coded style and unregistered Variable audit](docs/AUD-001-硬编码样式与未登记Variable审计.md)
+- [Instance, Variant, and component-source audit](docs/AUD-002-Instance-Variant与组件来源审计.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

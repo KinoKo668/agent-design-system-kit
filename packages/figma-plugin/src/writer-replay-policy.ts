@@ -9,6 +9,10 @@ export function shouldCacheWriterResult(
   result: WriterPluginResult,
 ): boolean {
   if (result.ok)
-    return commandType === "writer.ping" || commandType === "audit.styles.scan";
+    return (
+      commandType === "writer.ping" ||
+      commandType === "audit.styles.scan" ||
+      commandType === "audit.components.scan"
+    );
   return ERROR_DEFINITIONS[result.error.code].retry === "do_not_retry";
 }

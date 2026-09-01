@@ -17,10 +17,17 @@ import {
   styleAuditLoopInputSchema,
   styleAuditLoopOutputSchema,
 } from "./style-audit-loop.js";
+import {
+  componentAuditLoopInputSchema,
+  componentAuditLoopOutputSchema,
+  runComponentAuditLoop,
+} from "./component-audit-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
 export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
+export const HATCHKIT_COMPONENT_AUDIT_TOOL_NAME =
+  "hatchkit_audit_components" as const;
 
 export const HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS = {
   destructiveHint: false,
@@ -50,6 +57,33 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+    {
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+      description:
+        "Scan the current bound Figma page without modifying it. Verify that managed component-shaped nodes remain real Instances, that every Instance source belongs to the active Git Registry, and that its Variant and provenance match the approved Component Contract. Use a new requestId after the page changes.",
+      inputSchema: componentAuditLoopInputSchema.extend({
+        waitTimeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
+      }),
+      outputSchema: componentAuditLoopOutputSchema,
+      title: "Audit current-page component provenance",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runComponentAuditLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_STYLE_AUDIT_TOOL_NAME,
     {

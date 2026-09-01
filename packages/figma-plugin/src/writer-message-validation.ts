@@ -152,6 +152,53 @@ const STYLE_AUDIT_SUMMARY_KEYS = new Set([
   "registeredBindings",
   "unregisteredVariables",
 ]);
+const COMPONENT_AUDIT_PLAN_KEYS = new Set([
+  "fileBindingId",
+  "projectId",
+  "schemaVersion",
+  "scope",
+  "sources",
+]);
+const COMPONENT_AUDIT_SOURCE_KEYS = new Set([
+  "assetId",
+  "assetVersion",
+  "componentSetNodeId",
+  "componentSetStableId",
+  "contentDigest",
+  "variants",
+]);
+const COMPONENT_AUDIT_VARIANT_KEYS = new Set([
+  "figmaName",
+  "properties",
+  "slotId",
+  "stableId",
+]);
+const COMPONENT_AUDIT_RESULT_KEYS = new Set([
+  "findings",
+  "page",
+  "passed",
+  "schemaVersion",
+  "scope",
+  "summary",
+  "type",
+]);
+const COMPONENT_AUDIT_FINDING_KEYS = new Set([
+  "actual",
+  "code",
+  "expected",
+  "node",
+  "recoveryInstruction",
+  "severity",
+]);
+const COMPONENT_AUDIT_SUMMARY_KEYS = new Set([
+  "auditedNodes",
+  "compliantInstances",
+  "detachedOrApproximate",
+  "provenanceMismatches",
+  "unregisteredSources",
+  "unregisteredVariants",
+  "variantPropertyMismatches",
+]);
 const BUTTON_SET_KEYS = new Set([
   "description",
   "majorVersion",
@@ -974,6 +1021,103 @@ function isStyleAuditPlan(value: unknown): boolean {
   });
 }
 
+function isStringProperties(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length <= 50 &&
+    Object.entries(value).every(
+      ([name, propertyValue]) =>
+        isBoundedString(name, 1, 120) && isBoundedString(propertyValue, 1, 500),
+    )
+  );
+}
+
+function isComponentAuditPlan(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, COMPONENT_AUDIT_PLAN_KEYS) ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    !isStableIdSegment(value.projectId) ||
+    !isUuid(value.fileBindingId) ||
+    !Array.isArray(value.sources) ||
+    value.sources.length < 1 ||
+    value.sources.length > 500
+  ) {
+    return false;
+  }
+  const sourceIds = new Set<string>();
+  const variantIds = new Set<string>();
+  return value.sources.every((source: unknown) => {
+    if (
+      !isRecord(source) ||
+      !hasOnlyKeys(source, COMPONENT_AUDIT_SOURCE_KEYS) ||
+      !isStableAssetId(source.assetId) ||
+      !isBoundedString(source.assetVersion, 1, 128) ||
+      !SEMVER_PATTERN.test(source.assetVersion) ||
+      !isBoundedString(source.componentSetNodeId, 1, 128) ||
+      !/^\d+:\d+$/u.test(source.componentSetNodeId) ||
+      !isStableAssetId(source.componentSetStableId) ||
+      !isBoundedString(source.contentDigest, 1, 80) ||
+      !CONTENT_DIGEST_PATTERN.test(source.contentDigest) ||
+      !Array.isArray(source.variants) ||
+      source.variants.length < 1 ||
+      source.variants.length > 200
+    ) {
+      return false;
+    }
+    const root = `${String(value.projectId)}/component/${String(source.assetId)}/component-set/major-${String(source.assetVersion).split(".")[0]}`;
+    if (source.componentSetStableId !== root || sourceIds.has(root)) {
+      return false;
+    }
+    sourceIds.add(root);
+    return source.variants.every((variant: unknown) => {
+      if (
+        !isRecord(variant) ||
+        !hasOnlyKeys(variant, COMPONENT_AUDIT_VARIANT_KEYS) ||
+        !isBoundedString(variant.figmaName, 1, 240) ||
+        !isStringProperties(variant.properties) ||
+        !isStableAssetId(variant.slotId) ||
+        !isStableAssetId(variant.stableId) ||
+        variant.stableId !== `${root}/${String(variant.slotId)}` ||
+        variantIds.has(variant.stableId)
+      ) {
+        return false;
+      }
+      variantIds.add(variant.stableId);
+      return true;
+    });
+  });
+}
+
+function isComponentAuditCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "audit.components.scan" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isComponentAuditPlan(value.payload.plan) ||
+    !isRecord(value.payload.plan) ||
+    !hasOnlyKeys(approval, new Set(["mode", "reason"])) ||
+    approval.mode !== "not_required" ||
+    approval.reason !== "read_only_diagnostic" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    target.kind !== "figma-file" ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  ) {
+    return false;
+  }
+  return (
+    projectId === value.payload.plan.projectId &&
+    target.fileBindingId === value.payload.plan.fileBindingId
+  );
+}
+
 function isStyleAuditCommand(
   value: Record<string, unknown>,
   approval: Record<string, unknown>,
@@ -1036,6 +1180,16 @@ export function isWriterCommandDelivery(
   }
   if (
     isStyleAuditCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    )
+  ) {
+    return true;
+  }
+  if (
+    isComponentAuditCommand(
       value.command,
       value.approval,
       value.target,
@@ -1253,6 +1407,84 @@ function isStyleAuditResult(value: Record<string, unknown>): boolean {
   );
 }
 
+function isComponentAuditFinding(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, COMPONENT_AUDIT_FINDING_KEYS) &&
+    [
+      "DETACHED_OR_APPROXIMATE_COMPONENT",
+      "UNREGISTERED_COMPONENT_SOURCE",
+      "UNREGISTERED_VARIANT",
+      "VARIANT_PROPERTY_MISMATCH",
+      "INSTANCE_PROVENANCE_MISMATCH",
+    ].includes(String(value.code)) &&
+    value.severity === "error" &&
+    isRecord(value.actual) &&
+    isRecord(value.expected) &&
+    isStyleAuditNode(value.node) &&
+    isBoundedString(value.recoveryInstruction, 1, 500)
+  );
+}
+
+function isComponentAuditResult(value: Record<string, unknown>): boolean {
+  if (
+    !hasOnlyKeys(value, COMPONENT_AUDIT_RESULT_KEYS) ||
+    value.type !== "audit.components.scan" ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    typeof value.passed !== "boolean" ||
+    !Array.isArray(value.findings) ||
+    value.findings.length > 10_000 ||
+    !value.findings.every(isComponentAuditFinding) ||
+    !isRecord(value.page) ||
+    !hasOnlyKeys(value.page, new Set(["id", "name"])) ||
+    !isBoundedString(value.page.id, 1, 128) ||
+    !/^\d+:\d+$/u.test(value.page.id) ||
+    !isBoundedString(value.page.name, 1, 256) ||
+    !isRecord(value.summary) ||
+    !hasOnlyKeys(value.summary, COMPONENT_AUDIT_SUMMARY_KEYS) ||
+    ![
+      value.summary.auditedNodes,
+      value.summary.compliantInstances,
+      value.summary.detachedOrApproximate,
+      value.summary.provenanceMismatches,
+      value.summary.unregisteredSources,
+      value.summary.unregisteredVariants,
+      value.summary.variantPropertyMismatches,
+    ].every((count) => Number.isSafeInteger(count) && Number(count) >= 0)
+  ) {
+    return false;
+  }
+  const findings: readonly unknown[] = value.findings;
+  const count = (code: string) =>
+    findings.filter(
+      (finding: unknown) => isRecord(finding) && finding.code === code,
+    ).length;
+  const nodesWithFindings = new Set(
+    findings.flatMap((finding: unknown) =>
+      isRecord(finding) &&
+      isRecord(finding.node) &&
+      typeof finding.node.id === "string"
+        ? [finding.node.id]
+        : [],
+    ),
+  ).size;
+  return (
+    value.passed === (findings.length === 0) &&
+    value.summary.detachedOrApproximate ===
+      count("DETACHED_OR_APPROXIMATE_COMPONENT") &&
+    value.summary.provenanceMismatches ===
+      count("INSTANCE_PROVENANCE_MISMATCH") &&
+    value.summary.unregisteredSources ===
+      count("UNREGISTERED_COMPONENT_SOURCE") &&
+    value.summary.unregisteredVariants === count("UNREGISTERED_VARIANT") &&
+    value.summary.variantPropertyMismatches ===
+      count("VARIANT_PROPERTY_MISMATCH") &&
+    value.summary.auditedNodes ===
+      Number(value.summary.compliantInstances) + nodesWithFindings
+  );
+}
+
 export function isWriterPluginResult(
   value: unknown,
 ): value is WriterPluginResult {
@@ -1272,6 +1504,7 @@ export function isWriterPluginResult(
         isVariablesResult(value.result) ||
         isButtonResult(value.result) ||
         isButtonInstanceResult(value.result) ||
+        isComponentAuditResult(value.result) ||
         isStyleAuditResult(value.result))
     );
   }

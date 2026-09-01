@@ -7,6 +7,7 @@ export * from "./button-contract.js";
 export * from "./canonical-json.js";
 export * from "./component-change-request.js";
 export * from "./component-query.js";
+export * from "./component-audit.js";
 export * from "./component-registry.js";
 export * from "./design-system-snapshot.js";
 export * from "./design-asset-query.js";

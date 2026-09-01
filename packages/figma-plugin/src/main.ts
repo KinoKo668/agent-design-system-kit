@@ -20,6 +20,7 @@ import { createFigmaVariablesPort } from "./figma-variables-port.js";
 import { createFigmaButtonPort } from "./figma-button-port.js";
 import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
 import { createFigmaStyleAuditPort } from "./figma-style-audit-port.js";
+import { createFigmaComponentAuditPort } from "./figma-component-audit-port.js";
 import { ButtonWriterError, ensureFigmaButton } from "./button-writer.js";
 import {
   ButtonInstanceWriterError,
@@ -33,6 +34,10 @@ import {
   type FigmaLibraryFileBinding,
 } from "./variables-writer.js";
 import { runFigmaStyleAudit, StyleAuditError } from "./style-audit-runner.js";
+import {
+  ComponentAuditError,
+  runFigmaComponentAudit,
+} from "./component-audit-runner.js";
 
 const PANEL_WIDTH = 360;
 const PANEL_HEIGHT = 568;
@@ -118,6 +123,7 @@ const variablesPort = createFigmaVariablesPort(figma);
 const buttonPort = createFigmaButtonPort(figma);
 const buttonInstancePort = createFigmaButtonInstancePort(figma);
 const styleAuditPort = createFigmaStyleAuditPort(figma);
+const componentAuditPort = createFigmaComponentAuditPort(figma);
 let executionChain: Promise<void> = Promise.resolve();
 
 function commandFingerprint(command: WriterCommandDelivery): string {
@@ -205,6 +211,33 @@ async function executeCommand(
       result: { pong: true },
       schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
     };
+  } else if (
+    command.command.type === "audit.components.scan" &&
+    command.approval.mode === "not_required" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: await runFigmaComponentAudit(
+          componentAuditPort,
+          command.command.payload.plan,
+        ),
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof ComponentAuditError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Figma component audit failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics and retry the read-only audit.",
+            });
+    }
   } else if (
     command.command.type === "audit.styles.scan" &&
     command.approval.mode === "not_required" &&

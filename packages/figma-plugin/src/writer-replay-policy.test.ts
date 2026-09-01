@@ -37,6 +37,9 @@ describe("Writer replay cache policy", () => {
   it("caches only read-only success and terminal failures", () => {
     expect(shouldCacheWriterResult("writer.ping", success)).toBe(true);
     expect(shouldCacheWriterResult("audit.styles.scan", success)).toBe(true);
+    expect(shouldCacheWriterResult("audit.components.scan", success)).toBe(
+      true,
+    );
     expect(shouldCacheWriterResult("variables.ensure", success)).toBe(false);
     expect(shouldCacheWriterResult("components.button.ensure", success)).toBe(
       false,

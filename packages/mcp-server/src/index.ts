@@ -5,6 +5,7 @@ export * from "./registry-files.js";
 export * from "./figma-bridge.js";
 export * from "./figma-bridge-launch.js";
 export * from "./button-instance-loop.js";
+export * from "./component-audit-loop.js";
 export * from "./local-writer-client.js";
 export * from "./operation-log.js";
 export * from "./query-tools.js";
