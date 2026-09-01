@@ -17,6 +17,7 @@ await build({
   globalName: "HatchkitWriterPlugin",
   legalComments: "none",
   logLevel: "info",
+  minify: true,
   outfile: resolve(outputRoot, "plugin.js"),
   platform: "browser",
   sourcemap: true,

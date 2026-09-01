@@ -16,6 +16,8 @@ import {
 } from "@agent-design-system-kit/core";
 import { FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION } from "./writer-message-validation.js";
 import { createFigmaVariablesPort } from "./figma-variables-port.js";
+import { createFigmaButtonPort } from "./figma-button-port.js";
+import { ButtonWriterError, ensureFigmaButton } from "./button-writer.js";
 import {
   bindFigmaLibraryFile,
   ensureFigmaVariables,
@@ -105,6 +107,7 @@ interface CompletedCommand {
 const completedCommands = new Map<string, CompletedCommand>();
 const MAX_COMPLETED_COMMANDS = 100;
 const variablesPort = createFigmaVariablesPort(figma);
+const buttonPort = createFigmaButtonPort(figma);
 let executionChain: Promise<void> = Promise.resolve();
 
 function commandFingerprint(command: WriterCommandDelivery): string {
@@ -193,6 +196,7 @@ async function executeCommand(
       schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
     };
   } else if (
+    command.command.type === "variables.ensure" &&
     command.approval.mode === "approved" &&
     command.target.kind === "figma-file"
   ) {
@@ -225,12 +229,46 @@ async function executeCommand(
                 "Inspect the local Plugin diagnostics and report the failure before retrying.",
             });
     }
+  } else if (
+    command.command.type === "components.button.ensure" &&
+    command.approval.mode === "approved" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      const buttonResult = await ensureFigmaButton(
+        buttonPort,
+        command.command.payload.plan,
+        {
+          approvalId: command.approval.approvalId,
+          fileBindingId: command.target.fileBindingId,
+          operationId: command.operationId,
+          projectId: command.projectId,
+        },
+      );
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: buttonResult,
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof ButtonWriterError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Figma Button writer failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics and report the failure before retrying.",
+            });
+    }
   } else {
     result = failureResult(command, pluginInstanceId, {
       code: "APPROVAL_REQUIRED",
-      message: "The Variables command has no matching approved Token record.",
+      message: "The Writer command has no matching approved source record.",
       recoveryInstruction:
-        "Rebuild the command from the current approved Token Set and bound Figma file.",
+        "Rebuild the command from the current approved source and bound Figma file.",
     });
   }
   if (

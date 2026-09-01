@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
+
+import { createFigmaButtonPlan } from "./figma-button-plan.js";
+
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
   toWriterCommandFingerprintSubject,
@@ -95,6 +100,37 @@ function variablesCommand(): unknown {
   };
 }
 
+function buttonCommand(): unknown {
+  const planned = createFigmaButtonPlan(
+    validContract,
+    validTokenSet,
+    "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78",
+    `sha256:${"a".repeat(64)}`,
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.button.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "components.button.ensure",
+    },
+    idempotencyKey: "components-button-1.0.0",
+    operationId: "39d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("Writer protocol", () => {
   it("accepts the diagnostic and approved Variable commands", () => {
     expect(writerCommandEnvelopeSchema.parse(validCommand())).toEqual(
@@ -104,6 +140,9 @@ describe("Writer protocol", () => {
     expect(
       writerCommandEnvelopeSchema.safeParse(variablesCommand()).success,
     ).toBe(true);
+    expect(writerCommandEnvelopeSchema.safeParse(buttonCommand()).success).toBe(
+      true,
+    );
   });
 
   it("rejects unknown fields and an approval bypass", () => {
@@ -169,6 +208,28 @@ describe("Writer protocol", () => {
           deferredTypographyCount: 1,
           type: "variables.ensure",
           variables: { created: 30, unchanged: 0, updated: 0 },
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }).success,
+    ).toBe(true);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          componentSet: {
+            action: "created",
+            nodeId: "1:2",
+            stableId: "hatch-demo/component/button/component-set/major-1",
+          },
+          labelPropertyName: "Label#1:2",
+          type: "components.button.ensure",
+          typography: {
+            lineHeightStrategy: "resolved-percent",
+            variableBindings: 4,
+          },
+          variants: { created: 4, unchanged: 0, updated: 0 },
         },
         schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
       }).success,

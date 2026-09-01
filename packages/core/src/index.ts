@@ -13,6 +13,7 @@ export * from "./design-asset-query.js";
 export * from "./design-brief.js";
 export * from "./errors.js";
 export * from "./figma-variable-plan.js";
+export * from "./figma-button-plan.js";
 export * from "./json.js";
 export * from "./logging.js";
 export * from "./results.js";

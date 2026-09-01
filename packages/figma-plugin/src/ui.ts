@@ -249,7 +249,7 @@ function waitForMainResult(
         pendingResults.delete(command.operationId);
         reject(new Error("Figma main thread did not return a Writer Result."));
       },
-      command.command.type === "variables.ensure" ? 30_000 : 5_000,
+      command.command.type === "writer.ping" ? 5_000 : 30_000,
     );
     pendingResults.set(command.operationId, (result) => {
       clearTimeout(timer);
@@ -270,36 +270,37 @@ async function runCommand(
   command: WriterCommandDelivery,
 ): Promise<void> {
   const variablesCommand = command.command.type === "variables.ensure";
-  const totalSteps = variablesCommand ? 5 : 1;
+  const buttonCommand = command.command.type === "components.button.ensure";
+  const writeCommand = variablesCommand || buttonCommand;
+  const totalSteps = variablesCommand ? 5 : buttonCommand ? 7 : 1;
   update({
-    approval: variablesCommand
+    approval: writeCommand
       ? command.approval.mode === "approved"
         ? {
             approvalId: command.approval.approvalId,
-            detail: "The command carries an approved Token version and digest.",
+            detail: `The command carries an approved ${command.approval.subject.type} version and digest.`,
             status: "approved",
             subject: `${command.approval.subject.assetId}@${command.approval.subject.assetVersion}`,
           }
         : {
-            detail:
-              "The Variables command is missing an approved Token record.",
+            detail: "The write command is missing an approved source record.",
             status: "blocked",
           }
       : snapshot.approval,
     error: null,
     operation: {
       completedSteps: 0,
-      detail: variablesCommand
-        ? "The Figma main thread is preflighting the approved Variable plan."
+      detail: writeCommand
+        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : "Button"} plan.`
         : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
-      step: variablesCommand
-        ? "Verify file, identities, Modes and conflicts"
+      step: writeCommand
+        ? `Verify file, identities, ${variablesCommand ? "Modes" : "Token dependencies"} and conflicts`
         : "Validate writer.ping",
       totalSteps,
     },
-    writeAuthorized: variablesCommand && command.approval.mode === "approved",
+    writeAuthorized: writeCommand && command.approval.mode === "approved",
   });
   const result = await waitForMainResult(command);
   await client.report(result);
@@ -308,19 +309,28 @@ async function runCommand(
       "type" in result.result && result.result.type === "variables.ensure"
         ? result.result
         : null;
+    const buttonResult =
+      "type" in result.result &&
+      result.result.type === "components.button.ensure"
+        ? result.result
+        : null;
     update({
       operation: {
         completedSteps: totalSteps,
         detail:
-          variablesResult === null
-            ? "The diagnostic round trip completed without a Figma write."
-            : `${String(variablesResult.variables.created)} created, ${String(variablesResult.variables.updated)} updated, ${String(variablesResult.variables.unchanged)} unchanged.`,
+          variablesResult !== null
+            ? `${String(variablesResult.variables.created)} created, ${String(variablesResult.variables.updated)} updated, ${String(variablesResult.variables.unchanged)} unchanged.`
+            : buttonResult !== null
+              ? `${String(buttonResult.variants.created)} Variants created, ${String(buttonResult.variants.updated)} updated, ${String(buttonResult.variants.unchanged)} unchanged.`
+              : "The diagnostic round trip completed without a Figma write.",
         operationId: command.operationId,
         status: "succeeded",
         step:
-          variablesResult === null
-            ? "writer.ping acknowledged"
-            : "Variables audited and managed markers committed",
+          variablesResult !== null
+            ? "Variables audited and managed markers committed"
+            : buttonResult !== null
+              ? "Button Component Set audited and managed markers committed"
+              : "writer.ping acknowledged",
         totalSteps,
       },
       writeAuthorized: false,

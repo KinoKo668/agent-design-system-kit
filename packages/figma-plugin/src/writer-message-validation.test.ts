@@ -1,5 +1,6 @@
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
+  createFigmaButtonPlan,
   createFigmaVariablePlan,
   writerCommandDeliverySchema,
   writerPluginResultSchema,
@@ -30,6 +31,56 @@ function delivery() {
     target: {
       kind: "plugin-session",
       stableId: "hatch-demo/plugin-session",
+    },
+  };
+}
+
+function buttonDelivery() {
+  const tokens = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/tokens/button-foundation.tokens.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const contract = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/components/button.component.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const planned = createFigmaButtonPlan(
+    contract,
+    tokens,
+    "sha256:7e6003e59916e0fc445e7ef6d37feb148a3d77908bb7834b3bdb4185530d0e78",
+    `sha256:${"a".repeat(64)}`,
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.button.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "components.button.ensure",
+    },
+    idempotencyKey: "components-button-1.0.0",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
     },
   };
 }
@@ -80,6 +131,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(variablesDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(variablesDelivery())).toBe(true);
+    expect(
+      writerCommandDeliverySchema.safeParse(buttonDelivery()).success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(buttonDelivery())).toBe(true);
   });
 
   it("rejects the same unsafe command extensions at the Plugin boundary", () => {
@@ -113,6 +168,13 @@ describe("lightweight Figma Writer boundary validation", () => {
       false,
     );
     expect(isWriterCommandDelivery(missingAlias)).toBe(false);
+
+    const wrongComponentApproval = structuredClone(buttonDelivery());
+    wrongComponentApproval.approval.approvalId = "approval.tokens.button.1.0.0";
+    expect(
+      writerCommandDeliverySchema.safeParse(wrongComponentApproval).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(wrongComponentApproval)).toBe(false);
   });
 
   it("matches strict success and failure Result envelopes", () => {
@@ -146,12 +208,31 @@ describe("lightweight Figma Writer boundary validation", () => {
         variables: { created: 30, unchanged: 0, updated: 0 },
       },
     };
+    const button = {
+      ...success,
+      result: {
+        componentSet: {
+          action: "created",
+          nodeId: "1:2",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        labelPropertyName: "Label#1:2",
+        type: "components.button.ensure",
+        typography: {
+          lineHeightStrategy: "resolved-percent",
+          variableBindings: 4,
+        },
+        variants: { created: 4, unchanged: 0, updated: 0 },
+      },
+    };
     expect(writerPluginResultSchema.safeParse(success).success).toBe(true);
     expect(writerPluginResultSchema.safeParse(failure).success).toBe(true);
     expect(isWriterPluginResult(success)).toBe(true);
     expect(isWriterPluginResult(failure)).toBe(true);
     expect(writerPluginResultSchema.safeParse(variables).success).toBe(true);
     expect(isWriterPluginResult(variables)).toBe(true);
+    expect(writerPluginResultSchema.safeParse(button).success).toBe(true);
+    expect(isWriterPluginResult(button)).toBe(true);
     expect(isWriterPluginResult({ ...success, token: "unsafe" })).toBe(false);
   });
 });

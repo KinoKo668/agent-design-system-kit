@@ -9,6 +9,7 @@ import {
   strictSemverSchema,
 } from "./schema-primitives.js";
 import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
+import { figmaButtonPlanSchema } from "./figma-button-plan.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -43,6 +44,27 @@ export const writerTargetSchema = z.discriminatedUnion("kind", [
   writerPluginSessionTargetSchema,
 ]);
 
+const approvedWriterSubjectSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      assetId: stableAssetIdSchema,
+      assetVersion: strictSemverSchema,
+      contentDigest: contentDigestSchema,
+      projectId: stableIdSegmentSchema,
+      type: z.literal("token-set"),
+    })
+    .strict(),
+  z
+    .object({
+      assetId: stableAssetIdSchema,
+      assetVersion: strictSemverSchema,
+      contentDigest: contentDigestSchema,
+      projectId: stableIdSegmentSchema,
+      type: z.literal("component"),
+    })
+    .strict(),
+]);
+
 export const writerApprovalSchema = z.discriminatedUnion("mode", [
   z
     .object({
@@ -56,19 +78,24 @@ export const writerApprovalSchema = z.discriminatedUnion("mode", [
         .string()
         .min(1)
         .max(320)
-        .regex(/^approval\.tokens\.[a-z0-9.+-]+$/u),
+        .regex(/^approval\.(?:component|tokens)\.[a-z0-9.+-]+$/u),
       mode: z.literal("approved"),
-      subject: z
-        .object({
-          assetId: stableAssetIdSchema,
-          assetVersion: strictSemverSchema,
-          contentDigest: contentDigestSchema,
-          projectId: stableIdSegmentSchema,
-          type: z.literal("token-set"),
-        })
-        .strict(),
+      subject: approvedWriterSubjectSchema,
     })
-    .strict(),
+    .strict()
+    .superRefine((approval, context) => {
+      const prefix =
+        approval.subject.type === "token-set"
+          ? "approval.tokens."
+          : "approval.component.";
+      if (!approval.approvalId.startsWith(prefix)) {
+        context.addIssue({
+          code: "custom",
+          message: "Approval ID namespace must match its subject type.",
+          path: ["approvalId"],
+        });
+      }
+    }),
 ]);
 
 export const writerCommandSourceSchema = z
@@ -91,7 +118,15 @@ export const writerEnsureVariablesCommandSchema = z
   })
   .strict();
 
+export const writerEnsureButtonCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaButtonPlanSchema }).strict(),
+    type: z.literal("components.button.ensure"),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerEnsureButtonCommandSchema,
   writerEnsureVariablesCommandSchema,
   writerPingCommandSchema,
 ]);
@@ -131,7 +166,7 @@ export const writerCommandEnvelopeSchema = z
     if (envelope.approval.mode !== "approved") {
       context.addIssue({
         code: "custom",
-        message: "variables.ensure requires a verified Token approval.",
+        message: `${envelope.command.type} requires a verified approval.`,
         path: ["approval"],
       });
       return;
@@ -139,12 +174,15 @@ export const writerCommandEnvelopeSchema = z
     if (envelope.target.kind !== "figma-file") {
       context.addIssue({
         code: "custom",
-        message: "variables.ensure must target a bound Figma file.",
+        message: `${envelope.command.type} must target a bound Figma file.`,
         path: ["target", "kind"],
       });
     }
     const subject = envelope.approval.subject;
+    const expectedSubjectType =
+      envelope.command.type === "variables.ensure" ? "token-set" : "component";
     const mismatches = [
+      subject.type !== expectedSubjectType ? "type" : null,
       subject.projectId !== plan.source.projectId ? "projectId" : null,
       subject.assetId !== plan.source.assetId ? "assetId" : null,
       subject.assetVersion !== plan.source.assetVersion ? "assetVersion" : null,
@@ -156,7 +194,7 @@ export const writerCommandEnvelopeSchema = z
     if (mismatches.length > 0) {
       context.addIssue({
         code: "custom",
-        message: `Token approval does not match the Variable plan: ${mismatches.join(", ")}.`,
+        message: `Approval does not match the ${envelope.command.type} plan: ${mismatches.join(", ")}.`,
         path: ["approval", "subject"],
       });
     }
@@ -227,8 +265,36 @@ export const writerVariablesResultSchema = z
   })
   .strict();
 
+export const writerButtonResultSchema = z
+  .object({
+    componentSet: z
+      .object({
+        action: z.enum(["created", "unchanged", "updated"]),
+        nodeId: z.string().min(1).max(128),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    labelPropertyName: z.string().min(1).max(120),
+    type: z.literal("components.button.ensure"),
+    typography: z
+      .object({
+        lineHeightStrategy: z.literal("resolved-percent"),
+        variableBindings: z.literal(4),
+      })
+      .strict(),
+    variants: z
+      .object({
+        created: z.number().int().nonnegative(),
+        unchanged: z.number().int().nonnegative(),
+        updated: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
+  writerButtonResultSchema,
   writerVariablesResultSchema,
 ]);
 

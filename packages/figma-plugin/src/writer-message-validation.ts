@@ -14,7 +14,8 @@ const STABLE_ASSET_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)*$/u;
 const CONTENT_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*))*))?(?:\+([0-9a-z-]+(?:\.[0-9a-z-]+)*))?$/iu;
-const APPROVAL_ID_PATTERN = /^approval\.tokens\.[a-z0-9.+-]+$/u;
+const TOKEN_APPROVAL_ID_PATTERN = /^approval\.tokens\.[a-z0-9.+-]+$/u;
+const COMPONENT_APPROVAL_ID_PATTERN = /^approval\.component\.[a-z0-9.+-]+$/u;
 const DELIVERY_KEYS = new Set([
   "approval",
   "attempt",
@@ -107,6 +108,48 @@ const VARIABLE_SCOPES = new Set([
   "STROKE_FLOAT",
   "TEXT_FILL",
   "WIDTH_HEIGHT",
+]);
+const BUTTON_PLAN_KEYS = new Set([
+  "componentSet",
+  "schemaVersion",
+  "sharedBindings",
+  "source",
+  "tokenSource",
+  "typography",
+  "variants",
+]);
+const BUTTON_SET_KEYS = new Set([
+  "description",
+  "majorVersion",
+  "name",
+  "properties",
+  "slotId",
+  "stableId",
+]);
+const BUTTON_TOKEN_SOURCE_KEYS = new Set([
+  "assetId",
+  "assetVersion",
+  "collectionStableId",
+  "contentDigest",
+  "projectId",
+]);
+const BUTTON_TYPOGRAPHY_KEYS = new Set([
+  "fontFamily",
+  "fontSize",
+  "fontStyleFallback",
+  "fontWeight",
+  "letterSpacing",
+  "lineHeight",
+  "tokenPath",
+]);
+const BUTTON_VARIANT_KEYS = new Set([
+  "bindings",
+  "displayName",
+  "figmaName",
+  "id",
+  "selections",
+  "slotId",
+  "stableId",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -375,6 +418,231 @@ function isVariablePlan(value: unknown): value is Record<string, unknown> {
   return structurallyValid && hasValidPlanRelationships(value, modeIds);
 }
 
+function isPlanSource(value: unknown): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, PLAN_SOURCE_KEYS) &&
+    isStableAssetId(value.assetId) &&
+    isBoundedString(value.assetVersion, 1, 128) &&
+    SEMVER_PATTERN.test(value.assetVersion) &&
+    isBoundedString(value.contentDigest, 1, 80) &&
+    CONTENT_DIGEST_PATTERN.test(value.contentDigest) &&
+    isStableIdSegment(value.projectId)
+  );
+}
+
+function isButtonBinding(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !isStableAssetId(value.variableStableId) ||
+    typeof value.target !== "string"
+  ) {
+    return false;
+  }
+  if (value.kind === "color") {
+    return (
+      hasOnlyKeys(
+        value,
+        new Set(["fallback", "kind", "target", "variableStableId"]),
+      ) &&
+      ["container.border-color", "container.fill", "label.fill"].includes(
+        value.target,
+      ) &&
+      isRecord(value.fallback) &&
+      hasOnlyKeys(value.fallback, new Set(["a", "b", "g", "r"])) &&
+      [
+        value.fallback.a,
+        value.fallback.b,
+        value.fallback.g,
+        value.fallback.r,
+      ].every(
+        (channel) =>
+          typeof channel === "number" && channel >= 0 && channel <= 1,
+      )
+    );
+  }
+  return (
+    value.kind === "float" &&
+    hasOnlyKeys(
+      value,
+      new Set(["fallback", "kind", "target", "variableStableId"]),
+    ) &&
+    [
+      "container.border-width",
+      "container.height",
+      "container.opacity",
+      "container.padding-inline",
+      "container.radius",
+    ].includes(value.target) &&
+    typeof value.fallback === "number" &&
+    Number.isFinite(value.fallback)
+  );
+}
+
+function isTypographyVariable(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, new Set(["fallback", "variableStableId"])) &&
+    (typeof value.fallback === "number" ||
+      isBoundedString(value.fallback, 1, 120)) &&
+    isStableAssetId(value.variableStableId)
+  );
+}
+
+function isButtonProperty(value: unknown, variant: boolean): boolean {
+  if (
+    !isRecord(value) ||
+    !isBoundedString(value.name, 1, 120) ||
+    !isBoundedString(value.defaultValue, 1, variant ? 120 : 500)
+  )
+    return false;
+  return variant
+    ? hasOnlyKeys(value, new Set(["defaultValue", "name", "options"])) &&
+        Array.isArray(value.options) &&
+        value.options.length >= 2 &&
+        value.options.length <= 20 &&
+        value.options.every((option) => isBoundedString(option, 1, 120)) &&
+        new Set(value.options).size === value.options.length &&
+        value.options.includes(value.defaultValue)
+    : hasOnlyKeys(value, new Set(["defaultValue", "name"]));
+}
+
+function isFigmaButtonPlan(value: unknown): value is Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, BUTTON_PLAN_KEYS) ||
+    value.schemaVersion !== "1.0.0" ||
+    !isPlanSource(value.source) ||
+    !isRecord(value.componentSet) ||
+    !hasOnlyKeys(value.componentSet, BUTTON_SET_KEYS) ||
+    !isBoundedString(value.componentSet.description, 1, 2_000) ||
+    !Number.isSafeInteger(value.componentSet.majorVersion) ||
+    Number(value.componentSet.majorVersion) < 0 ||
+    !isBoundedString(value.componentSet.name, 1, 120) ||
+    value.componentSet.slotId !== "root" ||
+    !isStableAssetId(value.componentSet.stableId) ||
+    !isRecord(value.componentSet.properties) ||
+    !hasOnlyKeys(
+      value.componentSet.properties,
+      new Set(["appearance", "label", "state"]),
+    ) ||
+    !isButtonProperty(value.componentSet.properties.appearance, true) ||
+    !isButtonProperty(value.componentSet.properties.label, false) ||
+    !isButtonProperty(value.componentSet.properties.state, true) ||
+    !isRecord(value.tokenSource) ||
+    !hasOnlyKeys(value.tokenSource, BUTTON_TOKEN_SOURCE_KEYS) ||
+    !isStableAssetId(value.tokenSource.assetId) ||
+    !isBoundedString(value.tokenSource.assetVersion, 1, 128) ||
+    !SEMVER_PATTERN.test(value.tokenSource.assetVersion) ||
+    !isStableAssetId(value.tokenSource.collectionStableId) ||
+    !isBoundedString(value.tokenSource.contentDigest, 1, 80) ||
+    !CONTENT_DIGEST_PATTERN.test(value.tokenSource.contentDigest) ||
+    !isStableIdSegment(value.tokenSource.projectId) ||
+    !Array.isArray(value.sharedBindings) ||
+    value.sharedBindings.length !== 3 ||
+    !value.sharedBindings.every(isButtonBinding) ||
+    !isRecord(value.typography) ||
+    !hasOnlyKeys(value.typography, BUTTON_TYPOGRAPHY_KEYS) ||
+    !isTypographyVariable(value.typography.fontFamily) ||
+    !isTypographyVariable(value.typography.fontSize) ||
+    !isTypographyVariable(value.typography.fontWeight) ||
+    !isTypographyVariable(value.typography.letterSpacing) ||
+    !isBoundedString(value.typography.fontStyleFallback, 1, 120) ||
+    !isRecord(value.typography.lineHeight) ||
+    !hasOnlyKeys(value.typography.lineHeight, new Set(["fallback", "unit"])) ||
+    typeof value.typography.lineHeight.fallback !== "number" ||
+    value.typography.lineHeight.fallback <= 0 ||
+    value.typography.lineHeight.unit !== "PERCENT" ||
+    !isStableAssetId(value.typography.tokenPath) ||
+    !Array.isArray(value.variants) ||
+    value.variants.length !== 4
+  )
+    return false;
+
+  const source = value.source;
+  const componentSet = value.componentSet;
+  const tokenSource = value.tokenSource;
+  const expectedRoot = `${String(source.projectId)}/component/${String(source.assetId)}/component-set/major-${String(componentSet.majorVersion)}`;
+  const expectedCollection = `${String(tokenSource.projectId)}/token-set/${String(tokenSource.assetId)}/variables/major-${String(tokenSource.assetVersion).split(".")[0]}`;
+  if (
+    componentSet.stableId !== expectedRoot ||
+    Number(String(source.assetVersion).split(".")[0]) !==
+      componentSet.majorVersion ||
+    tokenSource.collectionStableId !== expectedCollection
+  )
+    return false;
+
+  const variablePrefix = `${tokenSource.collectionStableId}/variable/`;
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  const selectionKeys = new Set<string>();
+  const properties = componentSet.properties;
+  if (
+    !isRecord(properties) ||
+    !isRecord(properties.appearance) ||
+    !isRecord(properties.state)
+  ) {
+    return false;
+  }
+  const appearanceOptions = properties.appearance.options as unknown[];
+  const stateOptions = properties.state.options as unknown[];
+  for (const variant of value.variants) {
+    if (
+      !isRecord(variant) ||
+      !hasOnlyKeys(variant, BUTTON_VARIANT_KEYS) ||
+      !Array.isArray(variant.bindings) ||
+      variant.bindings.length < 2 ||
+      variant.bindings.length > 5 ||
+      !variant.bindings.every(isButtonBinding) ||
+      !isBoundedString(variant.displayName, 1, 120) ||
+      !isBoundedString(variant.figmaName, 1, 240) ||
+      !isStableAssetId(variant.id) ||
+      !isRecord(variant.selections) ||
+      !hasOnlyKeys(variant.selections, new Set(["appearance", "state"])) ||
+      !isBoundedString(variant.selections.appearance, 1, 120) ||
+      !isBoundedString(variant.selections.state, 1, 120) ||
+      !isStableAssetId(variant.slotId) ||
+      !isStableAssetId(variant.stableId) ||
+      variant.stableId !== `${expectedRoot}/${variant.slotId}` ||
+      ids.has(variant.stableId) ||
+      names.has(variant.figmaName) ||
+      !appearanceOptions.includes(variant.selections.appearance) ||
+      !stateOptions.includes(variant.selections.state) ||
+      variant.figmaName !==
+        `${String(properties.appearance.name)}=${String(variant.selections.appearance)}, ${String(properties.state.name)}=${String(variant.selections.state)}` ||
+      selectionKeys.has(
+        `${String(variant.selections.appearance)}/${String(variant.selections.state)}`,
+      )
+    )
+      return false;
+    ids.add(variant.stableId);
+    names.add(variant.figmaName);
+    selectionKeys.add(
+      `${String(variant.selections.appearance)}/${String(variant.selections.state)}`,
+    );
+  }
+  const sharedBindings = value.sharedBindings as unknown[];
+  const variants = value.variants as unknown[];
+  const bindings: unknown[] = [
+    ...sharedBindings,
+    ...variants.flatMap((variant): unknown[] =>
+      isRecord(variant) && Array.isArray(variant.bindings)
+        ? (variant.bindings as unknown[])
+        : [],
+    ),
+    value.typography.fontFamily,
+    value.typography.fontSize,
+    value.typography.fontWeight,
+    value.typography.letterSpacing,
+  ];
+  return bindings.every(
+    (binding) =>
+      isRecord(binding) &&
+      typeof binding.variableStableId === "string" &&
+      binding.variableStableId.startsWith(variablePrefix),
+  );
+}
+
 function isPingCommand(value: Record<string, unknown>): boolean {
   return (
     value.type === "writer.ping" &&
@@ -397,7 +665,7 @@ function isVariablesCommand(
     approval.mode !== "approved" ||
     !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
     !isBoundedString(approval.approvalId, 1, 320) ||
-    !APPROVAL_ID_PATTERN.test(approval.approvalId) ||
+    !TOKEN_APPROVAL_ID_PATTERN.test(approval.approvalId) ||
     !isRecord(approval.subject) ||
     !hasOnlyKeys(
       approval.subject,
@@ -425,6 +693,50 @@ function isVariablesCommand(
     approval.subject.assetVersion === planSource.assetVersion &&
     approval.subject.contentDigest === planSource.contentDigest &&
     projectId === planSource.projectId
+  );
+}
+
+function isButtonCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "components.button.ensure" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isFigmaButtonPlan(value.payload.plan) ||
+    approval.mode !== "approved" ||
+    !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
+    !isBoundedString(approval.approvalId, 1, 320) ||
+    !COMPONENT_APPROVAL_ID_PATTERN.test(approval.approvalId) ||
+    !isRecord(approval.subject) ||
+    !hasOnlyKeys(
+      approval.subject,
+      new Set([
+        "assetId",
+        "assetVersion",
+        "contentDigest",
+        "projectId",
+        "type",
+      ]),
+    ) ||
+    approval.subject.type !== "component" ||
+    target.kind !== "figma-file" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  )
+    return false;
+  const source = value.payload.plan.source;
+  return (
+    isRecord(source) &&
+    approval.subject.projectId === source.projectId &&
+    approval.subject.assetId === source.assetId &&
+    approval.subject.assetVersion === source.assetVersion &&
+    approval.subject.contentDigest === source.contentDigest &&
+    projectId === source.projectId
   );
 }
 
@@ -460,11 +772,19 @@ export function isWriterCommandDelivery(
       value.approval.reason === "read_only_diagnostic"
     );
   }
-  return isVariablesCommand(
-    value.command,
-    value.approval,
-    value.target,
-    value.projectId,
+  return (
+    isVariablesCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    ) ||
+    isButtonCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    )
   );
 }
 
@@ -496,6 +816,47 @@ function isVariablesResult(value: Record<string, unknown>): boolean {
   );
 }
 
+function isButtonResult(value: Record<string, unknown>): boolean {
+  return (
+    hasOnlyKeys(
+      value,
+      new Set([
+        "componentSet",
+        "labelPropertyName",
+        "type",
+        "typography",
+        "variants",
+      ]),
+    ) &&
+    value.type === "components.button.ensure" &&
+    isRecord(value.componentSet) &&
+    hasOnlyKeys(
+      value.componentSet,
+      new Set(["action", "nodeId", "stableId"]),
+    ) &&
+    ["created", "unchanged", "updated"].includes(
+      String(value.componentSet.action),
+    ) &&
+    isBoundedString(value.componentSet.nodeId, 1, 128) &&
+    isStableAssetId(value.componentSet.stableId) &&
+    isBoundedString(value.labelPropertyName, 1, 120) &&
+    isRecord(value.typography) &&
+    hasOnlyKeys(
+      value.typography,
+      new Set(["lineHeightStrategy", "variableBindings"]),
+    ) &&
+    value.typography.lineHeightStrategy === "resolved-percent" &&
+    value.typography.variableBindings === 4 &&
+    isRecord(value.variants) &&
+    hasOnlyKeys(value.variants, new Set(["created", "unchanged", "updated"])) &&
+    [
+      value.variants.created,
+      value.variants.unchanged,
+      value.variants.updated,
+    ].every((count) => Number.isSafeInteger(count) && Number(count) >= 0)
+  );
+}
+
 export function isWriterPluginResult(
   value: unknown,
 ): value is WriterPluginResult {
@@ -512,7 +873,8 @@ export function isWriterPluginResult(
       hasOnlyKeys(value, SUCCESS_RESULT_KEYS) &&
       isRecord(value.result) &&
       ((Object.keys(value.result).length === 1 && value.result.pong === true) ||
-        isVariablesResult(value.result))
+        isVariablesResult(value.result) ||
+        isButtonResult(value.result))
     );
   }
   if (

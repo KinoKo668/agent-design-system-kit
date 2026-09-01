@@ -66,6 +66,8 @@ Core Schema、Bridge 和 Plugin 轻量边界校验都会检查这些关联。空
 
 Bridge 还有第二道运行时门禁：如果没有配置 Git Approval Verifier，即使命令外形正确也会被拒绝，且不会进入 Queue。
 
+Verifier 还会从当前 Git Token Set 重新生成完整 Variable Plan，并与客户端计划做 Canonical JSON 全字段对比。因此通过 Schema 但被客户端改写值、Scope、描述或绑定的计划仍会以 `APPROVAL_STALE` 拒绝。
+
 ## 5. 稳定身份
 
 正式 Shared Plugin Data 使用：

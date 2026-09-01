@@ -1,5 +1,8 @@
 import {
+  canonicalizeJson,
   checkApprovalForUse,
+  createFigmaButtonPlan,
+  createFigmaVariablePlan,
   createToolkitError,
   type DesignSystemSnapshot,
   type ToolkitError,
@@ -28,6 +31,96 @@ const DEFAULT_ADAPTERS: ApprovalVerifierAdapters = {
   loadSnapshot: loadDesignSystemFromDirectory,
 };
 
+function planMismatchError(command: WriterCommandEnvelope): ToolkitError {
+  return createToolkitError({
+    code: "APPROVAL_STALE",
+    message:
+      "The Writer plan is not the deterministic plan generated from the current approved Git source.",
+    recoveryInstruction:
+      "Discard the client plan, reload the current approved source, and regenerate the Writer Command.",
+    target: {
+      logicalId:
+        command.approval.mode === "approved"
+          ? command.approval.subject.assetId
+          : command.projectId,
+      type: "operation",
+    },
+  });
+}
+
+function verifyDeterministicPlan(
+  snapshot: DesignSystemSnapshot,
+  command: WriterCommandEnvelope,
+): ToolkitError | null {
+  if (
+    command.command.type === "writer.ping" ||
+    command.approval.mode !== "approved"
+  )
+    return null;
+  const subject = command.approval.subject;
+  const approvalId = command.approval.approvalId;
+  if (command.command.type === "variables.ensure") {
+    const tokenSet = snapshot.tokenSets.find(
+      ({ data }) =>
+        data.projectId === subject.projectId &&
+        data.assetId === subject.assetId &&
+        data.assetVersion === subject.assetVersion,
+    );
+    if (tokenSet === undefined) return planMismatchError(command);
+    const expected = createFigmaVariablePlan(
+      tokenSet.data,
+      subject.contentDigest,
+    );
+    return !expected.ok ||
+      canonicalizeJson(expected.data) !==
+        canonicalizeJson(command.command.payload.plan)
+      ? planMismatchError(command)
+      : null;
+  }
+
+  const component = snapshot.components.find(
+    ({ data }) =>
+      data.projectId === subject.projectId &&
+      data.assetId === subject.assetId &&
+      data.assetVersion === subject.assetVersion,
+  );
+  const approval = snapshot.approvals.find(
+    ({ data }) => data.approvalId === approvalId,
+  )?.data;
+  const tokenDependency = approval?.dependencies.find(
+    (dependency) => dependency.type === "token-set",
+  );
+  const tokenSet =
+    component === undefined || tokenDependency === undefined
+      ? undefined
+      : snapshot.tokenSets.find(
+          ({ data }) =>
+            data.projectId === component.data.tokenSource.projectId &&
+            data.assetId === component.data.tokenSource.assetId &&
+            data.assetVersion === component.data.tokenSource.assetVersion &&
+            data.projectId === tokenDependency.projectId &&
+            data.assetId === tokenDependency.assetId &&
+            data.assetVersion === tokenDependency.assetVersion,
+        );
+  if (
+    component === undefined ||
+    tokenSet === undefined ||
+    tokenDependency === undefined
+  )
+    return planMismatchError(command);
+  const expected = createFigmaButtonPlan(
+    component.data,
+    tokenSet.data,
+    subject.contentDigest,
+    tokenDependency.contentDigest,
+  );
+  return !expected.ok ||
+    canonicalizeJson(expected.data) !==
+      canonicalizeJson(command.command.payload.plan)
+    ? planMismatchError(command)
+    : null;
+}
+
 export function createGitApprovalVerifier(
   options: ApprovalVerifierOptions,
   adapters: ApprovalVerifierAdapters = DEFAULT_ADAPTERS,
@@ -54,7 +147,7 @@ export function createGitApprovalVerifier(
     const snapshotResult = await adapters.loadSnapshot(options);
     if (!snapshotResult.ok) return snapshotResult.error;
     const subject = command.approval.subject;
-    return checkApprovalForUse(
+    const approvalError = checkApprovalForUse(
       snapshotResult.data.approvals.map(({ data }) => data),
       {
         approvalId: command.approval.approvalId,
@@ -64,6 +157,9 @@ export function createGitApprovalVerifier(
         projectId: subject.projectId,
         type: subject.type,
       },
+    );
+    return (
+      approvalError ?? verifyDeterministicPlan(snapshotResult.data, command)
     );
   };
 }
