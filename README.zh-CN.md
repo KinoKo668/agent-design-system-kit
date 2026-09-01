@@ -149,7 +149,9 @@ spikes/          M0 历史能力证明，不属于正式 Package
 
 ## 开始使用
 
-正式产品流程仍在开发中。当前可以克隆仓库并验证工程骨架：
+请优先阅读[安装与五分钟 Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)，完成经过验证的只读 Button 演示和可选 Figma 开发连接。
+
+最短工程安装步骤如下：
 
 ```bash
 git clone https://github.com/KinoKo668/hatchkit.git
@@ -238,6 +240,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Registry 与 Figma 双向差异审计](docs/AUD-003-Registry与Figma双向差异审计.md)
 - [Agent 黄金路径回归测试](docs/QA-001-Agent黄金路径回归测试.md)
 - [系统失败矩阵与零污染回归](docs/QA-002-系统失败矩阵与零污染回归.md)
+- [安装与五分钟 Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

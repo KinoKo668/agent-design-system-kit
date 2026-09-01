@@ -160,7 +160,9 @@ spikes/          Historical M0 capability proofs—not production packages
 
 ## Getting started
 
-The formal product workflow is still under construction. To inspect and build the current engineering foundation:
+For a verified read-only Button demo plus the optional Figma development connection, follow the [five-minute Quickstart](docs/DOC-001-安装与五分钟Quickstart.md).
+
+The shortest engineering setup is:
 
 ```bash
 git clone https://github.com/KinoKo668/hatchkit.git
@@ -251,6 +253,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Registry-to-Figma bidirectional drift audit](docs/AUD-003-Registry与Figma双向差异审计.md)
 - [Agent-facing golden-path regression](docs/QA-001-Agent黄金路径回归测试.md)
 - [System failure matrix and zero-pollution regression](docs/QA-002-系统失败矩阵与零污染回归.md)
+- [Installation and five-minute Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
