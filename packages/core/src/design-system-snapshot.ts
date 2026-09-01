@@ -1,6 +1,10 @@
 import type { ZodError } from "zod";
 
 import {
+  approvalRecordSchema,
+  type ApprovalRecord,
+} from "./approval-record.js";
+import {
   buttonComponentContractSchema,
   toButtonComponentContractDigestSubject,
   validateButtonComponentContractWithTokenSet,
@@ -20,6 +24,7 @@ import type { JsonObject, JsonValue } from "./json.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
 import { stableIdSegmentSchema } from "./schema-primitives.js";
+import { compareSemanticVersions } from "./semantic-version.js";
 import { toJsonPointer, toValidationIssues } from "./schema-validation.js";
 import {
   tokenSetSchema,
@@ -28,6 +33,7 @@ import {
 } from "./token-set.js";
 
 export const DESIGN_SYSTEM_DOCUMENT_KINDS = [
+  "approval",
   "brief",
   "component",
   "component-registry",
@@ -49,6 +55,7 @@ export interface LocatedDesignAsset<T> {
 }
 
 export interface DesignSystemSnapshot {
+  readonly approvals: readonly LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: readonly LocatedDesignAsset<DesignBrief>[];
   readonly components: readonly LocatedDesignAsset<ButtonComponentContract>[];
   readonly projectId: string;
@@ -67,6 +74,7 @@ export interface DesignSystemIntegrityIssue extends JsonObject {
 }
 
 interface MutableSnapshot {
+  readonly approvals: LocatedDesignAsset<ApprovalRecord>[];
   readonly briefs: LocatedDesignAsset<DesignBrief>[];
   readonly components: LocatedDesignAsset<ButtonComponentContract>[];
   readonly registries: LocatedDesignAsset<ComponentRegistry>[];
@@ -181,6 +189,10 @@ function componentIdentity(component: ButtonComponentContract): string {
 
 function briefIdentity(brief: DesignBrief): string {
   return `${brief.projectId}/brief/${brief.assetId}@${brief.assetVersion}`;
+}
+
+function approvalIdentity(approval: ApprovalRecord): string {
+  return approval.approvalId;
 }
 
 function validateComponentTokenReferences(
@@ -327,6 +339,230 @@ function validateRegistryComponentReferences(
   }
 }
 
+function approvalSubjectIdentity(record: ApprovalRecord): string {
+  return `${record.subject.projectId}/${record.subject.type}/${record.subject.assetId}@${record.subject.assetVersion}`;
+}
+
+function wasApproved(status: ApprovalRecord["status"]): boolean {
+  return ["approved", "revoked", "superseded"].includes(status);
+}
+
+function addMissingApprovalReference(
+  issues: DesignSystemIntegrityIssue[],
+  sourcePath: string,
+  path: string,
+  identity: string,
+): void {
+  issues.push({
+    code: "missing_reference",
+    message: `Approval reference '${identity}' was not loaded.`,
+    path,
+    sourcePath,
+  });
+}
+
+function validateApprovalReferences(
+  snapshot: DesignSystemSnapshot,
+  issues: DesignSystemIntegrityIssue[],
+  calculateDigest: JsonContentDigestCalculator,
+): void {
+  const approvals = new Map(
+    snapshot.approvals.map((located) => [located.data.approvalId, located]),
+  );
+  const briefs = new Map(
+    snapshot.briefs.map((located) => [briefIdentity(located.data), located]),
+  );
+  const tokenSets = new Map(
+    snapshot.tokenSets.map((located) => [tokenIdentity(located.data), located]),
+  );
+  const components = new Map(
+    snapshot.components.map((located) => [
+      componentIdentity(located.data),
+      located,
+    ]),
+  );
+
+  for (const located of snapshot.approvals) {
+    const approval = located.data;
+    const subjectKey = approvalSubjectIdentity(approval);
+    let subjectDigest: string | undefined;
+    let subjectSourcePath: string | undefined;
+    if (approval.subject.type === "token-set") {
+      const asset = tokenSets.get(subjectKey);
+      if (asset === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/subject",
+          subjectKey,
+        );
+      } else {
+        subjectDigest = calculateDigest(toTokenSetDigestSubject(asset.data));
+        subjectSourcePath = asset.sourcePath;
+      }
+    } else if (approval.subject.type === "component") {
+      const asset = components.get(subjectKey);
+      if (asset === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/subject",
+          subjectKey,
+        );
+      } else {
+        subjectDigest = calculateDigest(
+          toButtonComponentContractDigestSubject(asset.data),
+        );
+        subjectSourcePath = asset.sourcePath;
+      }
+    }
+    if (
+      subjectDigest !== undefined &&
+      subjectDigest !== approval.subject.contentDigest
+    ) {
+      issues.push({
+        code: "content_digest_mismatch",
+        message:
+          "Approval subject contentDigest does not match the canonical source asset.",
+        path: "/subject/contentDigest",
+        ...(subjectSourcePath === undefined
+          ? {}
+          : { relatedSourcePath: subjectSourcePath }),
+        sourcePath: located.sourcePath,
+      });
+    }
+
+    approval.dependencies.forEach((dependency, dependencyIndex) => {
+      const dependencyPath = `/dependencies/${String(dependencyIndex)}`;
+      if (dependency.type === "brief") {
+        const key = `${dependency.projectId}/brief/${dependency.assetId}@${dependency.assetVersion}`;
+        const brief = briefs.get(key);
+        if (brief === undefined) {
+          addMissingApprovalReference(
+            issues,
+            located.sourcePath,
+            dependencyPath,
+            key,
+          );
+          return;
+        }
+        if (
+          calculateDigest(toDesignBriefDigestSubject(brief.data)) !==
+          dependency.contentDigest
+        ) {
+          issues.push({
+            code: "content_digest_mismatch",
+            message:
+              "Approval dependency contentDigest does not match the canonical Design Brief.",
+            path: `${dependencyPath}/contentDigest`,
+            relatedSourcePath: brief.sourcePath,
+            sourcePath: located.sourcePath,
+          });
+        }
+        return;
+      }
+
+      const dependencyApproval =
+        dependency.approvalId === null
+          ? undefined
+          : approvals.get(dependency.approvalId);
+      if (dependencyApproval === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          `${dependencyPath}/approvalId`,
+          dependency.approvalId ?? "missing-approval-id",
+        );
+        return;
+      }
+      const dependencySubject = dependencyApproval.data.subject;
+      if (
+        dependencySubject.projectId !== dependency.projectId ||
+        dependencySubject.type !== dependency.type ||
+        dependencySubject.assetId !== dependency.assetId ||
+        dependencySubject.assetVersion !== dependency.assetVersion ||
+        dependencySubject.contentDigest !== dependency.contentDigest
+      ) {
+        issues.push({
+          code: "approval_dependency_mismatch",
+          message:
+            "Approval dependency fields do not match the referenced Approval Record subject.",
+          path: dependencyPath,
+          relatedSourcePath: dependencyApproval.sourcePath,
+          sourcePath: located.sourcePath,
+        });
+      }
+    });
+
+    if (approval.supersedes !== null) {
+      const predecessor = approvals.get(approval.supersedes);
+      if (predecessor === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/supersedes",
+          approval.supersedes,
+        );
+      } else if (
+        predecessor.data.subject.projectId !== approval.subject.projectId ||
+        predecessor.data.subject.type !== approval.subject.type ||
+        predecessor.data.subject.assetId !== approval.subject.assetId ||
+        compareSemanticVersions(
+          predecessor.data.subject.assetVersion,
+          approval.subject.assetVersion,
+        ) >= 0 ||
+        (wasApproved(approval.status) &&
+          (predecessor.data.status !== "superseded" ||
+            predecessor.data.termination?.type !== "superseded" ||
+            predecessor.data.termination.replacementApprovalId !==
+              approval.approvalId))
+      ) {
+        issues.push({
+          code: "approval_lineage_mismatch",
+          message:
+            "The predecessor must be an earlier version of the same logical asset and, after replacement approval, point back to this Approval.",
+          path: "/supersedes",
+          relatedSourcePath: predecessor.sourcePath,
+          sourcePath: located.sourcePath,
+        });
+      }
+    }
+
+    if (approval.termination?.type === "superseded") {
+      const replacement = approvals.get(
+        approval.termination.replacementApprovalId,
+      );
+      if (replacement === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/termination/replacementApprovalId",
+          approval.termination.replacementApprovalId,
+        );
+      } else if (
+        replacement.data.subject.projectId !== approval.subject.projectId ||
+        replacement.data.subject.type !== approval.subject.type ||
+        replacement.data.subject.assetId !== approval.subject.assetId ||
+        compareSemanticVersions(
+          replacement.data.subject.assetVersion,
+          approval.subject.assetVersion,
+        ) <= 0 ||
+        !wasApproved(replacement.data.status) ||
+        replacement.data.supersedes !== approval.approvalId
+      ) {
+        issues.push({
+          code: "approval_lineage_mismatch",
+          message:
+            "The replacement Approval must be a later version of the same logical asset and point back to the superseded Approval.",
+          path: "/termination/replacementApprovalId",
+          relatedSourcePath: replacement.sourcePath,
+          sourcePath: located.sourcePath,
+        });
+      }
+    }
+  }
+}
+
 export function createDesignSystemIntegrityFailure(
   issues: readonly DesignSystemIntegrityIssue[],
 ): FailureResult {
@@ -363,6 +599,7 @@ export function validateDesignSystemSnapshot(
 
   const seenSourcePaths = new Set<string>();
   const snapshot: MutableSnapshot = {
+    approvals: [],
     briefs: [],
     components: [],
     registries: [],
@@ -390,6 +627,24 @@ export function validateDesignSystemSnapshot(
     }
     seenSourcePaths.add(document.sourcePath);
 
+    if (document.kind === "approval") {
+      const result = approvalRecordSchema.safeParse(document.value);
+      if (!result.success) {
+        addZodIssues(issues, document.sourcePath, result.error);
+      } else {
+        addProjectMismatch(
+          issues,
+          expectedProjectId,
+          document.sourcePath,
+          result.data.subject.projectId,
+        );
+        snapshot.approvals.push({
+          data: result.data,
+          sourcePath: document.sourcePath,
+        });
+      }
+      continue;
+    }
     if (document.kind === "brief") {
       const result = designBriefSchema.safeParse(document.value);
       if (!result.success) {
@@ -463,6 +718,11 @@ export function validateDesignSystemSnapshot(
   }
 
   addDuplicateAssetIssues(
+    snapshot.approvals,
+    ({ data }) => approvalIdentity(data),
+    issues,
+  );
+  addDuplicateAssetIssues(
     snapshot.briefs,
     ({ data }) => briefIdentity(data),
     issues,
@@ -490,6 +750,7 @@ export function validateDesignSystemSnapshot(
   }
 
   return createSuccessResult({
+    approvals: snapshot.approvals,
     briefs: snapshot.briefs,
     components: snapshot.components,
     projectId: expectedProjectId,
@@ -562,6 +823,7 @@ export function verifyDesignSystemContentDigests(
         });
       }
     }
+    validateApprovalReferences(snapshot, issues, calculateDigest);
   } catch {
     return digestComputationFailure();
   }

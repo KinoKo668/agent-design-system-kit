@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point, the authenticated single-writer Figma Bridge, and the first deterministic Figma Variables Ensure path, but the toolkit is not yet production-ready.**
+**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point, machine-readable Approval Records with live Git write verification, the authenticated single-writer Figma Bridge, and the first deterministic Figma Variables Ensure path, but the toolkit is not yet production-ready.**
 
 What exists today:
 
@@ -110,6 +110,7 @@ What exists today:
 - a versioned DTCG 2025.10 Token Set subset with typed aliases, modes, dependency rules, and Button fixtures;
 - a strict Button v1 Component Contract with properties, a complete Variant matrix, stable slots, and typed Token bindings;
 - a Component Registry schema that connects exact Contract digests, Approval references, lifecycle, and repairable Figma locators;
+- a strict Approval Record schema whose status is derived from exact content, required human roles, validation evidence, terminal events, and upstream approval state;
 - a deterministic local loader that safely discovers managed files, validates cross-asset references, and rejects content-digest drift with relative source paths;
 - deterministic component search and exact resolution that never fuzzy-matches, silently falls back to inactive versions, or treats an unbuilt Figma asset as insertable;
 - environment-neutral Brief and Token queries with exact detail selection, deterministic pagination, bounded Token paths, and validated alias dependency closure;
@@ -123,7 +124,7 @@ What exists today:
 - an in-memory Session Token connection flow and a safe `writer.ping` round trip that proves the full Plugin transport without modifying Figma;
 - a strict Variable planner and `variables.ensure` adapter that maps the Button Token fixture to one Major-version Collection, 30 real Variables, targeted scopes, aliases, code syntax, stable managed identities, no-op retries, and recoverable partial writes;
 - an explicit human-confirmed Figma file-binding control that binds an unbound library once, safely replays the same identity, and refuses automatic overwrite or rebind;
-- a fail-closed write authorization hook: a standalone Bridge cannot enqueue `variables.ensure` until the project control plane re-verifies the matching Git approval record;
+- a live Git Approval verifier that reloads the catalog before every write, validates the exact subject and upstream chain, and fails closed on missing, stale, revoked, superseded, duplicate, or invalid records;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -178,7 +179,13 @@ pnpm build
 pnpm hatchkit:figma-bridge
 ```
 
-Do not redirect, save, screenshot, or publish the displayed token. A standalone Bridge can run the no-write `writer.ping`; it deliberately blocks `variables.ensure` until a project Approval Verifier is configured.
+Do not redirect, save, screenshot, or publish the displayed token. A standalone Bridge can run the no-write `writer.ping` and deliberately blocks `variables.ensure`. To enable live Git verification—not bypass approval—start it with both project and design-system root:
+
+```bash
+pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-demo
+```
+
+The public demo currently has no real human Approval Records, so formal writes remain blocked until those records exist.
 
 Requirements:
 
@@ -222,6 +229,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge and single-writer queue](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [Deterministic Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
+- [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

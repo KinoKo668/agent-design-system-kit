@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、经过认证的单 Writer Figma Bridge，以及第一条确定性的 Figma Variables Ensure 链路，但尚未成为可用于生产环境的完整工具。**
+**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、可机器读取并实时校验 Git 的 Approval Record、经过认证的单 Writer Figma Bridge，以及第一条确定性的 Figma Variables Ensure 链路，但尚未成为可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -99,6 +99,7 @@ Registry · 历史             │
 - 带类型 Alias、Mode、依赖规则和 Button 样例的 DTCG 2025.10 Token Set 子集；
 - 带严格属性、完整 Variant 矩阵、稳定 Slot 和类型化 Token Binding 的 Button v1 Component Contract；
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
+- 根据准确内容、必需人工角色、验证证据、终止事件和上游状态推导结果的严格 Approval Record Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
 - 确定性的组件搜索与精确解析，不模糊猜测、不自动回退旧版本，也不把尚未建成的 Figma 资产冒充为可插入；
 - 环境无关的 Brief 与 Token 查询，支持精确详情、确定性分页、Token Path 限量与已校验的 Alias 依赖闭包；
@@ -112,7 +113,7 @@ Registry · 历史             │
 - Session Token 只驻留内存的连接流程，以及不会修改 Figma 的 `writer.ping` 完整往返验证；
 - 严格的 Variable Plan 与 `variables.ensure` Adapter：把 Button Token Fixture 映射为一个 Major Collection、30 个真实 Variable、精确 Scope、Alias、Code Syntax 和稳定托管身份，并支持无写入重试与部分恢复；
 - 需要设计师二次确认的 Figma 文件绑定入口：未绑定库文件只初始化一次，同一身份可安全重放，不同身份或损坏记录不会被自动覆盖或改绑；
-- 默认关闭的写授权入口：独立 Bridge 在项目控制面重新校验 Git Approval Record 之前，不能把 `variables.ensure` 加入队列；
+- 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -167,7 +168,13 @@ pnpm build
 pnpm hatchkit:figma-bridge
 ```
 
-请勿重定向、保存、截图或公开终端显示的 Token。独立 Bridge 可以运行无写入的 `writer.ping`；在配置项目 Approval Verifier 之前，它会主动阻断 `variables.ensure`。
+请勿重定向、保存、截图或公开终端显示的 Token。独立 Bridge 可以运行无写入的 `writer.ping`，并主动阻断 `variables.ensure`。如需启用实时 Git 校验（不是绕过审批），必须同时指定项目和设计系统目录：
+
+```bash
+pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-demo
+```
+
+当前公开 Demo 没有真实人工 Approval Record，因此正式写入仍会保持阻断，直到这些记录真实存在。
 
 环境要求：
 
@@ -209,6 +216,7 @@ pnpm hatchkit:figma-bridge
 - [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge 与单 Writer 队列](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [确定性 Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
+- [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

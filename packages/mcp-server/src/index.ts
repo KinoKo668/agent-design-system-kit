@@ -1,7 +1,9 @@
 import { CORE_PACKAGE_NAME } from "@agent-design-system-kit/core";
 
+export * from "./approval-verifier.js";
 export * from "./registry-files.js";
 export * from "./figma-bridge.js";
+export * from "./figma-bridge-launch.js";
 export * from "./operation-log.js";
 export * from "./query-tools.js";
 export * from "./resolution-tools.js";

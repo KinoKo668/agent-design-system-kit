@@ -17,6 +17,7 @@ const MAX_FILE_BYTES = 2 * 1_024 * 1_024;
 const MAX_FILES = 1_000;
 
 const SOURCE_SUFFIXES = {
+  approval: ".approval.json",
   brief: ".brief.json",
   component: ".component.json",
   "component-registry": ".registry.json",

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-import { compareSemanticVersions } from "./component-registry.js";
+import { compareSemanticVersions } from "./semantic-version.js";
 import type {
   DesignSystemSnapshot,
   LocatedDesignAsset,

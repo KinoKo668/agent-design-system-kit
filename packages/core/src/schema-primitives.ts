@@ -1,7 +1,6 @@
 import * as z from "zod";
 
-const SEMVER_PATTERN =
-  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*))*))?(?:\+([0-9a-z-]+(?:\.[0-9a-z-]+)*))?$/iu;
+import { SEMVER_PATTERN } from "./semantic-version.js";
 const STABLE_ID_SEGMENT_PATTERN = /^[a-z][a-z0-9-]*$/u;
 const STABLE_ASSET_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)*$/u;
 const CONTENT_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;

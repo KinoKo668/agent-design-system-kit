@@ -25,6 +25,7 @@ const statusOutputSchema = z.strictObject({
   data: z.strictObject({
     catalog: z.strictObject({
       counts: z.strictObject({
+        approvals: z.number().int().nonnegative(),
         briefs: z.number().int().nonnegative(),
         components: z.number().int().nonnegative(),
         registries: z.number().int().nonnegative(),
@@ -66,6 +67,7 @@ async function createStatusResult(
   return createSuccessResult({
     catalog: {
       counts: {
+        approvals: snapshot.approvals.length,
         briefs: snapshot.briefs.length,
         components: snapshot.components.length,
         registries: snapshot.registries.length,
@@ -73,6 +75,7 @@ async function createStatusResult(
       },
       projectId: snapshot.projectId,
       sources: [
+        ...snapshot.approvals.map(({ sourcePath }) => sourcePath),
         ...snapshot.briefs.map(({ sourcePath }) => sourcePath),
         ...snapshot.components.map(({ sourcePath }) => sourcePath),
         ...snapshot.registries.map(({ sourcePath }) => sourcePath),

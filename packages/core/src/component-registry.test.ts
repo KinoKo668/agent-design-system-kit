@@ -7,11 +7,11 @@ import validRegistry from "../../../design-system/hatch-demo/registry/components
 import {
   COMPONENT_REGISTRY_SCHEMA_VERSION,
   COMPONENT_REGISTRY_TYPE,
-  compareSemanticVersions,
   validateComponentRegistry,
   validateComponentRegistryWithButtonContract,
 } from "./component-registry.js";
 import { isFailureResult, isSuccessResult } from "./results.js";
+import { compareSemanticVersions } from "./semantic-version.js";
 
 const CONTRACT_DIGEST = validButtonContract.contentDigest;
 
@@ -230,5 +230,16 @@ describe("compareSemanticVersions", () => {
     ).toBeLessThan(0);
     expect(compareSemanticVersions("1.0.0-alpha", "1.0.0")).toBeLessThan(0);
     expect(compareSemanticVersions("1.0.0+one", "1.0.0+two")).toBe(0);
+    expect(
+      compareSemanticVersions(
+        "999999999999999999999.0.0",
+        "1000000000000000000000.0.0",
+      ),
+    ).toBeLessThan(0);
+  });
+
+  it("rejects incomplete or malformed versions instead of guessing", () => {
+    expect(() => compareSemanticVersions("1.0", "1.0.0")).toThrow(TypeError);
+    expect(() => compareSemanticVersions("v1.0.0", "1.0.0")).toThrow(TypeError);
   });
 });

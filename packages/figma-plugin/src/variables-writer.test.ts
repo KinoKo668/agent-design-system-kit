@@ -445,4 +445,33 @@ describe("Figma Variables writer", () => {
       ),
     ).toBe(writesBefore);
   });
+
+  it("fails closed when managed metadata contains an invalid version", async () => {
+    await ensureFigmaVariables(port, plan, context());
+    const collection = port.collections[0];
+    if (collection === undefined) {
+      throw new Error("Managed Collection fixture missing.");
+    }
+    const marker = JSON.parse(
+      collection.getSharedPluginData(
+        HATCHKIT_SHARED_NAMESPACE,
+        MANAGED_ASSET_SHARED_KEY,
+      ),
+    ) as Record<string, unknown>;
+    collection.setSharedPluginData(
+      HATCHKIT_SHARED_NAMESPACE,
+      MANAGED_ASSET_SHARED_KEY,
+      JSON.stringify({ ...marker, assetVersion: "not-semver" }),
+    );
+    const writesBefore = collection.writeCount;
+
+    await expect(
+      ensureFigmaVariables(
+        port,
+        plan,
+        context("4070f054-5f9b-43cd-9a1e-bbffb900d0c4"),
+      ),
+    ).rejects.toMatchObject({ code: "VERSION_CONFLICT" });
+    expect(collection.writeCount).toBe(writesBefore);
+  });
 });

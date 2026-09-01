@@ -1,5 +1,6 @@
 import {
   canonicalizeJson,
+  compareSemanticVersions,
   type ErrorCode,
   type FigmaVariablePlan,
   type FigmaVariablePlannedValue,
@@ -367,10 +368,19 @@ function assertMarkerVersion(
     );
   }
   if (marker.assetVersion === undefined) return;
-  const comparison = compareSemver(
-    marker.assetVersion,
-    plan.source.assetVersion,
-  );
+  let comparison: number;
+  try {
+    comparison = compareSemanticVersions(
+      marker.assetVersion,
+      plan.source.assetVersion,
+    );
+  } catch {
+    throw writerError(
+      "VERSION_CONFLICT",
+      "The managed Figma metadata contains an invalid Token version.",
+      "Repair or explicitly recover the managed metadata before retrying.",
+    );
+  }
   if (comparison > 0) {
     throw writerError(
       "VERSION_CONFLICT",
@@ -378,60 +388,6 @@ function assertMarkerVersion(
       "Refresh the design-system sources and retry with the current approved version.",
     );
   }
-}
-
-function compareSemver(left: string, right: string): number {
-  const parse = (
-    value: string,
-  ): {
-    readonly core: readonly number[];
-    readonly prerelease: readonly string[] | null;
-  } => {
-    const withoutBuild = value.split("+")[0] ?? value;
-    const [coreText = withoutBuild, prereleaseText] = withoutBuild.split(
-      "-",
-      2,
-    );
-    return {
-      core: coreText.split(".").map((segment) => Number(segment)),
-      prerelease: prereleaseText?.split(".") ?? null,
-    };
-  };
-  const leftParts = parse(left);
-  const rightParts = parse(right);
-  for (let index = 0; index < 3; index += 1) {
-    const difference =
-      (leftParts.core[index] ?? 0) - (rightParts.core[index] ?? 0);
-    if (difference !== 0) return difference;
-  }
-  if (leftParts.prerelease === null) {
-    return rightParts.prerelease === null ? 0 : 1;
-  }
-  if (rightParts.prerelease === null) return -1;
-  const length = Math.max(
-    leftParts.prerelease.length,
-    rightParts.prerelease.length,
-  );
-  for (let index = 0; index < length; index += 1) {
-    const leftIdentifier = leftParts.prerelease[index];
-    const rightIdentifier = rightParts.prerelease[index];
-    if (leftIdentifier === undefined) return -1;
-    if (rightIdentifier === undefined) return 1;
-    if (leftIdentifier === rightIdentifier) continue;
-    const leftNumber = /^\d+$/u.test(leftIdentifier)
-      ? Number(leftIdentifier)
-      : null;
-    const rightNumber = /^\d+$/u.test(rightIdentifier)
-      ? Number(rightIdentifier)
-      : null;
-    if (leftNumber !== null && rightNumber !== null) {
-      return leftNumber - rightNumber;
-    }
-    if (leftNumber !== null) return -1;
-    if (rightNumber !== null) return 1;
-    return leftIdentifier < rightIdentifier ? -1 : 1;
-  }
-  return 0;
 }
 
 function unique<T>(

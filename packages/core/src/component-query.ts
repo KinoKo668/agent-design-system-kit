@@ -2,11 +2,11 @@ import * as z from "zod";
 
 import type { ButtonComponentContract } from "./button-contract.js";
 import {
-  compareSemanticVersions,
   FIGMA_BINDING_STATUSES,
   REGISTRY_LIFECYCLES,
   type ComponentRegistryEntry,
 } from "./component-registry.js";
+import { compareSemanticVersions } from "./semantic-version.js";
 import type {
   DesignSystemSnapshot,
   LocatedDesignAsset,

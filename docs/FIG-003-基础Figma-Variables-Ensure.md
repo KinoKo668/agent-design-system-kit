@@ -6,7 +6,7 @@ FIG-003 已把经过校验的 Hatch Token Set 转换为确定性的 Figma Variab
 
 同一份 `projectId + assetId + Major + contentDigest` 重复执行时，Writer 会重新读取真实 Collection、Mode、Variable、Alias、Scope、Code Syntax 与托管标记；全部一致时返回 `unchanged`，不会创建副本，也不会产生无意义的 Figma 写入。
 
-本阶段没有开放审批旁路。独立启动 Bridge 时，`variables.ensure` 默认返回 `APPROVAL_REQUIRED`。只有后续项目控制面提供能够重新读取 Git Approval Record 的 `authorizeWrite` 校验器后，写命令才可以进入队列。
+本阶段没有开放审批旁路。独立启动 Bridge 时，`variables.ensure` 默认返回 `APPROVAL_REQUIRED`。使用 `--project` 与 `--root` 启动后，Bridge 会在每条写命令前重新读取 Git Approval Record；只有准确 Subject、人工角色、验证证据和上游审批链全部有效时，命令才可以进入队列。
 
 ## 2. 从 Token 到 Figma 的映射
 
@@ -151,6 +151,7 @@ key       = file-binding
 - 文件绑定不匹配在零写入状态下拒绝；
 - 注入中途故障后返回 `PARTIAL_WRITE`，并可从托管骨架恢复；
 - Bridge 默认无 Approval Verifier 时阻断写入；
+- Git Approval Verifier 每次写入前重读 Catalog，并阻断缺失、过期、撤销、取代、重复或断裂依赖；
 - 认证 Bridge 能完整传递已授权 Variable Plan 与结构化结果；
 - Plugin 主线程继续使用串行执行链，避免并行 Figma mutation。
 
@@ -167,4 +168,6 @@ FIG-003 不负责：
 - 删除旧 Variable；
 - 对外开放 Agent 写 Tool。
 
-下一步先在用户明确批准的独立 Figma 文件中，通过现有人工绑定入口完成首次绑定，并对正式 Adapter 执行两次相同 Ensure。验证通过后，FIG-004 使用这些登记 Variable 创建 Button Main Component 与 4 个 Contract Variant。Approval Record 的机器读取和拒绝路径在 LOOP-001／LOOP-003 接入；重新绑定仍属于后续单独评审的恢复能力。
+Approval Record Schema、机器读取与写前拒绝路径已经提前接入，详见 [GOV-001：审批记录与写前校验](GOV-001-审批记录与写前校验.md)；这不等于已经产生真实人工批准。
+
+下一步先由真实审批角色为准确版本留下决定和证据，再在用户明确批准的独立 Figma 文件中，通过现有人工绑定入口完成首次绑定，并对正式 Adapter 执行两次相同 Ensure。验证通过后，FIG-004 使用这些登记 Variable 创建 Button Main Component 与 4 个 Contract Variant。重新绑定仍属于后续单独评审的恢复能力。

@@ -8,6 +8,10 @@ import { createToolkitError } from "./errors.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
 import {
+  compareSemanticVersions,
+  semanticVersionMajor,
+} from "./semantic-version.js";
+import {
   contentDigestSchema,
   stableAssetIdSchema,
   stableIdSegmentSchema,
@@ -113,86 +117,6 @@ function addIssue(
   context.addIssue({ code: "custom", message, path: [...path] });
 }
 
-interface ParsedSemver {
-  readonly core: readonly [bigint, bigint, bigint];
-  readonly prerelease: readonly string[] | undefined;
-}
-
-function parseSemver(version: string): ParsedSemver {
-  const withoutBuild = version.split("+", 1)[0] ?? version;
-  const prereleaseSeparator = withoutBuild.indexOf("-");
-  const corePart =
-    prereleaseSeparator === -1
-      ? withoutBuild
-      : withoutBuild.slice(0, prereleaseSeparator);
-  const prereleasePart =
-    prereleaseSeparator === -1
-      ? undefined
-      : withoutBuild.slice(prereleaseSeparator + 1);
-  const [major = "0", minor = "0", patch = "0"] = corePart.split(".");
-  return {
-    core: [BigInt(major), BigInt(minor), BigInt(patch)],
-    prerelease: prereleasePart?.split("."),
-  };
-}
-
-function comparePrereleaseIdentifiers(left: string, right: string): number {
-  const numericPattern = /^\d+$/u;
-  const leftNumeric = numericPattern.test(left);
-  const rightNumeric = numericPattern.test(right);
-  if (leftNumeric && rightNumeric) {
-    const leftNumber = BigInt(left);
-    const rightNumber = BigInt(right);
-    return leftNumber < rightNumber ? -1 : leftNumber > rightNumber ? 1 : 0;
-  }
-  if (leftNumeric !== rightNumeric) {
-    return leftNumeric ? -1 : 1;
-  }
-  return left < right ? -1 : left > right ? 1 : 0;
-}
-
-export function compareSemanticVersions(left: string, right: string): number {
-  const leftVersion = parseSemver(left);
-  const rightVersion = parseSemver(right);
-  for (let index = 0; index < leftVersion.core.length; index += 1) {
-    const leftPart = leftVersion.core[index];
-    const rightPart = rightVersion.core[index];
-    if (leftPart !== rightPart) {
-      return (leftPart ?? 0n) < (rightPart ?? 0n) ? -1 : 1;
-    }
-  }
-
-  if (leftVersion.prerelease === undefined) {
-    return rightVersion.prerelease === undefined ? 0 : 1;
-  }
-  if (rightVersion.prerelease === undefined) {
-    return -1;
-  }
-
-  const length = Math.max(
-    leftVersion.prerelease.length,
-    rightVersion.prerelease.length,
-  );
-  for (let index = 0; index < length; index += 1) {
-    const leftIdentifier = leftVersion.prerelease[index];
-    const rightIdentifier = rightVersion.prerelease[index];
-    if (leftIdentifier === undefined) {
-      return -1;
-    }
-    if (rightIdentifier === undefined) {
-      return 1;
-    }
-    const comparison = comparePrereleaseIdentifiers(
-      leftIdentifier,
-      rightIdentifier,
-    );
-    if (comparison !== 0) {
-      return comparison;
-    }
-  }
-  return 0;
-}
-
 function expectedApprovalId(entry: ComponentRegistryEntry): string {
   const encodedAssetId = entry.asset.id.replaceAll("/", ".");
   return `approval.component.${encodedAssetId}.${entry.asset.version}`;
@@ -212,8 +136,8 @@ function validateEntryState(
   }
 
   if (
-    BigInt(entry.figma.majorVersion) !==
-    parseSemver(entry.asset.version).core[0]
+    String(entry.figma.majorVersion) !==
+    semanticVersionMajor(entry.asset.version)
   ) {
     addIssue(
       context,
