@@ -15,6 +15,7 @@ export * from "./stdio.js";
 export * from "./style-audit-loop.js";
 export * from "./writer-queue.js";
 export * from "./write-tools.js";
+export * from "./registry-drift-audit-loop.js";
 
 export const MCP_SERVER_PACKAGE_NAME =
   "@agent-design-system-kit/mcp-server" as const;

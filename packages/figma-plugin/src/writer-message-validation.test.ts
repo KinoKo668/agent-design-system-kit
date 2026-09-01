@@ -121,6 +121,59 @@ function componentAuditDelivery() {
   };
 }
 
+function registryDriftAuditDelivery() {
+  const digest = `sha256:${"a".repeat(64)}`;
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    attempt: 1,
+    command: {
+      payload: {
+        plan: {
+          componentSets: [
+            {
+              assetId: "button",
+              assetVersion: "1.0.0",
+              componentSetKey: "component-set-key",
+              contentDigest: digest,
+              nodeId: "100:200",
+              stableId: "hatch-demo/component/button/component-set/major-1",
+              variantStableIds: [
+                "hatch-demo/component/button/component-set/major-1/variant/primary",
+              ],
+            },
+          ],
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+          scope: "entire-file",
+          tokenCollections: [
+            {
+              assetId: "foundation",
+              assetVersion: "1.0.0",
+              contentDigest: digest,
+              stableId: "hatch-demo/token-set/foundation/variables/major-1",
+              variableStableIds: [
+                "hatch-demo/token-set/foundation/variables/major-1/variable/semantic/color/action",
+              ],
+            },
+          ],
+        },
+      },
+      type: "audit.registry-drift.scan",
+    },
+    idempotencyKey: "registry-drift-file-1",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function buttonDelivery() {
   const tokens = JSON.parse(
     readFileSync(
@@ -294,6 +347,11 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(componentAuditDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(componentAuditDelivery())).toBe(true);
+    expect(
+      writerCommandDeliverySchema.safeParse(registryDriftAuditDelivery())
+        .success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(registryDriftAuditDelivery())).toBe(true);
     expect(
       writerCommandDeliverySchema.safeParse(variablesDelivery()).success,
     ).toBe(true);
@@ -494,6 +552,34 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerPluginResultSchema.safeParse(componentAuditSuccess).success,
     ).toBe(true);
     expect(isWriterPluginResult(componentAuditSuccess)).toBe(true);
+    const driftAuditSuccess = {
+      ok: true,
+      operationId: OPERATION_ID,
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "entire-file",
+        summary: {
+          auditedFigmaAssets: 2,
+          duplicateAssets: 0,
+          invalidMarkers: 0,
+          locatorMismatches: 0,
+          mismatchedChildren: 0,
+          mismatchedDigests: 0,
+          mismatchedVersions: 0,
+          missingInFigma: 0,
+          missingInRegistry: 0,
+        },
+        type: "audit.registry-drift.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    };
+    expect(writerPluginResultSchema.safeParse(driftAuditSuccess).success).toBe(
+      true,
+    );
+    expect(isWriterPluginResult(driftAuditSuccess)).toBe(true);
     const inconsistentComponentAudit = structuredClone(componentAuditSuccess);
     inconsistentComponentAudit.result.summary.auditedNodes = 4;
     expect(

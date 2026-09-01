@@ -19,6 +19,7 @@ export * from "./figma-button-instance-plan.js";
 export * from "./json.js";
 export * from "./logging.js";
 export * from "./results.js";
+export * from "./registry-drift-audit.js";
 export * from "./security.js";
 export * from "./semantic-version.js";
 export * from "./style-audit.js";

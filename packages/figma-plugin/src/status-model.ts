@@ -73,6 +73,8 @@ const ERROR_KEYS = new Set([
   "recoveryInstruction",
   "retry",
 ]);
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const UI_MESSAGE_KEYS = new Set(["schemaVersion", "type"]);
 const FILE_BIND_MESSAGE_KEYS = new Set([
   "binding",
@@ -417,17 +419,8 @@ export function isUiToMainMessage(value: unknown): value is UiToMainMessage {
     value.type === "writer.execute" &&
     hasOnlyKeys(value, EXECUTE_MESSAGE_KEYS) &&
     typeof value.pluginInstanceId === "string" &&
-    isWriterCommandDelivery(value.command) &&
-    isWriterPluginResult({
-      ok: true,
-      operationId:
-        isRecord(value.command) && typeof value.command.operationId === "string"
-          ? value.command.operationId
-          : "",
-      pluginInstanceId: value.pluginInstanceId,
-      result: { pong: true },
-      schemaVersion: "1.0.0",
-    })
+    UUID_PATTERN.test(value.pluginInstanceId) &&
+    isWriterCommandDelivery(value.command)
   );
 }
 

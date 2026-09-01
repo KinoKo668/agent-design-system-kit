@@ -223,6 +223,58 @@ function componentAuditCommand(operationId: string) {
   };
 }
 
+function registryDriftAuditCommand(operationId: string) {
+  return {
+    approval: { mode: "not_required", reason: "read_only_diagnostic" },
+    command: {
+      payload: {
+        plan: {
+          componentSets: [
+            {
+              assetId: "button",
+              assetVersion: "1.0.0",
+              componentSetKey: "fixture_button_component_set_key_0001",
+              contentDigest: COMPONENT_DIGEST,
+              nodeId: "100:200",
+              stableId: "hatch-demo/component/button/component-set/major-1",
+              variantStableIds: [
+                "hatch-demo/component/button/component-set/major-1/variant/appearance-primary/state-default",
+              ],
+            },
+          ],
+          fileBindingId: FILE_BINDING_ID,
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+          scope: "entire-file",
+          tokenCollections: [
+            {
+              assetId: "button-foundation",
+              assetVersion: "1.0.0",
+              contentDigest: TOKEN_DIGEST,
+              stableId:
+                "hatch-demo/token-set/button-foundation/variables/major-1",
+              variableStableIds: [
+                "hatch-demo/token-set/button-foundation/variables/major-1/variable/semantic/color/action-primary-background",
+              ],
+            },
+          ],
+        },
+      },
+      type: "audit.registry-drift.scan",
+    },
+    idempotencyKey: `registry-drift-audit-${operationId}`,
+    operationId,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function hello(pluginInstanceId = PLUGIN_INSTANCE_ID) {
   return {
     context: { fileName: "Bridge Contract", pageName: "Page 1" },
@@ -537,6 +589,47 @@ describe("local Figma Bridge", () => {
     });
     expect(componentReported.response.status).toBe(202);
     expect(componentReported.body).toMatchObject({
+      data: { operation: { status: "succeeded" } },
+      ok: true,
+    });
+
+    const driftSubmitted = await request(
+      address.url,
+      "/v1/operations",
+      registryDriftAuditCommand(OPERATION_IDS[2]),
+    );
+    expect(driftSubmitted.response.status).toBe(202);
+    expect(authorizeWrite).not.toHaveBeenCalled();
+    await request(address.url, "/v1/plugin/next", {
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    const driftReported = await request(address.url, "/v1/plugin/results", {
+      ok: true,
+      operationId: OPERATION_IDS[2],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        findings: [],
+        passed: true,
+        schemaVersion: "1.0.0",
+        scope: "entire-file",
+        summary: {
+          auditedFigmaAssets: 2,
+          duplicateAssets: 0,
+          invalidMarkers: 0,
+          locatorMismatches: 0,
+          mismatchedChildren: 0,
+          mismatchedDigests: 0,
+          mismatchedVersions: 0,
+          missingInFigma: 0,
+          missingInRegistry: 0,
+        },
+        type: "audit.registry-drift.scan",
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(driftReported.response.status).toBe(202);
+    expect(driftReported.body).toMatchObject({
       data: { operation: { status: "succeeded" } },
       ok: true,
     });

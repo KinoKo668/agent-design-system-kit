@@ -12,7 +12,8 @@ export function shouldCacheWriterResult(
     return (
       commandType === "writer.ping" ||
       commandType === "audit.styles.scan" ||
-      commandType === "audit.components.scan"
+      commandType === "audit.components.scan" ||
+      commandType === "audit.registry-drift.scan"
     );
   return ERROR_DEFINITIONS[result.error.code].retry === "do_not_retry";
 }

@@ -19,6 +19,10 @@ import {
   figmaComponentAuditPlanSchema,
   figmaComponentAuditResultSchema,
 } from "./component-audit.js";
+import {
+  registryDriftAuditPlanSchema,
+  registryDriftAuditResultSchema,
+} from "./registry-drift-audit.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -155,7 +159,15 @@ export const writerAuditComponentsCommandSchema = z
   })
   .strict();
 
+export const writerAuditRegistryDriftCommandSchema = z
+  .object({
+    payload: z.object({ plan: registryDriftAuditPlanSchema }).strict(),
+    type: z.literal("audit.registry-drift.scan"),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerAuditRegistryDriftCommandSchema,
   writerAuditComponentsCommandSchema,
   writerAuditStylesCommandSchema,
   writerInsertButtonInstanceCommandSchema,
@@ -197,7 +209,8 @@ export const writerCommandEnvelopeSchema = z
 
     if (
       envelope.command.type === "audit.styles.scan" ||
-      envelope.command.type === "audit.components.scan"
+      envelope.command.type === "audit.components.scan" ||
+      envelope.command.type === "audit.registry-drift.scan"
     ) {
       if (envelope.approval.mode !== "not_required") {
         context.addIssue({
@@ -398,6 +411,7 @@ export const writerButtonInstanceResultSchema = z
 
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
+  registryDriftAuditResultSchema,
   figmaComponentAuditResultSchema,
   figmaStyleAuditResultSchema,
   writerButtonResultSchema,

@@ -698,7 +698,8 @@ export function createFigmaBridge(
       if (
         parsed.data.command.type !== "writer.ping" &&
         parsed.data.command.type !== "audit.styles.scan" &&
-        parsed.data.command.type !== "audit.components.scan"
+        parsed.data.command.type !== "audit.components.scan" &&
+        parsed.data.command.type !== "audit.registry-drift.scan"
       ) {
         const authorizationError =
           options.authorizeWrite === undefined

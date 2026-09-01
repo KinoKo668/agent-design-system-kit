@@ -199,6 +199,69 @@ const COMPONENT_AUDIT_SUMMARY_KEYS = new Set([
   "unregisteredVariants",
   "variantPropertyMismatches",
 ]);
+const DRIFT_PLAN_KEYS = new Set([
+  "componentSets",
+  "fileBindingId",
+  "projectId",
+  "schemaVersion",
+  "scope",
+  "tokenCollections",
+]);
+const DRIFT_TOKEN_KEYS = new Set([
+  "assetId",
+  "assetVersion",
+  "contentDigest",
+  "stableId",
+  "variableStableIds",
+]);
+const DRIFT_COMPONENT_KEYS = new Set([
+  "assetId",
+  "assetVersion",
+  "componentSetKey",
+  "contentDigest",
+  "nodeId",
+  "stableId",
+  "variantStableIds",
+]);
+const DRIFT_RESULT_KEYS = new Set([
+  "findings",
+  "passed",
+  "schemaVersion",
+  "scope",
+  "summary",
+  "type",
+]);
+const DRIFT_FINDING_KEYS = new Set([
+  "actual",
+  "code",
+  "expected",
+  "kind",
+  "physicalId",
+  "recoveryInstruction",
+  "severity",
+  "stableId",
+]);
+const DRIFT_SUMMARY_KEYS = new Set([
+  "auditedFigmaAssets",
+  "duplicateAssets",
+  "invalidMarkers",
+  "locatorMismatches",
+  "mismatchedChildren",
+  "mismatchedDigests",
+  "mismatchedVersions",
+  "missingInFigma",
+  "missingInRegistry",
+]);
+const DRIFT_CODES = new Set([
+  "REGISTRY_ASSET_MISSING_IN_FIGMA",
+  "FIGMA_ASSET_MISSING_IN_REGISTRY",
+  "FIGMA_ASSET_DUPLICATE",
+  "FIGMA_MARKER_INVALID",
+  "FIGMA_ASSET_VERSION_MISMATCH",
+  "FIGMA_ASSET_DIGEST_MISMATCH",
+  "FIGMA_LOCATOR_MISMATCH",
+  "FIGMA_CHILD_SET_MISMATCH",
+]);
 const BUTTON_SET_KEYS = new Set([
   "description",
   "majorVersion",
@@ -1090,6 +1153,80 @@ function isComponentAuditPlan(value: unknown): boolean {
   });
 }
 
+function isRegistryDriftAuditPlan(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, DRIFT_PLAN_KEYS) ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "entire-file" ||
+    !isStableIdSegment(value.projectId) ||
+    !isUuid(value.fileBindingId) ||
+    !Array.isArray(value.tokenCollections) ||
+    value.tokenCollections.length < 1 ||
+    value.tokenCollections.length > 500 ||
+    !Array.isArray(value.componentSets) ||
+    value.componentSets.length < 1 ||
+    value.componentSets.length > 500
+  ) {
+    return false;
+  }
+  const roots = new Set<string>();
+  const validAsset = (
+    asset: unknown,
+    kind: "component" | "token-set",
+  ): boolean => {
+    if (
+      !isRecord(asset) ||
+      !hasOnlyKeys(
+        asset,
+        kind === "component" ? DRIFT_COMPONENT_KEYS : DRIFT_TOKEN_KEYS,
+      ) ||
+      !isStableAssetId(asset.assetId) ||
+      !isBoundedString(asset.assetVersion, 1, 128) ||
+      !SEMVER_PATTERN.test(asset.assetVersion) ||
+      !isStableAssetId(asset.stableId) ||
+      roots.has(asset.stableId) ||
+      (asset.contentDigest !== null &&
+        (typeof asset.contentDigest !== "string" ||
+          !CONTENT_DIGEST_PATTERN.test(asset.contentDigest)))
+    ) {
+      return false;
+    }
+    const root =
+      kind === "component"
+        ? `${String(value.projectId)}/component/${String(asset.assetId)}/component-set/major-${asset.assetVersion.split(".")[0]}`
+        : `${String(value.projectId)}/token-set/${String(asset.assetId)}/variables/major-${asset.assetVersion.split(".")[0]}`;
+    const childKey =
+      kind === "component" ? "variantStableIds" : "variableStableIds";
+    const children = asset[childKey];
+    if (
+      asset.stableId !== root ||
+      !Array.isArray(children) ||
+      children.length < 1 ||
+      children.length > (kind === "component" ? 200 : 2_000) ||
+      !children.every(
+        (child) =>
+          isStableAssetId(child) && String(child).startsWith(`${root}/`),
+      ) ||
+      new Set(children).size !== children.length ||
+      (kind === "component" &&
+        (!CONTENT_DIGEST_PATTERN.test(String(asset.contentDigest)) ||
+          !isBoundedString(asset.nodeId, 1, 128) ||
+          !/^\d+:\d+$/u.test(asset.nodeId) ||
+          (asset.componentSetKey !== null &&
+            !isBoundedString(asset.componentSetKey, 1, 256))))
+    ) {
+      return false;
+    }
+    roots.add(root);
+    return true;
+  };
+  return (
+    value.tokenCollections.every((asset) => validAsset(asset, "token-set")) &&
+    value.componentSets.every((asset) => validAsset(asset, "component"))
+  );
+}
+
 function isComponentAuditCommand(
   value: Record<string, unknown>,
   approval: Record<string, unknown>,
@@ -1146,6 +1283,30 @@ function isStyleAuditCommand(
   );
 }
 
+function isRegistryDriftAuditCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  return (
+    value.type === "audit.registry-drift.scan" &&
+    isRecord(value.payload) &&
+    hasOnlyKeys(value.payload, new Set(["plan"])) &&
+    isRegistryDriftAuditPlan(value.payload.plan) &&
+    isRecord(value.payload.plan) &&
+    hasOnlyKeys(approval, new Set(["mode", "reason"])) &&
+    approval.mode === "not_required" &&
+    approval.reason === "read_only_diagnostic" &&
+    hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) &&
+    target.kind === "figma-file" &&
+    isUuid(target.fileBindingId) &&
+    isStableAssetId(target.stableId) &&
+    projectId === value.payload.plan.projectId &&
+    target.fileBindingId === value.payload.plan.fileBindingId
+  );
+}
+
 export function isWriterCommandDelivery(
   value: unknown,
 ): value is WriterCommandDelivery {
@@ -1177,6 +1338,16 @@ export function isWriterCommandDelivery(
       value.approval.mode === "not_required" &&
       value.approval.reason === "read_only_diagnostic"
     );
+  }
+  if (
+    isRegistryDriftAuditCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    )
+  ) {
+    return true;
   }
   if (
     isStyleAuditCommand(
@@ -1485,6 +1656,61 @@ function isComponentAuditResult(value: Record<string, unknown>): boolean {
   );
 }
 
+function isRegistryDriftAuditResult(value: Record<string, unknown>): boolean {
+  if (
+    !hasOnlyKeys(value, DRIFT_RESULT_KEYS) ||
+    value.type !== "audit.registry-drift.scan" ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "entire-file" ||
+    typeof value.passed !== "boolean" ||
+    !Array.isArray(value.findings) ||
+    value.findings.length > 10_000 ||
+    !value.findings.every(
+      (candidate) =>
+        isRecord(candidate) &&
+        hasOnlyKeys(candidate, DRIFT_FINDING_KEYS) &&
+        typeof candidate.code === "string" &&
+        DRIFT_CODES.has(candidate.code) &&
+        ["component-set", "token-collection"].includes(
+          String(candidate.kind),
+        ) &&
+        candidate.severity === "error" &&
+        isRecord(candidate.actual) &&
+        isRecord(candidate.expected) &&
+        (candidate.physicalId === null ||
+          isBoundedString(candidate.physicalId, 1, 256)) &&
+        (candidate.stableId === null || isStableAssetId(candidate.stableId)) &&
+        isBoundedString(candidate.recoveryInstruction, 1, 500),
+    ) ||
+    !isRecord(value.summary) ||
+    !hasOnlyKeys(value.summary, DRIFT_SUMMARY_KEYS) ||
+    ![...DRIFT_SUMMARY_KEYS].every(
+      (key) =>
+        Number.isSafeInteger((value.summary as Record<string, unknown>)[key]) &&
+        Number((value.summary as Record<string, unknown>)[key]) >= 0,
+    )
+  ) {
+    return false;
+  }
+  const findings: readonly unknown[] = value.findings;
+  const count = (code: string) =>
+    findings.filter(
+      (candidate) => isRecord(candidate) && candidate.code === code,
+    ).length;
+  return (
+    value.passed === (findings.length === 0) &&
+    value.summary.duplicateAssets === count("FIGMA_ASSET_DUPLICATE") &&
+    value.summary.invalidMarkers === count("FIGMA_MARKER_INVALID") &&
+    value.summary.locatorMismatches === count("FIGMA_LOCATOR_MISMATCH") &&
+    value.summary.mismatchedChildren === count("FIGMA_CHILD_SET_MISMATCH") &&
+    value.summary.mismatchedDigests === count("FIGMA_ASSET_DIGEST_MISMATCH") &&
+    value.summary.mismatchedVersions ===
+      count("FIGMA_ASSET_VERSION_MISMATCH") &&
+    value.summary.missingInFigma === count("REGISTRY_ASSET_MISSING_IN_FIGMA") &&
+    value.summary.missingInRegistry === count("FIGMA_ASSET_MISSING_IN_REGISTRY")
+  );
+}
+
 export function isWriterPluginResult(
   value: unknown,
 ): value is WriterPluginResult {
@@ -1504,6 +1730,7 @@ export function isWriterPluginResult(
         isVariablesResult(value.result) ||
         isButtonResult(value.result) ||
         isButtonInstanceResult(value.result) ||
+        isRegistryDriftAuditResult(value.result) ||
         isComponentAuditResult(value.result) ||
         isStyleAuditResult(value.result))
     );

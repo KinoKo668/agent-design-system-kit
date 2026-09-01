@@ -40,6 +40,9 @@ describe("Writer replay cache policy", () => {
     expect(shouldCacheWriterResult("audit.components.scan", success)).toBe(
       true,
     );
+    expect(shouldCacheWriterResult("audit.registry-drift.scan", success)).toBe(
+      true,
+    );
     expect(shouldCacheWriterResult("variables.ensure", success)).toBe(false);
     expect(shouldCacheWriterResult("components.button.ensure", success)).toBe(
       false,

@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 查询合同和 M3 Writer 自动化骨架，正在推进 M4 Agent Loop 与 M5 审计：当前可通过可选 MCP 调用插入 Registry 驱动的 Button Instance，也能只读审计当前 Figma 页面的样式绑定、组件来源与 Variant 完整性。真实审批与独立 Figma 文件验收尚未完成，因此还不是可用于生产环境的完整工具。**
+**Hatch 已完成 M2 查询合同和 M3 Writer 自动化骨架，正在推进 M4 Agent Loop 与 M5 质量门禁：当前可通过可选 MCP 调用插入 Registry 驱动的 Button Instance，只读审计当前页面的样式与组件来源，并对整个 Figma Library 执行 Registry 双向差异检查。真实审批与独立 Figma 文件验收尚未完成，因此还不是可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -122,6 +122,7 @@ Registry · 历史             │
 - 完整 Agent Loop 的审批负向门禁：缺失、评审中、要求修改、不完整、拒绝、过期、被取代和撤销均在进入 Queue 前阻断，并向 Agent 保留准确恢复动作；
 - 只读 `hatchkit_audit_styles` MCP Tool：从当前 Git 设计事实生成已登记 Variable 允许清单，扫描绑定的 Figma 当前页面，并用准确 Node 与字段证据报告硬编码样式和外部 Variable；
 - 只读 `hatchkit_audit_components` MCP Tool：把真实 Instance、托管 Marker、Component Set 来源、批准 Variant 与当前 Variant Properties 和 Active Registry 交叉核对；
+- 只读 `hatchkit_audit_registry_drift` MCP Tool：盘点整个已绑定 Figma Library，报告双方缺失、重复身份、无效 Marker、版本／摘要／Locator 冲突以及不完整的 Variable／Variant 集合；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -232,6 +233,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [审批拒绝端到端阻断](docs/LOOP-003-审批拒绝端到端阻断.md)
 - [硬编码样式与未登记 Variable 审计](docs/AUD-001-硬编码样式与未登记Variable审计.md)
 - [Instance、Variant 与组件来源审计](docs/AUD-002-Instance-Variant与组件来源审计.md)
+- [Registry 与 Figma 双向差异审计](docs/AUD-003-Registry与Figma双向差异审计.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

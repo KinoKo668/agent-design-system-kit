@@ -20,6 +20,7 @@ import {
 import {
   HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+  HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
 } from "./write-tools.js";
 import {
@@ -205,6 +206,18 @@ describe("createHatchkitMcpServer", () => {
     expect(
       tools.tools.find(
         ({ name }) => name === HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+      ),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+    });
+    expect(
+      tools.tools.find(
+        ({ name }) => name === HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
       ),
     ).toMatchObject({
       annotations: {

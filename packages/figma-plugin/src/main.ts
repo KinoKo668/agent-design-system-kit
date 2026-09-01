@@ -21,6 +21,7 @@ import { createFigmaButtonPort } from "./figma-button-port.js";
 import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
 import { createFigmaStyleAuditPort } from "./figma-style-audit-port.js";
 import { createFigmaComponentAuditPort } from "./figma-component-audit-port.js";
+import { createFigmaRegistryDriftAuditPort } from "./figma-registry-drift-audit-port.js";
 import { ButtonWriterError, ensureFigmaButton } from "./button-writer.js";
 import {
   ButtonInstanceWriterError,
@@ -38,6 +39,10 @@ import {
   ComponentAuditError,
   runFigmaComponentAudit,
 } from "./component-audit-runner.js";
+import {
+  RegistryDriftAuditError,
+  runFigmaRegistryDriftAudit,
+} from "./registry-drift-audit-runner.js";
 
 const PANEL_WIDTH = 360;
 const PANEL_HEIGHT = 568;
@@ -124,6 +129,7 @@ const buttonPort = createFigmaButtonPort(figma);
 const buttonInstancePort = createFigmaButtonInstancePort(figma);
 const styleAuditPort = createFigmaStyleAuditPort(figma);
 const componentAuditPort = createFigmaComponentAuditPort(figma);
+const registryDriftAuditPort = createFigmaRegistryDriftAuditPort(figma);
 let executionChain: Promise<void> = Promise.resolve();
 
 function commandFingerprint(command: WriterCommandDelivery): string {
@@ -211,6 +217,33 @@ async function executeCommand(
       result: { pong: true },
       schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
     };
+  } else if (
+    command.command.type === "audit.registry-drift.scan" &&
+    command.approval.mode === "not_required" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: await runFigmaRegistryDriftAudit(
+          registryDriftAuditPort,
+          command.command.payload.plan,
+        ),
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof RegistryDriftAuditError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Registry to Figma drift audit failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics and retry the read-only audit.",
+            });
+    }
   } else if (
     command.command.type === "audit.components.scan" &&
     command.approval.mode === "not_required" &&

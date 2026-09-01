@@ -22,12 +22,19 @@ import {
   componentAuditLoopOutputSchema,
   runComponentAuditLoop,
 } from "./component-audit-loop.js";
+import {
+  registryDriftAuditLoopInputSchema,
+  registryDriftAuditLoopOutputSchema,
+  runRegistryDriftAuditLoop,
+} from "./registry-drift-audit-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
 export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
 export const HATCHKIT_COMPONENT_AUDIT_TOOL_NAME =
   "hatchkit_audit_components" as const;
+export const HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME =
+  "hatchkit_audit_registry_drift" as const;
 
 export const HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS = {
   destructiveHint: false,
@@ -57,6 +64,33 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
+    {
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+      description:
+        "Scan the entire bound Figma library without modifying it. Compare every Hatchkit-managed Variable Collection and Component Set against the active Git Registry, including stable identity, version, content digest, locator, and exact child assets. Use a new requestId after Git or Figma changes.",
+      inputSchema: registryDriftAuditLoopInputSchema.extend({
+        waitTimeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
+      }),
+      outputSchema: registryDriftAuditLoopOutputSchema,
+      title: "Audit Registry and Figma library drift",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runRegistryDriftAuditLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
     {
