@@ -130,7 +130,7 @@ export const buttonTokenBindingSchema = z
     }
   });
 
-const buttonVariantSchema = z.strictObject({
+export const buttonVariantSchema = z.strictObject({
   bindings: z.array(buttonTokenBindingSchema).min(2).max(8),
   id: stableAssetIdSchema,
   name: requiredText(120),

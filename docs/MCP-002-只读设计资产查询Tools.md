@@ -196,4 +196,4 @@ MCP-002 不实现：
 - Approval Record 权威校验；
 - Figma Writer 或任何页面写入。
 
-这些能力分别进入 MCP-003 和后续 FIG 系列任务。
+Component Resolve 与 Change Request 已在 MCP-003 完成；Approval 和 Figma 写入进入后续任务。

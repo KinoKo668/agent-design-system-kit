@@ -16,5 +16,7 @@ enabled_tools = [
   "hatchkit_query_briefs",
   "hatchkit_query_tokens",
   "hatchkit_search_components",
+  "hatchkit_resolve_component",
+  "hatchkit_request_component_change",
 ]
 default_tools_approval_mode = "auto"

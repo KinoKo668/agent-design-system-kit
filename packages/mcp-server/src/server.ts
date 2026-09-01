@@ -8,6 +8,7 @@ import {
 
 import { loadDesignSystemFromDirectory } from "./registry-files.js";
 import { registerHatchkitQueryTools } from "./query-tools.js";
+import { registerHatchkitResolutionTools } from "./resolution-tools.js";
 
 export const HATCHKIT_MCP_SERVER_NAME = "hatchkit" as const;
 export const HATCHKIT_MCP_SERVER_VERSION = "0.0.0" as const;
@@ -132,6 +133,7 @@ export function createHatchkitMcpServer(
   );
 
   registerHatchkitQueryTools(server, options);
+  registerHatchkitResolutionTools(server, options);
 
   return server;
 }

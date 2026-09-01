@@ -16,6 +16,8 @@ const EXPECTED_TOOL_NAMES = [
   "hatchkit_query_briefs",
   "hatchkit_query_tokens",
   "hatchkit_search_components",
+  "hatchkit_resolve_component",
+  "hatchkit_request_component_change",
 ];
 
 async function captureProcess(arguments_) {
@@ -154,6 +156,43 @@ async function verifyConnection(label, versionNegotiation) {
       JSON.stringify(components).includes("nodeId")
     ) {
       throw new Error(`${label}: Component search was incomplete or unsafe.`);
+    }
+    const resolution = await client.callTool({
+      arguments: {
+        assetId: "button",
+        variantSelections: { appearance: "secondary", state: "disabled" },
+      },
+      name: "hatchkit_resolve_component",
+    });
+    if (
+      resolution.isError === true ||
+      resolution.structuredContent?.data?.status !== "figma-ready" ||
+      resolution.structuredContent?.data?.selectedVariant?.id !==
+        "appearance-secondary/state-disabled"
+    ) {
+      throw new Error(`${label}: exact Component resolution failed.`);
+    }
+    const changeRequest = await client.callTool({
+      arguments: {
+        assetId: "select",
+        submission: {
+          intendedUse: "Use Select in a settings form without one-off UI.",
+          rationale: "No exact Select component is registered.",
+          requestId: "00000000-0000-4000-8000-000000000032",
+          submittedAt: "2026-09-01T16:50:00Z",
+          submittedBy: { id: "codex", type: "agent" },
+          summary: "Review a missing Select component",
+        },
+      },
+      name: "hatchkit_request_component_change",
+    });
+    if (
+      changeRequest.isError === true ||
+      changeRequest.structuredContent?.data?.outcome !==
+        "change-request-required" ||
+      JSON.stringify(changeRequest).includes("nodeId")
+    ) {
+      throw new Error(`${label}: safe Component Change Request failed.`);
     }
     if (!client.getInstructions()?.startsWith("Hatchkit is a local")) {
       throw new Error(`${label}: server instructions were not initialized.`);

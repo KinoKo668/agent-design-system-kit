@@ -208,4 +208,4 @@ REG-003 不实现：
 - CLI 与 MCP 协议入口；
 - Figma Writer 或任何页面写入。
 
-CLI-001 已提供本地 `validate`、`search`、`resolve` 与 `request-change` 入口；MCP-003 后续再向 Agent 暴露 Resolve 与 Change Request Tool。
+CLI-001 已提供本地 `validate`、`search`、`resolve` 与 `request-change` 入口；MCP-003 已向 Agent 暴露 Resolve 与 Change Request Tool。

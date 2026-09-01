@@ -105,6 +105,7 @@ Registry · 历史             │
 - 结构化的缺失组件 Change Request，把真实能力缺口交给人工分诊，同时阻止近似 UI 和 Figma 写入命令；
 - 可显式选择来源文件的只读 `hatchkit` CLI，支持校验、精确搜索、解析与确定性 Change Request；
 - 带初始化治理说明以及 Status、Brief、Token、Component Search 四个只读 Tool 的本地 `hatchkit` stdio MCP Server，并覆盖新旧协议冒烟验证；
+- 精确 Component Resolve 与确定性 Change Request MCP Tools，始终保留审批／审计门禁且不会加入 Figma 写入队列；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -187,6 +188,7 @@ pnpm --silent hatchkit:mcp --help
 - [本地只读 CLI](docs/CLI-001-本地只读命令.md)
 - [本地 stdio MCP Server](docs/MCP-001-本地Stdio-Server.md)
 - [只读设计资产 MCP 查询](docs/MCP-002-只读设计资产查询Tools.md)
+- [组件解析与变更申请 MCP Tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

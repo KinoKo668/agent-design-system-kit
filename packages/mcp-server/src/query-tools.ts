@@ -17,21 +17,22 @@ import {
   stableIdSegmentSchema,
   strictSemverSchema,
   tokenDefinitionSchema,
-  type DesignSystemSnapshot,
-  type ToolkitResult,
 } from "@agent-design-system-kit/core";
 
-import { loadDesignSystemFromDirectory } from "./registry-files.js";
+import {
+  HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
+  TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
+  toMcpToolResponse,
+  withDesignSystemSnapshot,
+  type HatchkitCatalogOptions,
+} from "./tool-support.js";
 
 export const HATCHKIT_BRIEF_QUERY_TOOL_NAME = "hatchkit_query_briefs" as const;
 export const HATCHKIT_TOKEN_QUERY_TOOL_NAME = "hatchkit_query_tokens" as const;
 export const HATCHKIT_COMPONENT_SEARCH_TOOL_NAME =
   "hatchkit_search_components" as const;
 
-export interface HatchkitQueryToolOptions {
-  readonly designSystemRoot: string;
-  readonly expectedProjectId: string;
-}
+export type HatchkitQueryToolOptions = HatchkitCatalogOptions;
 
 const paginationInputShape = {
   limit: z
@@ -209,12 +210,6 @@ const queryPageSchema = z.strictObject({
   total: z.number().int().nonnegative(),
 });
 
-const resultEnvelopeShape = {
-  ok: z.literal(true),
-  schemaVersion: z.literal("1.0.0"),
-  warnings: z.array(z.unknown()),
-};
-
 const briefAssetSchema = z.strictObject({
   contentDigest: z.string().nullable(),
   id: stableAssetIdSchema,
@@ -245,7 +240,7 @@ const briefQueryDataSchema = z.strictObject({
 
 export const hatchkitBriefQueryOutputSchema = z.strictObject({
   data: briefQueryDataSchema,
-  ...resultEnvelopeShape,
+  ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
 });
 
 const tokenAssetSchema = z.strictObject({
@@ -298,7 +293,7 @@ const tokenQueryDataSchema = z.strictObject({
 
 export const hatchkitTokenQueryOutputSchema = z.strictObject({
   data: tokenQueryDataSchema,
-  ...resultEnvelopeShape,
+  ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
 });
 
 const componentSearchDataSchema = z.strictObject({
@@ -341,43 +336,8 @@ const componentSearchDataSchema = z.strictObject({
 
 export const hatchkitComponentSearchOutputSchema = z.strictObject({
   data: componentSearchDataSchema,
-  ...resultEnvelopeShape,
+  ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
 });
-
-const readOnlyAnnotations = {
-  destructiveHint: false,
-  idempotentHint: true,
-  openWorldHint: false,
-  readOnlyHint: true,
-} as const;
-
-function stringifyResult(result: ToolkitResult<unknown>): string {
-  return JSON.stringify(result, null, 2);
-}
-
-function toolResponse(result: ToolkitResult<unknown>) {
-  const text = stringifyResult(result);
-  return result.ok
-    ? {
-        content: [{ text, type: "text" as const }],
-        structuredContent: result,
-      }
-    : {
-        content: [{ text, type: "text" as const }],
-        isError: true as const,
-      };
-}
-
-async function withSnapshot<T>(
-  options: HatchkitQueryToolOptions,
-  query: (snapshot: DesignSystemSnapshot) => ToolkitResult<T>,
-): Promise<ToolkitResult<T>> {
-  const snapshotResult = await loadDesignSystemFromDirectory({
-    designSystemRoot: options.designSystemRoot,
-    expectedProjectId: options.expectedProjectId,
-  });
-  return snapshotResult.ok ? query(snapshotResult.data) : snapshotResult;
-}
 
 function pageComponentResults(
   result: ReturnType<typeof searchComponents>,
@@ -411,7 +371,7 @@ export function registerHatchkitQueryTools(
   server.registerTool(
     HATCHKIT_BRIEF_QUERY_TOOL_NAME,
     {
-      annotations: readOnlyAnnotations,
+      annotations: HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
       description:
         "List bounded Design Brief summaries or retrieve one exact full Brief. Use summaries first; full detail requires assetId and assetVersion.",
       inputSchema: hatchkitBriefQueryInputSchema,
@@ -419,8 +379,8 @@ export function registerHatchkitQueryTools(
       title: "Query Hatchkit Design Briefs",
     },
     async (input) =>
-      toolResponse(
-        await withSnapshot(options, (snapshot) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
           queryDesignBriefs(snapshot, {
             ...input,
             projectId: options.expectedProjectId,
@@ -432,7 +392,7 @@ export function registerHatchkitQueryTools(
   server.registerTool(
     HATCHKIT_TOKEN_QUERY_TOOL_NAME,
     {
-      annotations: readOnlyAnnotations,
+      annotations: HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
       description:
         "List bounded Token Set summaries or retrieve exact Token definitions for one mode. Definitions can include validated alias dependencies and never resolve by fuzzy path.",
       inputSchema: hatchkitTokenQueryInputSchema,
@@ -440,8 +400,8 @@ export function registerHatchkitQueryTools(
       title: "Query Hatchkit Tokens",
     },
     async (input) =>
-      toolResponse(
-        await withSnapshot(options, (snapshot) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
           queryTokenSets(snapshot, {
             ...input,
             projectId: options.expectedProjectId,
@@ -453,7 +413,7 @@ export function registerHatchkitQueryTools(
   server.registerTool(
     HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
     {
-      annotations: readOnlyAnnotations,
+      annotations: HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
       description:
         "Search registered Components by exact identity, display name, or profile. Returns bounded summaries and Git-relative sources without Figma locators or fuzzy approximations.",
       inputSchema: hatchkitComponentSearchInputSchema,
@@ -461,8 +421,8 @@ export function registerHatchkitQueryTools(
       title: "Search Hatchkit Components",
     },
     async ({ limit, offset, ...input }) =>
-      toolResponse(
-        await withSnapshot(options, (snapshot) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
           pageComponentResults(
             searchComponents(snapshot, {
               ...input,

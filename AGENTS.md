@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结、M1 工程骨架以及 M2 Schema、Registry 与只读查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、Brief／Token 查询、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已提供本地文件加载、stdio 协议入口、初始化治理说明以及 Status、Brief、Token 与 Component Search 只读 Tool。当前处于 M3 MCP 查询与 Figma Writer，下一项是 MCP-003 Resolve 与 Change Request Tool。
+项目已完成 M0 架构与风险冻结、M1 工程骨架以及 M2 Schema、Registry 与只读查询阶段。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、Design Brief Schema、基础 Token Schema、Button v1 Component Contract、Component Registry Schema、跨资产快照与内容摘要校验、Brief／Token 查询、组件搜索、唯一解析与缺失组件 Change Request；`cli` 已提供显式来源文件的 validate、search、resolve 与 request-change 只读命令；`mcp-server` 已提供本地文件加载、stdio 协议入口、初始化治理说明以及 Status、Brief、Token、Component Search、Resolve 与 Change Request 六个只读 Tool。当前处于 M3 MCP 查询与 Figma Writer，下一项是 MCP-004 Codex 真实客户端契约测试。
 
 开始工作前请先阅读：
 
@@ -50,6 +50,7 @@
 - `docs/CLI-001-本地只读命令.md`
 - `docs/MCP-001-本地Stdio-Server.md`
 - `docs/MCP-002-只读设计资产查询Tools.md`
+- `docs/MCP-003-组件解析与变更申请Tools.md`
 
 工程规则：
 

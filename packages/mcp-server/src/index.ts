@@ -2,6 +2,7 @@ import { CORE_PACKAGE_NAME } from "@agent-design-system-kit/core";
 
 export * from "./registry-files.js";
 export * from "./query-tools.js";
+export * from "./resolution-tools.js";
 export * from "./server.js";
 export * from "./stdio.js";
 

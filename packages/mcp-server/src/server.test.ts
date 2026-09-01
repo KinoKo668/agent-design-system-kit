@@ -5,6 +5,10 @@ import { InMemoryTransport } from "@modelcontextprotocol/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME,
+  HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
+} from "./resolution-tools.js";
+import {
   HATCHKIT_BRIEF_QUERY_TOOL_NAME,
   HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
   HATCHKIT_TOKEN_QUERY_TOOL_NAME,
@@ -60,6 +64,8 @@ describe("createHatchkitMcpServer", () => {
       HATCHKIT_BRIEF_QUERY_TOOL_NAME,
       HATCHKIT_TOKEN_QUERY_TOOL_NAME,
       HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+      HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
+      HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME,
     ]);
     for (const tool of tools.tools) {
       expect(tool).toEqual(
