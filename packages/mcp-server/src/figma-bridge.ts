@@ -19,9 +19,11 @@ import {
   writerPluginHelloSchema,
   writerPluginPollSchema,
   writerPluginResultSchema,
+  writerCommandEnvelopeSchema,
   type ErrorCode,
   type JsonValue,
   type ToolkitError,
+  type WriterCommandEnvelope,
 } from "@agent-design-system-kit/core";
 import * as z from "zod";
 
@@ -71,6 +73,9 @@ class FigmaBridgeRequestError extends Error {
 }
 
 export interface FigmaBridgeOptions {
+  readonly authorizeWrite?: (
+    command: WriterCommandEnvelope,
+  ) => Promise<ToolkitError | null> | ToolkitError | null;
   readonly leaseMs?: number;
   readonly longPollMs?: number;
   readonly now?: () => Date;
@@ -214,6 +219,15 @@ function statusForError(code: ErrorCode): number {
     case "CREDENTIAL_INVALID":
     case "CREDENTIAL_REQUIRED":
       return 401;
+    case "APPROVAL_CHANGES_REQUESTED":
+    case "APPROVAL_INCOMPLETE":
+    case "APPROVAL_IN_REVIEW":
+    case "APPROVAL_REJECTED":
+    case "APPROVAL_REQUIRED":
+    case "APPROVAL_REVOKED":
+    case "APPROVAL_STALE":
+    case "APPROVAL_SUPERSEDED":
+      return 403;
     case "IDENTITY_NOT_FOUND":
       return 404;
     case "IDENTITY_CONFLICT":
@@ -629,7 +643,39 @@ export function createFigmaBridge(
     }
 
     if (request.method === "POST" && url.pathname === "/v1/operations") {
-      const submitted = await queue.submit(await readJson(request));
+      const input = await readJson(request);
+      const parsed = writerCommandEnvelopeSchema.safeParse(input);
+      if (!parsed.success) {
+        sendFailure(
+          response,
+          400,
+          bridgeError(
+            "VALIDATION_FAILED",
+            "Writer Command does not match the current protocol.",
+            "Correct the command fields and submit it again.",
+          ),
+        );
+        return;
+      }
+      if (parsed.data.command.type !== "writer.ping") {
+        const authorizationError =
+          options.authorizeWrite === undefined
+            ? bridgeError(
+                "APPROVAL_REQUIRED",
+                "The Bridge has no configured approval verifier for Figma writes.",
+                "Start the Writer through the project control plane so it can re-read and verify the Git approval record.",
+              )
+            : await options.authorizeWrite(parsed.data);
+        if (authorizationError !== null) {
+          sendFailure(
+            response,
+            statusForError(authorizationError.code),
+            authorizationError,
+          );
+          return;
+        }
+      }
+      const submitted = await queue.submit(parsed.data);
       if (!submitted.ok) {
         sendFailure(
           response,

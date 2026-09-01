@@ -95,7 +95,7 @@ The first release is local-first. It does not host an AI model and does not requ
 
 ## Current status
 
-**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point and the authenticated single-writer Figma Bridge, but the toolkit is not yet production-ready.**
+**Hatch has completed M2 schemas and read-only queries. M3 now includes the local stdio MCP entry point, the authenticated single-writer Figma Bridge, and the first deterministic Figma Variables Ensure path, but the toolkit is not yet production-ready.**
 
 What exists today:
 
@@ -121,6 +121,9 @@ What exists today:
 - a compact Figma Writer panel with versioned connection, approval, operation, progress, error-recovery, and write-authorization status boundaries;
 - an authenticated loopback-only HTTP Bridge with one Plugin owner, FIFO dispatch, one in-flight lease, idempotent replay, structured results, and a 30-day redacted operation log;
 - an in-memory Session Token connection flow and a safe `writer.ping` round trip that proves the full Plugin transport without modifying Figma;
+- a strict Variable planner and `variables.ensure` adapter that maps the Button Token fixture to one Major-version Collection, 30 real Variables, targeted scopes, aliases, code syntax, stable managed identities, no-op retries, and recoverable partial writes;
+- an explicit human-confirmed Figma file-binding control that binds an unbound library once, safely replays the same identity, and refuses automatic overwrite or rebind;
+- a fail-closed write authorization hook: a standalone Bridge cannot enqueue `variables.ensure` until the project control plane re-verifies the matching Git approval record;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
 - reproducible M0 spikes proving Figma variable/component creation and local process-to-plugin communication;
 - a frozen Button vertical-slice acceptance contract.
@@ -175,7 +178,7 @@ pnpm build
 pnpm hatchkit:figma-bridge
 ```
 
-Do not redirect, save, screenshot, or publish the displayed token. FIG-002 accepts only the no-write `writer.ping`; managed Figma Variables begin in FIG-003.
+Do not redirect, save, screenshot, or publish the displayed token. A standalone Bridge can run the no-write `writer.ping`; it deliberately blocks `variables.ensure` until a project Approval Verifier is configured.
 
 Requirements:
 
@@ -218,6 +221,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Real Codex Agent contract](docs/MCP-004-Codex真实Agent契约测试.md)
 - [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge and single-writer queue](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
+- [Deterministic Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 Start with the [Chinese project introduction](README.zh-CN.md) if you prefer a concise overview.

@@ -13,6 +13,7 @@ import {
 } from "./bridge-client.js";
 import {
   FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+  FILE_BINDING_CONFIRMATION,
   approvalPresentation,
   connectionPresentation,
   createInitialWriterStatus,
@@ -24,6 +25,7 @@ import {
   type UiToMainMessage,
   type WriterStatusSnapshot,
 } from "./status-model.js";
+import type { FigmaLibraryFileBinding } from "./variables-writer.js";
 
 function requiredElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -33,7 +35,7 @@ function requiredElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function pluginInstanceId(): string {
+function randomUuid(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
   bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
@@ -68,6 +70,15 @@ function errorFrom(cause: unknown): PluginErrorView {
 
 const contextFile = requiredElement<HTMLElement>("context-file");
 const contextPage = requiredElement<HTMLElement>("context-page");
+const bindingBadge = requiredElement<HTMLElement>("binding-badge");
+const bindingDetail = requiredElement<HTMLElement>("binding-detail");
+const bindingProjectInput =
+  requiredElement<HTMLInputElement>("binding-project-id");
+const bindingIdInput = requiredElement<HTMLInputElement>("binding-file-id");
+const generateBindingIdButton = requiredElement<HTMLButtonElement>(
+  "generate-binding-id",
+);
+const bindFileButton = requiredElement<HTMLButtonElement>("bind-file");
 const connectionBadge = requiredElement<HTMLElement>("connection-badge");
 const connectionDetail = requiredElement<HTMLElement>("connection-detail");
 const connectionEndpoint = requiredElement<HTMLElement>("connection-endpoint");
@@ -90,11 +101,14 @@ const authorization = requiredElement<HTMLElement>("authorization");
 const refreshButton = requiredElement<HTMLButtonElement>("refresh");
 const closeButton = requiredElement<HTMLButtonElement>("close");
 
-const instanceId = pluginInstanceId();
+const instanceId = randomUuid();
 let snapshot = createInitialWriterStatus({
   fileName: "Reading Figma…",
   pageName: "Reading Figma…",
 });
+let fileBinding: FigmaLibraryFileBinding | null = null;
+let fileBindingError: PluginErrorView | null = null;
+let fileBindingPending = false;
 let bridgeClient: FigmaBridgeClient | null = null;
 let connectionGeneration = 0;
 const pendingResults = new Map<string, (result: WriterPluginResult) => void>();
@@ -120,9 +134,56 @@ function setOptionalText(
   element.textContent = value === undefined ? "" : `${label}: ${value}`;
 }
 
+function bindingDraftIsValid(): boolean {
+  const projectId = bindingProjectInput.value.trim();
+  return (
+    projectId.length <= 64 &&
+    /^[a-z][a-z0-9-]*$/u.test(projectId) &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
+      bindingIdInput.value.trim(),
+    )
+  );
+}
+
+function renderFileBinding(): void {
+  const operationBusy =
+    snapshot.operation.status === "queued" ||
+    snapshot.operation.status === "running";
+  if (fileBinding !== null) {
+    bindingBadge.dataset.tone = "success";
+    bindingBadge.textContent = "Bound";
+    bindingDetail.textContent =
+      "This document is permanently identified as the project design-system library.";
+    bindingProjectInput.value = fileBinding.projectId;
+    bindingIdInput.value = fileBinding.fileBindingId;
+  } else if (fileBindingError !== null) {
+    bindingBadge.dataset.tone = "danger";
+    bindingBadge.textContent = "Invalid";
+    bindingDetail.textContent = `${fileBindingError.message} Next: ${fileBindingError.recoveryInstruction}`;
+  } else if (fileBindingPending) {
+    bindingBadge.dataset.tone = "info";
+    bindingBadge.textContent = "Binding";
+    bindingDetail.textContent =
+      "Writing the confirmed project identity to this Figma document.";
+  } else {
+    bindingBadge.dataset.tone = "warning";
+    bindingBadge.textContent = "Unbound";
+    bindingDetail.textContent =
+      "Confirm a stable project ID and generated file ID before any library write.";
+  }
+
+  const locked =
+    fileBinding !== null || fileBindingError !== null || fileBindingPending;
+  bindingProjectInput.disabled = locked;
+  bindingIdInput.disabled = locked;
+  generateBindingIdButton.disabled = locked || operationBusy;
+  bindFileButton.disabled = locked || operationBusy || !bindingDraftIsValid();
+}
+
 function render(): void {
   contextFile.textContent = snapshot.context.fileName;
   contextPage.textContent = snapshot.context.pageName;
+  renderFileBinding();
   setPresentation(
     connectionBadge,
     connectionPresentation(snapshot.connection.status),
@@ -183,10 +244,13 @@ function waitForMainResult(
   command: WriterCommandDelivery,
 ): Promise<WriterPluginResult> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      pendingResults.delete(command.operationId);
-      reject(new Error("Figma main thread did not return a Writer Result."));
-    }, 5_000);
+    const timer = setTimeout(
+      () => {
+        pendingResults.delete(command.operationId);
+        reject(new Error("Figma main thread did not return a Writer Result."));
+      },
+      command.command.type === "variables.ensure" ? 30_000 : 5_000,
+    );
     pendingResults.set(command.operationId, (result) => {
       clearTimeout(timer);
       pendingResults.delete(command.operationId);
@@ -205,29 +269,61 @@ async function runCommand(
   client: FigmaBridgeClient,
   command: WriterCommandDelivery,
 ): Promise<void> {
+  const variablesCommand = command.command.type === "variables.ensure";
+  const totalSteps = variablesCommand ? 5 : 1;
   update({
+    approval: variablesCommand
+      ? command.approval.mode === "approved"
+        ? {
+            approvalId: command.approval.approvalId,
+            detail: "The command carries an approved Token version and digest.",
+            status: "approved",
+            subject: `${command.approval.subject.assetId}@${command.approval.subject.assetVersion}`,
+          }
+        : {
+            detail:
+              "The Variables command is missing an approved Token record.",
+            status: "blocked",
+          }
+      : snapshot.approval,
     error: null,
     operation: {
       completedSteps: 0,
-      detail: "The Figma main thread is validating a diagnostic command.",
+      detail: variablesCommand
+        ? "The Figma main thread is preflighting the approved Variable plan."
+        : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
-      step: "Validate writer.ping",
-      totalSteps: 1,
+      step: variablesCommand
+        ? "Verify file, identities, Modes and conflicts"
+        : "Validate writer.ping",
+      totalSteps,
     },
+    writeAuthorized: variablesCommand && command.approval.mode === "approved",
   });
   const result = await waitForMainResult(command);
   await client.report(result);
   if (result.ok) {
+    const variablesResult =
+      "type" in result.result && result.result.type === "variables.ensure"
+        ? result.result
+        : null;
     update({
       operation: {
-        completedSteps: 1,
-        detail: "The diagnostic round trip completed without a Figma write.",
+        completedSteps: totalSteps,
+        detail:
+          variablesResult === null
+            ? "The diagnostic round trip completed without a Figma write."
+            : `${String(variablesResult.variables.created)} created, ${String(variablesResult.variables.updated)} updated, ${String(variablesResult.variables.unchanged)} unchanged.`,
         operationId: command.operationId,
         status: "succeeded",
-        step: "writer.ping acknowledged",
-        totalSteps: 1,
+        step:
+          variablesResult === null
+            ? "writer.ping acknowledged"
+            : "Variables audited and managed markers committed",
+        totalSteps,
       },
+      writeAuthorized: false,
     });
     return;
   }
@@ -238,13 +334,19 @@ async function runCommand(
       result.error.recoveryInstruction,
     ),
     operation: {
-      completedSteps: 0,
-      detail: "The diagnostic command failed safely.",
+      completedSteps: Math.min(
+        result.error.completedSteps?.length ?? 0,
+        totalSteps,
+      ),
+      detail: variablesCommand
+        ? "The Variables command stopped with a structured failure."
+        : "The diagnostic command failed safely.",
       operationId: command.operationId,
       status: "failed",
       step: "Review the structured error",
-      totalSteps: 1,
+      totalSteps,
     },
+    writeAuthorized: false,
   });
 }
 
@@ -413,6 +515,13 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
       update({ context: message.context });
       break;
     }
+    case "file.binding": {
+      fileBinding = message.binding;
+      fileBindingError = message.error;
+      fileBindingPending = false;
+      render();
+      break;
+    }
     case "writer.result": {
       pendingResults.get(message.result.operationId)?.(message.result);
       break;
@@ -422,6 +531,41 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
 
 connectButton.addEventListener("click", () => void connect());
 disconnectButton.addEventListener("click", () => void disconnect());
+bindingProjectInput.addEventListener("input", render);
+bindingIdInput.addEventListener("input", render);
+generateBindingIdButton.addEventListener("click", () => {
+  bindingIdInput.value = randomUuid();
+  render();
+  bindingProjectInput.focus();
+});
+bindFileButton.addEventListener("click", () => {
+  const projectId = bindingProjectInput.value.trim();
+  const fileBindingId = bindingIdInput.value.trim().toLowerCase();
+  if (!bindingDraftIsValid()) {
+    bindingDetail.textContent =
+      "Use a kebab-case project ID and generate a valid file UUID.";
+    bindingBadge.dataset.tone = "danger";
+    bindingBadge.textContent = "Check input";
+    return;
+  }
+  const confirmed = window.confirm(
+    `Bind “${snapshot.context.fileName}” to project “${projectId}”?\n\nThis identity blocks writes meant for other files. Changing it later requires a separately reviewed rebind flow.`,
+  );
+  if (!confirmed) return;
+  fileBindingPending = true;
+  render();
+  postMessage({
+    binding: {
+      fileBindingId,
+      fileRole: "design-system-library",
+      projectId,
+      schemaVersion: "1.0.0",
+    },
+    confirmation: FILE_BINDING_CONFIRMATION,
+    schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+    type: "file.bind",
+  });
+});
 refreshButton.addEventListener("click", () => {
   refreshButton.disabled = true;
   postMessage({

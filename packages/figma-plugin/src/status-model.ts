@@ -11,8 +11,11 @@ import {
   isWriterCommandDelivery,
   isWriterPluginResult,
 } from "./writer-message-validation.js";
+import type { FigmaLibraryFileBinding } from "./variables-writer.js";
 
 export const FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION = "1.0.0" as const;
+export const FILE_BINDING_CONFIRMATION =
+  "bind-current-file-as-design-system-library" as const;
 
 export type ConnectionStatus =
   "connected" | "connecting" | "disconnected" | "reconnecting";
@@ -71,6 +74,12 @@ const ERROR_KEYS = new Set([
   "retry",
 ]);
 const UI_MESSAGE_KEYS = new Set(["schemaVersion", "type"]);
+const FILE_BIND_MESSAGE_KEYS = new Set([
+  "binding",
+  "confirmation",
+  "schemaVersion",
+  "type",
+]);
 const EXECUTE_MESSAGE_KEYS = new Set([
   "command",
   "pluginInstanceId",
@@ -80,6 +89,18 @@ const EXECUTE_MESSAGE_KEYS = new Set([
 const STATUS_MESSAGE_KEYS = new Set(["schemaVersion", "snapshot", "type"]);
 const CONTEXT_MESSAGE_KEYS = new Set(["context", "schemaVersion", "type"]);
 const RESULT_MESSAGE_KEYS = new Set(["result", "schemaVersion", "type"]);
+const FILE_BINDING_MESSAGE_KEYS = new Set([
+  "binding",
+  "error",
+  "schemaVersion",
+  "type",
+]);
+const FILE_BINDING_KEYS = new Set([
+  "fileBindingId",
+  "fileRole",
+  "projectId",
+  "schemaVersion",
+]);
 
 export interface FigmaDocumentContext {
   readonly fileName: string;
@@ -162,6 +183,12 @@ export type UiToMainMessage =
       readonly type: "ui.ready" | "ui.refresh";
     }
   | {
+      readonly binding: FigmaLibraryFileBinding;
+      readonly confirmation: typeof FILE_BINDING_CONFIRMATION;
+      readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
+      readonly type: "file.bind";
+    }
+  | {
       readonly command: WriterCommandDelivery;
       readonly pluginInstanceId: string;
       readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
@@ -186,8 +213,18 @@ export interface WriterResultMessage {
   readonly type: "writer.result";
 }
 
+export interface FigmaFileBindingMessage {
+  readonly binding: FigmaLibraryFileBinding | null;
+  readonly error: PluginErrorView | null;
+  readonly schemaVersion: typeof FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION;
+  readonly type: "file.binding";
+}
+
 export type MainToUiMessage =
-  WriterContextMessage | WriterResultMessage | WriterStatusMessage;
+  | FigmaFileBindingMessage
+  | WriterContextMessage
+  | WriterResultMessage
+  | WriterStatusMessage;
 
 export function createInitialWriterStatus(
   context: FigmaDocumentContext,
@@ -268,6 +305,24 @@ function isOptionalString(value: unknown): value is string | undefined {
 
 function isNonNegativeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+function isFigmaLibraryFileBinding(
+  value: unknown,
+): value is FigmaLibraryFileBinding {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, FILE_BINDING_KEYS) &&
+    value.schemaVersion === "1.0.0" &&
+    typeof value.projectId === "string" &&
+    value.projectId.length <= 64 &&
+    /^[a-z][a-z0-9-]*$/u.test(value.projectId) &&
+    typeof value.fileBindingId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
+      value.fileBindingId,
+    ) &&
+    value.fileRole === "design-system-library"
+  );
 }
 
 function isPluginErrorView(value: unknown): value is PluginErrorView {
@@ -351,6 +406,13 @@ export function isUiToMainMessage(value: unknown): value is UiToMainMessage {
   ) {
     return true;
   }
+  if (value.type === "file.bind") {
+    return (
+      hasOnlyKeys(value, FILE_BIND_MESSAGE_KEYS) &&
+      value.confirmation === FILE_BINDING_CONFIRMATION &&
+      isFigmaLibraryFileBinding(value.binding)
+    );
+  }
   return (
     value.type === "writer.execute" &&
     hasOnlyKeys(value, EXECUTE_MESSAGE_KEYS) &&
@@ -389,6 +451,14 @@ export function isMainToUiMessage(value: unknown): value is MainToUiMessage {
       hasOnlyKeys(value.context, CONTEXT_KEYS) &&
       isString(value.context.fileName) &&
       isString(value.context.pageName)
+    );
+  }
+  if (value.type === "file.binding") {
+    return (
+      hasOnlyKeys(value, FILE_BINDING_MESSAGE_KEYS) &&
+      (value.binding === null || isFigmaLibraryFileBinding(value.binding)) &&
+      (value.error === null || isPluginErrorView(value.error)) &&
+      !(value.binding !== null && value.error !== null)
     );
   }
   return (

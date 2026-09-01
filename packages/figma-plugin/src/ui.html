@@ -245,6 +245,26 @@
         margin-top: 9px;
       }
 
+      .binding-form {
+        display: grid;
+        gap: 7px;
+        margin-top: 9px;
+      }
+
+      .binding-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: 7px;
+      }
+
+      .warning-note {
+        padding: 7px 8px;
+        border-radius: 6px;
+        color: var(--warning);
+        background: var(--warning-bg);
+        font-size: 10px;
+      }
+
       .field-label {
         color: var(--text-secondary);
         font-size: 10px;
@@ -349,7 +369,7 @@
       }
 
       .button:disabled {
-        cursor: wait;
+        cursor: default;
         opacity: 0.5;
       }
 
@@ -401,6 +421,63 @@
           <div class="context-item">
             <span class="context-label">Page</span>
             <span id="context-page" class="context-value">Reading Figma…</span>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="binding-title">
+          <div class="card-header">
+            <h2 id="binding-title">File binding</h2>
+            <span id="binding-badge" class="badge">Unbound</span>
+          </div>
+          <p id="binding-detail" class="detail">
+            Inspecting this document's Hatchkit identity.
+          </p>
+          <div class="binding-form">
+            <label class="field-label" for="binding-project-id"
+              >Stable project ID</label
+            >
+            <input
+              id="binding-project-id"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="example: hatch-demo"
+              aria-describedby="binding-detail binding-warning"
+            />
+            <label class="field-label" for="binding-file-id"
+              >File binding UUID</label
+            >
+            <input
+              id="binding-file-id"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Generate a permanent ID"
+              aria-describedby="binding-detail binding-warning"
+            />
+            <div class="binding-actions">
+              <button
+                id="generate-binding-id"
+                class="button button-compact"
+                type="button"
+              >
+                Generate ID
+              </button>
+              <button
+                id="bind-file"
+                class="button button-primary button-compact"
+                type="button"
+                disabled
+              >
+                Bind current file
+              </button>
+            </div>
+            <p id="binding-warning" class="warning-note">
+              Binding is permanent. Rebinding requires a separate reviewed
+              recovery flow.
+            </p>
           </div>
         </section>
 

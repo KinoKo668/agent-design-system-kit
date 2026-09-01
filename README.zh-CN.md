@@ -85,7 +85,7 @@ Registry · 历史             │
 
 ## 当前状态
 
-**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口和经过认证的单 Writer Figma Bridge，但尚未成为可用于生产环境的完整工具。**
+**Hatch 已完成 M2 Schema、Registry 与只读查询；M3 现在已经包含本地 stdio MCP 入口、经过认证的单 Writer Figma Bridge，以及第一条确定性的 Figma Variables Ensure 链路，但尚未成为可用于生产环境的完整工具。**
 
 目前已经完成：
 
@@ -110,6 +110,9 @@ Registry · 历史             │
 - 紧凑的 Figma Writer 面板，使用版本化边界显示连接、审批、操作、进度、错误恢复和真实写入授权；
 - 只监听回环地址的认证 HTTP Bridge，提供单 Plugin 所有权、FIFO、单在途租约、幂等重放、结构化结果与 30 天脱敏 Operation Log；
 - Session Token 只驻留内存的连接流程，以及不会修改 Figma 的 `writer.ping` 完整往返验证；
+- 严格的 Variable Plan 与 `variables.ensure` Adapter：把 Button Token Fixture 映射为一个 Major Collection、30 个真实 Variable、精确 Scope、Alias、Code Syntax 和稳定托管身份，并支持无写入重试与部分恢复；
+- 需要设计师二次确认的 Figma 文件绑定入口：未绑定库文件只初始化一次，同一身份可安全重放，不同身份或损坏记录不会被自动覆盖或改绑；
+- 默认关闭的写授权入口：独立 Bridge 在项目控制面重新校验 Git Approval Record 之前，不能把 `variables.ensure` 加入队列；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
 - 可以复现的 M0 Spike，验证 Figma 资产创建与本地进程到 Plugin 的通信；
 - Button 最小垂直链路的正式验收合同。
@@ -164,7 +167,7 @@ pnpm build
 pnpm hatchkit:figma-bridge
 ```
 
-请勿重定向、保存、截图或公开终端显示的 Token。FIG-002 只接受无写入的 `writer.ping`，真实基础 Variables 从 FIG-003 开始。
+请勿重定向、保存、截图或公开终端显示的 Token。独立 Bridge 可以运行无写入的 `writer.ping`；在配置项目 Approval Verifier 之前，它会主动阻断 `variables.ensure`。
 
 环境要求：
 
@@ -205,6 +208,7 @@ pnpm hatchkit:figma-bridge
 - [真实 Codex Agent 契约测试](docs/MCP-004-Codex真实Agent契约测试.md)
 - [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge 与单 Writer 队列](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
+- [确定性 Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
 ## 核心原则

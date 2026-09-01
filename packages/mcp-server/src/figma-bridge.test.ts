@@ -2,8 +2,13 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { WRITER_PROTOCOL_SCHEMA_VERSION } from "@agent-design-system-kit/core";
+import {
+  WRITER_PROTOCOL_SCHEMA_VERSION,
+  createFigmaVariablePlan,
+} from "@agent-design-system-kit/core";
 import { afterEach, describe, expect, it } from "vitest";
+
+import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 
 import { createFigmaBridge, type FigmaBridge } from "./figma-bridge.js";
 
@@ -67,6 +72,32 @@ function command(
     target: {
       kind: "plugin-session",
       stableId: `${projectId}/plugin-session`,
+    },
+  };
+}
+
+function variablesCommand(operationId: string) {
+  const planned = createFigmaVariablePlan(
+    validTokenSet,
+    `sha256:${"a".repeat(64)}`,
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.tokens.button-foundation.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "token-set" },
+    },
+    command: { payload: { plan: planned.data }, type: "variables.ensure" },
+    idempotencyKey: `variables-${operationId}`,
+    operationId,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
     },
   };
 }
@@ -234,6 +265,80 @@ describe("local Figma Bridge", () => {
       data: { command: { operationId: OPERATION_IDS[1] } },
       ok: true,
     });
+  });
+
+  it("carries an approved Variable plan through the authenticated queue", async () => {
+    const { address } = await startBridge({ authorizeWrite: () => null });
+    await request(address.url, "/v1/plugin/connect", hello());
+    const submitted = await request(
+      address.url,
+      "/v1/operations",
+      variablesCommand(OPERATION_IDS[0]),
+    );
+    expect(submitted.response.status).toBe(202);
+
+    const delivery = await request(address.url, "/v1/plugin/next", {
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(delivery.body).toMatchObject({
+      data: {
+        command: {
+          approval: { mode: "approved" },
+          command: {
+            type: "variables.ensure",
+          },
+        },
+      },
+      ok: true,
+    });
+
+    const reported = await request(address.url, "/v1/plugin/results", {
+      ok: true,
+      operationId: OPERATION_IDS[0],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      result: {
+        collection: {
+          action: "created",
+          stableId: "hatch-demo/token-set/button-foundation/variables/major-1",
+        },
+        deferredTypographyCount: 1,
+        type: "variables.ensure",
+        variables: { created: 30, unchanged: 0, updated: 0 },
+      },
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(reported.response.status).toBe(202);
+
+    const operation = await request(address.url, "/v1/operations/get", {
+      operationId: OPERATION_IDS[0],
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(operation.body).toMatchObject({
+      data: {
+        result: {
+          type: "variables.ensure",
+          variables: { created: 30 },
+        },
+        status: "succeeded",
+      },
+      ok: true,
+    });
+  });
+
+  it("blocks write commands when no Git approval verifier is configured", async () => {
+    const { address, bridge } = await startBridge();
+    const blocked = await request(
+      address.url,
+      "/v1/operations",
+      variablesCommand(OPERATION_IDS[0]),
+    );
+    expect(blocked.response.status).toBe(403);
+    expect(blocked.body).toMatchObject({
+      error: { code: "APPROVAL_REQUIRED" },
+      ok: false,
+    });
+    expect(bridge.snapshot().queue.queuedOperationIds).toEqual([]);
   });
 
   it("replays matching idempotency and rejects conflicting command reuse", async () => {

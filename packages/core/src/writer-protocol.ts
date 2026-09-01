@@ -3,9 +3,12 @@ import * as z from "zod";
 import { ERROR_DEFINITIONS, type ErrorCode } from "./errors.js";
 import type { JsonObject } from "./json.js";
 import {
+  contentDigestSchema,
   stableAssetIdSchema,
   stableIdSegmentSchema,
+  strictSemverSchema,
 } from "./schema-primitives.js";
+import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -20,19 +23,53 @@ const ERROR_CODES = Object.keys(ERROR_DEFINITIONS) as [
   ...ErrorCode[],
 ];
 
-export const writerTargetSchema = z
+export const writerPluginSessionTargetSchema = z
   .object({
     kind: z.literal("plugin-session"),
     stableId: stableAssetIdSchema,
   })
   .strict();
 
-export const writerApprovalSchema = z
+export const writerFigmaFileTargetSchema = z
   .object({
-    mode: z.literal("not_required"),
-    reason: z.literal("read_only_diagnostic"),
+    fileBindingId: z.uuid().max(64),
+    kind: z.literal("figma-file"),
+    stableId: stableAssetIdSchema,
   })
   .strict();
+
+export const writerTargetSchema = z.discriminatedUnion("kind", [
+  writerFigmaFileTargetSchema,
+  writerPluginSessionTargetSchema,
+]);
+
+export const writerApprovalSchema = z.discriminatedUnion("mode", [
+  z
+    .object({
+      mode: z.literal("not_required"),
+      reason: z.literal("read_only_diagnostic"),
+    })
+    .strict(),
+  z
+    .object({
+      approvalId: z
+        .string()
+        .min(1)
+        .max(320)
+        .regex(/^approval\.tokens\.[a-z0-9.+-]+$/u),
+      mode: z.literal("approved"),
+      subject: z
+        .object({
+          assetId: stableAssetIdSchema,
+          assetVersion: strictSemverSchema,
+          contentDigest: contentDigestSchema,
+          projectId: stableIdSegmentSchema,
+          type: z.literal("token-set"),
+        })
+        .strict(),
+    })
+    .strict(),
+]);
 
 export const writerCommandSourceSchema = z
   .object({
@@ -47,10 +84,22 @@ export const writerPingCommandSchema = z
   })
   .strict();
 
+export const writerEnsureVariablesCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaVariablePlanSchema }).strict(),
+    type: z.literal("variables.ensure"),
+  })
+  .strict();
+
+export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerEnsureVariablesCommandSchema,
+  writerPingCommandSchema,
+]);
+
 export const writerCommandEnvelopeSchema = z
   .object({
     approval: writerApprovalSchema,
-    command: writerPingCommandSchema,
+    command: writerCommandSchema,
     idempotencyKey: idempotencyKeySchema,
     operationId: operationIdSchema,
     projectId: stableIdSegmentSchema,
@@ -58,7 +107,60 @@ export const writerCommandEnvelopeSchema = z
     source: writerCommandSourceSchema,
     target: writerTargetSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((envelope, context) => {
+    if (envelope.command.type === "writer.ping") {
+      if (envelope.approval.mode !== "not_required") {
+        context.addIssue({
+          code: "custom",
+          message: "writer.ping must use read-only diagnostic approval.",
+          path: ["approval"],
+        });
+      }
+      if (envelope.target.kind !== "plugin-session") {
+        context.addIssue({
+          code: "custom",
+          message: "writer.ping must target the active Plugin session.",
+          path: ["target", "kind"],
+        });
+      }
+      return;
+    }
+
+    const plan = envelope.command.payload.plan;
+    if (envelope.approval.mode !== "approved") {
+      context.addIssue({
+        code: "custom",
+        message: "variables.ensure requires a verified Token approval.",
+        path: ["approval"],
+      });
+      return;
+    }
+    if (envelope.target.kind !== "figma-file") {
+      context.addIssue({
+        code: "custom",
+        message: "variables.ensure must target a bound Figma file.",
+        path: ["target", "kind"],
+      });
+    }
+    const subject = envelope.approval.subject;
+    const mismatches = [
+      subject.projectId !== plan.source.projectId ? "projectId" : null,
+      subject.assetId !== plan.source.assetId ? "assetId" : null,
+      subject.assetVersion !== plan.source.assetVersion ? "assetVersion" : null,
+      subject.contentDigest !== plan.source.contentDigest
+        ? "contentDigest"
+        : null,
+      envelope.projectId !== plan.source.projectId ? "envelopeProjectId" : null,
+    ].filter((value): value is string => value !== null);
+    if (mismatches.length > 0) {
+      context.addIssue({
+        code: "custom",
+        message: `Token approval does not match the Variable plan: ${mismatches.join(", ")}.`,
+        path: ["approval", "subject"],
+      });
+    }
+  });
 
 export type WriterCommandEnvelope = z.infer<typeof writerCommandEnvelopeSchema>;
 
@@ -99,10 +201,36 @@ export type WriterPluginDisconnect = WriterPluginPoll;
 const writerPluginErrorSchema = z
   .object({
     code: z.enum(ERROR_CODES),
+    completedSteps: z.array(z.string().min(1).max(120)).max(20).optional(),
     message: z.string().min(1).max(1024),
     recoveryInstruction: z.string().min(1).max(1024),
   })
   .strict();
+
+export const writerVariablesResultSchema = z
+  .object({
+    collection: z
+      .object({
+        action: z.enum(["created", "unchanged", "updated"]),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    deferredTypographyCount: z.number().int().nonnegative(),
+    type: z.literal("variables.ensure"),
+    variables: z
+      .object({
+        created: z.number().int().nonnegative(),
+        unchanged: z.number().int().nonnegative(),
+        updated: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
+export const writerSuccessResultSchema = z.union([
+  z.object({ pong: z.literal(true) }).strict(),
+  writerVariablesResultSchema,
+]);
 
 export const writerPluginResultSchema = z.discriminatedUnion("ok", [
   z
@@ -110,7 +238,7 @@ export const writerPluginResultSchema = z.discriminatedUnion("ok", [
       ok: z.literal(true),
       operationId: operationIdSchema,
       pluginInstanceId: pluginInstanceIdSchema,
-      result: z.object({ pong: z.literal(true) }).strict(),
+      result: writerSuccessResultSchema,
       schemaVersion: z.literal(WRITER_PROTOCOL_SCHEMA_VERSION),
     })
     .strict(),

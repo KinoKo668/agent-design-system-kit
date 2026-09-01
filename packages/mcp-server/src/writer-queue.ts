@@ -113,11 +113,13 @@ function operationError(
   message: string,
   recoveryInstruction: string,
   operationId?: string,
+  completedSteps?: readonly string[],
 ): ToolkitError {
   return createToolkitError({
     code,
     message,
     recoveryInstruction,
+    ...(completedSteps === undefined ? {} : { context: { completedSteps } }),
     ...(operationId === undefined
       ? {}
       : { target: { logicalId: operationId, type: "operation" } }),
@@ -344,7 +346,10 @@ export function createWriterQueue(options: WriterQueueOptions): WriterQueue {
             ),
           );
         }
-        if (existing.status === "interrupted") {
+        if (
+          existing.status === "interrupted" ||
+          existing.status === "partial"
+        ) {
           existing.command = { ...command, operationId: existing.operationId };
           existing.status = "queued";
           existing.error = undefined;
@@ -482,6 +487,7 @@ export function createWriterQueue(options: WriterQueueOptions): WriterQueue {
           result.error.message,
           result.error.recoveryInstruction,
           operation.operationId,
+          result.error.completedSteps,
         );
         operation.result = undefined;
       }

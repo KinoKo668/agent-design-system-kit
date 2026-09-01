@@ -189,6 +189,53 @@ describe("formal Writer queue", () => {
     });
   });
 
+  it("preserves completed steps for a recoverable partial write", async () => {
+    const fixture = await queueFixture(await temporaryLogDirectory());
+    await fixture.queue.submit(command(IDS[0]));
+    await fixture.queue.leaseNext();
+    const accepted = await fixture.queue.acceptResult({
+      error: {
+        code: "PARTIAL_WRITE",
+        completedSteps: ["resolved_variable_modes", "resolved_variables"],
+        message: "The Variable write stopped after creating managed skeletons.",
+        recoveryInstruction: "Retry the same operation.",
+      },
+      ok: false,
+      operationId: IDS[0],
+      pluginInstanceId: PLUGIN_INSTANCE_ID,
+      schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    });
+    expect(accepted.ok).toBe(true);
+
+    expect(fixture.queue.getOperation(IDS[0])).toMatchObject({
+      data: {
+        error: {
+          code: "PARTIAL_WRITE",
+          context: {
+            completedSteps: ["resolved_variable_modes", "resolved_variables"],
+          },
+        },
+        status: "partial",
+      },
+      ok: true,
+    });
+
+    const resumed = await fixture.queue.submit(
+      command(IDS[1], `key-${IDS[0]}`),
+    );
+    expect(resumed).toMatchObject({
+      data: {
+        idempotentReplay: true,
+        operation: { operationId: IDS[0], status: "queued" },
+      },
+      ok: true,
+    });
+    expect(await fixture.queue.leaseNext()).toMatchObject({
+      attempt: 2,
+      operationId: IDS[0],
+    });
+  });
+
   it("marks unfinished operations interrupted on restart and resumes only on resubmit", async () => {
     const directory = await temporaryLogDirectory();
     const first = await queueFixture(directory);

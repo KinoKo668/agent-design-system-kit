@@ -82,12 +82,25 @@ requireCondition(
   "UI missing the in-memory Bridge credential field",
 );
 requireCondition(
+  uiHtml.includes("File binding") && uiHtml.includes("Bind current file"),
+  "UI missing the explicit Figma file-binding control",
+);
+requireCondition(
+  uiHtml.includes("bind-current-file-as-design-system-library"),
+  "UI bundle missing the explicit file-binding confirmation",
+);
+requireCondition(
   uiHtml.includes("writer.execute"),
   "UI bundle missing the Writer execution boundary",
 );
 requireCondition(
   pluginJavaScript.includes("writer.ping"),
   "main bundle missing the safe diagnostic command",
+);
+requireCondition(
+  pluginJavaScript.includes("file-binding") &&
+    pluginJavaScript.includes("FILE_BINDING_MISMATCH"),
+  "main bundle missing fail-closed Figma file binding",
 );
 requireCondition(pluginStat.size <= 100 * 1024, "main bundle exceeds 100 KiB");
 requireCondition(uiStat.size <= 300 * 1024, "UI bundle exceeds 300 KiB");

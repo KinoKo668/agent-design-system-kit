@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+  FILE_BINDING_CONFIRMATION,
   approvalPresentation,
   connectionPresentation,
   createInitialWriterStatus,
@@ -113,6 +114,33 @@ describe("Figma Plugin writer status model", () => {
         type: "ui.ready",
       }),
     ).toBe(false);
+
+    expect(
+      isUiToMainMessage({
+        binding: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          fileRole: "design-system-library",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+        },
+        confirmation: FILE_BINDING_CONFIRMATION,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.bind",
+      }),
+    ).toBe(true);
+    expect(
+      isUiToMainMessage({
+        binding: {
+          fileBindingId: "not-a-uuid",
+          fileRole: "design-system-library",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+        },
+        confirmation: FILE_BINDING_CONFIRMATION,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.bind",
+      }),
+    ).toBe(false);
   });
 
   it("deeply validates Writer execution and result messages", () => {
@@ -207,6 +235,47 @@ describe("Figma Plugin writer status model", () => {
         schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
         snapshot: { ...snapshot, untrusted: true },
         type: "writer.status",
+      }),
+    ).toBe(false);
+
+    expect(
+      isMainToUiMessage({
+        binding: null,
+        error: null,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.binding",
+      }),
+    ).toBe(true);
+    expect(
+      isMainToUiMessage({
+        binding: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          fileRole: "design-system-library",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+        },
+        error: null,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.binding",
+      }),
+    ).toBe(true);
+    expect(
+      isMainToUiMessage({
+        binding: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          fileRole: "design-system-library",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+        },
+        error: {
+          category: "identity",
+          code: "FILE_BINDING_MISMATCH",
+          message: "Invalid binding.",
+          recoveryInstruction: "Inspect it.",
+          retry: "retry_after_correction",
+        },
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.binding",
       }),
     ).toBe(false);
   });
