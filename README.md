@@ -254,6 +254,8 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Agent-facing golden-path regression](docs/QA-001-Agent黄金路径回归测试.md)
 - [System failure matrix and zero-pollution regression](docs/QA-002-系统失败矩阵与零污染回归.md)
 - [Installation and five-minute Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
+- [Troubleshooting handbook](docs/DOC-002-故障排查手册.md)
+- [Current architecture and runtime boundaries](docs/DOC-002-当前架构与运行边界.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

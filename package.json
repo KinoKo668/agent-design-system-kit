@@ -29,6 +29,7 @@
     "qa:golden": "vitest run packages/mcp-server/src/golden-path-regression.test.ts",
     "qa:failures": "vitest run packages/mcp-server/src/failure-matrix-regression.test.ts",
     "docs:quickstart-check": "vitest run packages/cli/src/quickstart-contract.test.ts packages/mcp-server/src/quickstart-contract.test.ts",
+    "docs:check": "vitest run packages/cli/src/quickstart-contract.test.ts packages/mcp-server/src/quickstart-contract.test.ts packages/mcp-server/src/documentation-contract.test.ts",
     "test": "vitest run",
     "typecheck": "tsc --build --pretty false && tsc --project tsconfig.test.json --pretty false"
   },

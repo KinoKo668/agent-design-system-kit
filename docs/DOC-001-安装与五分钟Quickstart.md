@@ -196,4 +196,4 @@ pnpm figma:smoke
 
 当前 Alpha 已能证明严格 Catalog、Registry 驱动的 Button、单 Writer、幂等、三类审计和系统失败边界；尚未提供图形化安装器、完整组件库、云服务、多 Agent 同时写入、真实公开 Approval 样例或完整 Figma 视觉验收。
 
-遇到问题时先保留结构化 Error Code 和 Recovery Instruction，不要删除 Marker、重绑文件、修改 Operation Log 或绕过审批。下一份 `DOC-002` 会整理完整故障排查手册。
+遇到问题时先保留结构化 Error Code 和 Recovery Instruction，不要删除 Marker、重绑文件、修改 Operation Log 或绕过审批。请查看 [故障排查手册](DOC-002-故障排查手册.md) 和 [当前架构与运行边界](DOC-002-当前架构与运行边界.md)。

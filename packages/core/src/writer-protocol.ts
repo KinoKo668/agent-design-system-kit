@@ -26,6 +26,16 @@ import {
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
+export const WRITER_COMMAND_TYPES = {
+  auditComponents: "audit.components.scan",
+  auditRegistryDrift: "audit.registry-drift.scan",
+  auditStyles: "audit.styles.scan",
+  ensureButton: "components.button.ensure",
+  ensureVariables: "variables.ensure",
+  insertButtonInstance: "instances.button.insert",
+  ping: "writer.ping",
+} as const;
+
 const operationIdSchema = z.uuid().max(64);
 const idempotencyKeySchema = z
   .string()
@@ -120,49 +130,49 @@ export const writerCommandSourceSchema = z
 export const writerPingCommandSchema = z
   .object({
     payload: z.object({}).strict(),
-    type: z.literal("writer.ping"),
+    type: z.literal(WRITER_COMMAND_TYPES.ping),
   })
   .strict();
 
 export const writerEnsureVariablesCommandSchema = z
   .object({
     payload: z.object({ plan: figmaVariablePlanSchema }).strict(),
-    type: z.literal("variables.ensure"),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureVariables),
   })
   .strict();
 
 export const writerEnsureButtonCommandSchema = z
   .object({
     payload: z.object({ plan: figmaButtonPlanSchema }).strict(),
-    type: z.literal("components.button.ensure"),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureButton),
   })
   .strict();
 
 export const writerInsertButtonInstanceCommandSchema = z
   .object({
     payload: z.object({ plan: figmaButtonInstancePlanSchema }).strict(),
-    type: z.literal("instances.button.insert"),
+    type: z.literal(WRITER_COMMAND_TYPES.insertButtonInstance),
   })
   .strict();
 
 export const writerAuditStylesCommandSchema = z
   .object({
     payload: z.object({ plan: figmaStyleAuditPlanSchema }).strict(),
-    type: z.literal("audit.styles.scan"),
+    type: z.literal(WRITER_COMMAND_TYPES.auditStyles),
   })
   .strict();
 
 export const writerAuditComponentsCommandSchema = z
   .object({
     payload: z.object({ plan: figmaComponentAuditPlanSchema }).strict(),
-    type: z.literal("audit.components.scan"),
+    type: z.literal(WRITER_COMMAND_TYPES.auditComponents),
   })
   .strict();
 
 export const writerAuditRegistryDriftCommandSchema = z
   .object({
     payload: z.object({ plan: registryDriftAuditPlanSchema }).strict(),
-    type: z.literal("audit.registry-drift.scan"),
+    type: z.literal(WRITER_COMMAND_TYPES.auditRegistryDrift),
   })
   .strict();
 
@@ -189,7 +199,7 @@ export const writerCommandEnvelopeSchema = z
   })
   .strict()
   .superRefine((envelope, context) => {
-    if (envelope.command.type === "writer.ping") {
+    if (envelope.command.type === WRITER_COMMAND_TYPES.ping) {
       if (envelope.approval.mode !== "not_required") {
         context.addIssue({
           code: "custom",
@@ -208,9 +218,9 @@ export const writerCommandEnvelopeSchema = z
     }
 
     if (
-      envelope.command.type === "audit.styles.scan" ||
-      envelope.command.type === "audit.components.scan" ||
-      envelope.command.type === "audit.registry-drift.scan"
+      envelope.command.type === WRITER_COMMAND_TYPES.auditStyles ||
+      envelope.command.type === WRITER_COMMAND_TYPES.auditComponents ||
+      envelope.command.type === WRITER_COMMAND_TYPES.auditRegistryDrift
     ) {
       if (envelope.approval.mode !== "not_required") {
         context.addIssue({
@@ -253,7 +263,9 @@ export const writerCommandEnvelopeSchema = z
     }
     const subject = envelope.approval.subject;
     const expectedSubjectType =
-      envelope.command.type === "variables.ensure" ? "token-set" : "component";
+      envelope.command.type === WRITER_COMMAND_TYPES.ensureVariables
+        ? "token-set"
+        : "component";
     const mismatches: string[] = [
       subject.type !== expectedSubjectType ? "type" : null,
       subject.projectId !== plan.source.projectId ? "projectId" : null,
@@ -264,7 +276,7 @@ export const writerCommandEnvelopeSchema = z
         : null,
       envelope.projectId !== plan.source.projectId ? "envelopeProjectId" : null,
     ].filter((value): value is string => value !== null);
-    if (envelope.command.type === "instances.button.insert") {
+    if (envelope.command.type === WRITER_COMMAND_TYPES.insertButtonInstance) {
       if (
         envelope.approval.approvalId !==
         envelope.command.payload.plan.source.approvalId
@@ -342,7 +354,7 @@ export const writerVariablesResultSchema = z
       })
       .strict(),
     deferredTypographyCount: z.number().int().nonnegative(),
-    type: z.literal("variables.ensure"),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureVariables),
     variables: z
       .object({
         created: z.number().int().nonnegative(),
@@ -366,7 +378,7 @@ export const writerButtonResultSchema = z
       })
       .strict(),
     labelPropertyName: z.string().min(1).max(120),
-    type: z.literal("components.button.ensure"),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureButton),
     typography: z
       .object({
         lineHeightStrategy: z.literal("resolved-percent"),
@@ -404,7 +416,7 @@ export const writerButtonInstanceResultSchema = z
         stableId: stableAssetIdSchema,
       })
       .strict(),
-    type: z.literal("instances.button.insert"),
+    type: z.literal(WRITER_COMMAND_TYPES.insertButtonInstance),
     variant: z.object({ stableId: stableAssetIdSchema }).strict(),
   })
   .strict();

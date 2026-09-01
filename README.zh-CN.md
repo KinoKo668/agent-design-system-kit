@@ -241,6 +241,8 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Agent 黄金路径回归测试](docs/QA-001-Agent黄金路径回归测试.md)
 - [系统失败矩阵与零污染回归](docs/QA-002-系统失败矩阵与零污染回归.md)
 - [安装与五分钟 Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)
+- [故障排查手册](docs/DOC-002-故障排查手册.md)
+- [当前架构与运行边界](docs/DOC-002-当前架构与运行边界.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
