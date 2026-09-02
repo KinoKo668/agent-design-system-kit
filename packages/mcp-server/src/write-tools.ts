@@ -37,6 +37,14 @@ import {
   inputInstanceLoopOutputSchema,
   runInputInstanceLoop,
 } from "./input-instance-loop.js";
+import {
+  componentEnsureLoopInputSchema,
+  componentEnsureLoopOutputSchema,
+  runComponentEnsureLoop,
+  runVariablesEnsureLoop,
+  variablesEnsureLoopInputSchema,
+  variablesEnsureLoopOutputSchema,
+} from "./library-ensure-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
@@ -44,6 +52,10 @@ export const HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_icon_instance" as const;
 export const HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_input_instance" as const;
+export const HATCHKIT_VARIABLES_ENSURE_TOOL_NAME =
+  "hatchkit_ensure_variables" as const;
+export const HATCHKIT_COMPONENT_ENSURE_TOOL_NAME =
+  "hatchkit_ensure_component" as const;
 export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
 export const HATCHKIT_COMPONENT_AUDIT_TOOL_NAME =
   "hatchkit_audit_components" as const;
@@ -96,6 +108,23 @@ export const hatchkitInputInstanceInsertInputSchema =
       ),
   });
 
+const ensureWaitSchema = {
+  waitTimeoutMs: z
+    .number()
+    .int()
+    .min(1_000)
+    .max(120_000)
+    .default(30_000)
+    .describe(
+      "How long to wait for the connected Figma Plugin before returning a resumable timeout.",
+    ),
+} as const;
+
+export const hatchkitVariablesEnsureInputSchema =
+  variablesEnsureLoopInputSchema.extend(ensureWaitSchema);
+export const hatchkitComponentEnsureInputSchema =
+  componentEnsureLoopInputSchema.extend(ensureWaitSchema);
+
 export interface HatchkitWriteToolOptions extends HatchkitCatalogOptions {
   readonly writer: LocalWriterClient;
 }
@@ -104,6 +133,46 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+    {
+      annotations: HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS,
+      description:
+        "Resolve one exact Token Set from the validated Git catalog, derive its unique Figma library binding from active Component Registry references, rebuild the deterministic approved Variable plan, and converge the real Figma Variable Collection through the authenticated single Writer. Call this before ensuring a Component that uses the Token Set.",
+      inputSchema: hatchkitVariablesEnsureInputSchema,
+      outputSchema: variablesEnsureLoopOutputSchema,
+      title: "Ensure approved Figma Variables",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runVariablesEnsureLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
+  server.registerTool(
+    HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+    {
+      annotations: HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS,
+      description:
+        "Resolve one exact active Button, Icon, or Input Contract and Registry entry, rebuild its profile-specific deterministic plan from current Git source and Token dependency, converge the real Figma Main Component Set through the authenticated single Writer, and atomically finalize its Ready locator. Its Variables must already exist in the bound file.",
+      inputSchema: hatchkitComponentEnsureInputSchema,
+      outputSchema: componentEnsureLoopOutputSchema,
+      title: "Ensure an approved Figma Component Set",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runComponentEnsureLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
     {

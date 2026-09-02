@@ -164,7 +164,7 @@ File Binding 会把 Project ID 和 UUID 永久写入当前 Figma 文件的 Share
 
 ## 7. 可选：Writer-enabled Agent Host
 
-Writer 与依赖 Figma 的三个 Audit Tool 只有在 MCP Host 同时注入以下两个环境变量时才出现：
+Variables／Component 建库、Instance 插入与依赖 Figma 的三个 Audit Tool，只有在 MCP Host 同时注入以下两个环境变量时才出现：
 
 ```text
 HATCHKIT_FIGMA_BRIDGE_URL=http://127.0.0.1:38451
@@ -184,6 +184,18 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - 公开 Demo 没有可信人工 Approval Record，所以正式写入仍会失败关闭；
 - 不要伪造 Approval 来通过演示；真实 Approval 需要受保护分支、人工 Review 和准确内容摘要；
 - FIG-003 至 FIG-006 的真实 Figma Desktop 双次运行与设计师视觉验收尚未完成。
+
+获得真实 Approval 后，Agent 的建库顺序必须是：
+
+```text
+hatchkit_ensure_variables
+→ hatchkit_ensure_component
+→ hatchkit_resolve_component
+→ hatchkit_insert_button_instance / hatchkit_insert_icon_instance / hatchkit_insert_input_instance
+→ hatchkit_audit_styles + hatchkit_audit_components + hatchkit_audit_registry_drift
+```
+
+建库 Tool 必须提供准确 `assetId`、`assetVersion` 和稳定 `requestId`。Approval、摘要、Figma Node ID 与 File Binding 由 Git 自动重建，不能作为 Tool 参数传入。详细合同见 [Agent 建库 Tools](MCP-005-Agent建库Tools.md)。
 
 ## 8. 常用验证命令
 

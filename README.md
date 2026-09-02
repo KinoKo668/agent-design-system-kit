@@ -132,6 +132,7 @@ What exists today:
 - a deterministic Icon writer and `components.icon.ensure` protocol path that plans and converges one three-size Component Set with real Vector glyphs, exact Variable bindings, stable markers, no-op retries, and recoverable partial writes;
 - a deterministic Input writer and `components.input.ensure` protocol path that plans and converges the exact eight-Variant State × Content matrix, three text properties, visible label/helper/error layers, and all governed Variable bindings with no-op retries and recoverable partial writes;
 - an atomic Registry finalizer that records audited Button, Icon, or Input nodes only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
+- optional `hatchkit_ensure_variables` and `hatchkit_ensure_component` MCP tools that expose the approved library-production path to Agents without accepting caller-supplied approval IDs, digests, Figma node IDs, or file bindings;
 - a Registry-backed Button Instance writer that audits the real Main Component and exact Variant, creates one managed Figma Instance, and performs zero writes on an unchanged retry;
 - a unified Writer replay and destructive-action policy that forces real writes to re-audit on recovery and forbids automatic delete, detach, or component swap;
 - an optional `hatchkit_insert_button_instance` MCP tool that performs exact Registry/Variant resolution, deterministic planning, authenticated Bridge submission, Plugin waiting, and audited Instance reporting in one call while remaining absent in the default read-only configuration;
@@ -250,6 +251,8 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Read-only design-asset MCP queries](docs/MCP-002-只读设计资产查询Tools.md)
 - [Component Resolve and Change Request MCP tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [Real Codex Agent contract](docs/MCP-004-Codex真实Agent契约测试.md)
+- [Agent-facing Variables and Component library ensure tools](docs/MCP-005-Agent建库Tools.md)
+- [Codex, ChatGPT Desktop, Claude Code, Cursor, and Antigravity setup](docs/DOC-003-Agent-Host接入说明.md)
 - [Minimal Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge and single-writer queue](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [Deterministic Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
@@ -270,6 +273,8 @@ The detailed project documentation is currently written primarily in Chinese:
 - [v0.1.0-alpha.1 release notes](docs/REL-001-v0.1.0-alpha.1发布说明.md)
 - [Changelog](CHANGELOG.md)
 - [Security policy](SECURITY.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Contributor licensing and CLA strategy](docs/GOV-002-贡献者许可与CLA策略.md)
 - [Approval Records and pre-write verification](docs/GOV-001-审批记录与写前校验.md)
 - [MVP demonstration and acceptance contract](docs/DEMO-001-MVP演示脚本与成功标准.md)
 

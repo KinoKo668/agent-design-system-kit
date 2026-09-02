@@ -2,6 +2,10 @@ import { resolve } from "node:path";
 
 import { Client } from "@modelcontextprotocol/client";
 import { InMemoryTransport } from "@modelcontextprotocol/server";
+import type {
+  WriterCommandEnvelope,
+  WriterSuccessResult,
+} from "@agent-design-system-kit/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -21,8 +25,10 @@ import {
 import {
   HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+  HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
   HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+  HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
   HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
 } from "./write-tools.js";
@@ -38,6 +44,78 @@ import {
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "../../..");
 const clients: Client[] = [];
 const servers: ReturnType<typeof createHatchkitMcpServer>[] = [];
+
+function resultForWriterCommand(
+  command: WriterCommandEnvelope,
+): WriterSuccessResult {
+  switch (command.command.type) {
+    case "variables.ensure":
+      return {
+        collection: {
+          action: "created",
+          stableId: command.command.payload.plan.collection.stableId,
+        },
+        deferredTypographyCount:
+          command.command.payload.plan.deferredTypography.length,
+        type: command.command.type,
+        variables: { created: 30, unchanged: 0, updated: 0 },
+      };
+    case "components.button.ensure":
+      return {
+        componentSet: {
+          action: "created",
+          nodeId: "100:200",
+          stableId: command.command.payload.plan.componentSet.stableId,
+        },
+        labelPropertyName: "Label#100:201",
+        type: command.command.type,
+        typography: {
+          lineHeightStrategy: "resolved-percent",
+          variableBindings: 4,
+        },
+        variants: { created: 4, unchanged: 0, updated: 0 },
+      };
+    case "instances.button.insert":
+      return {
+        componentSet: {
+          nodeId: "100:200",
+          stableId: "hatch-demo/component/button/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "300:400",
+          stableId: "hatch-demo/instance/settings/save-button",
+        },
+        type: command.command.type,
+        variant: {
+          stableId:
+            "hatch-demo/component/button/component-set/major-1/variant/appearance-secondary/state-disabled",
+        },
+      };
+    default:
+      throw new Error(`Unexpected Writer command '${command.command.type}'.`);
+  }
+}
+
+function operationForWriterCommand(
+  command: WriterCommandEnvelope,
+): WriterOperation {
+  return {
+    attempt: 1,
+    commandFingerprint: `sha256:${"a".repeat(64)}`,
+    commandType: command.command.type,
+    completedAt: "2026-09-01T20:00:01.000Z",
+    dispatchedAt: "2026-09-01T20:00:00.500Z",
+    idempotencyKeyHash: `sha256:${"b".repeat(64)}`,
+    operationId: command.operationId,
+    projectId: command.projectId,
+    queuedAt: "2026-09-01T20:00:00.000Z",
+    result: resultForWriterCommand(command),
+    schemaVersion: WRITER_OPERATION_SCHEMA_VERSION,
+    status: "succeeded",
+    targetStableId: command.target.stableId,
+  };
+}
 
 async function connect(options: HatchkitMcpServerOptions): Promise<Client> {
   const server = createHatchkitMcpServer(options);
@@ -159,41 +237,11 @@ describe("createHatchkitMcpServer", () => {
     });
   });
 
-  it("exposes additive Instance Tools only when a local Writer is configured", async () => {
+  it("exposes and calls governed library and Instance Tools only with a local Writer", async () => {
     const requestId = "2c73620e-29b0-4285-8861-1a65b18f11dc";
-    const operation: WriterOperation = {
-      attempt: 1,
-      commandFingerprint: `sha256:${"a".repeat(64)}`,
-      commandType: "instances.button.insert",
-      completedAt: "2026-09-01T20:00:01.000Z",
-      dispatchedAt: "2026-09-01T20:00:00.500Z",
-      idempotencyKeyHash: `sha256:${"b".repeat(64)}`,
-      operationId: requestId,
-      projectId: "hatch-demo",
-      queuedAt: "2026-09-01T20:00:00.000Z",
-      result: {
-        componentSet: {
-          nodeId: "100:200",
-          stableId: "hatch-demo/component/button/component-set/major-1",
-        },
-        instance: {
-          action: "created",
-          nodeId: "300:400",
-          stableId: "hatch-demo/instance/settings/save-button",
-        },
-        type: "instances.button.insert",
-        variant: {
-          stableId:
-            "hatch-demo/component/button/component-set/major-1/variant/appearance-secondary/state-disabled",
-        },
-      },
-      schemaVersion: WRITER_OPERATION_SCHEMA_VERSION,
-      status: "succeeded",
-      targetStableId: "hatch-demo/figma-file/library",
-    };
-    const execute = vi.fn(() =>
+    const execute = vi.fn((command: WriterCommandEnvelope) =>
       Promise.resolve({
-        data: operation,
+        data: operationForWriterCommand(command),
         ok: true as const,
         schemaVersion: "1.0.0" as const,
         warnings: [],
@@ -263,6 +311,19 @@ describe("createHatchkitMcpServer", () => {
         readOnlyHint: false,
       },
     });
+    for (const name of [
+      HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+      HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+    ]) {
+      expect(tools.tools.find((tool) => tool.name === name)).toMatchObject({
+        annotations: {
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+          readOnlyHint: false,
+        },
+      });
+    }
     expect(tools.tools.at(-1)).toMatchObject({
       annotations: {
         destructiveHint: false,
@@ -280,6 +341,40 @@ describe("createHatchkitMcpServer", () => {
       data: { server: { access: "writer-enabled" } },
     });
 
+    const variables = await client.callTool({
+      arguments: {
+        assetId: "button-foundation",
+        assetVersion: "1.0.0",
+        requestId: "0c73620e-29b0-4285-8861-1a65b18f11dc",
+        waitTimeoutMs: 5_000,
+      },
+      name: HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+    });
+    expect(variables.isError).not.toBe(true);
+    expect(variables.structuredContent).toMatchObject({
+      data: { status: "ensured" },
+      ok: true,
+    });
+
+    const component = await client.callTool({
+      arguments: {
+        assetId: "button",
+        assetVersion: "1.0.0",
+        requestId: "1c73620e-29b0-4285-8861-1a65b18f11dc",
+        waitTimeoutMs: 5_000,
+      },
+      name: HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+    });
+    expect(component.isError).not.toBe(true);
+    expect(component.structuredContent).toMatchObject({
+      data: {
+        resolution: { commandType: "components.button.ensure" },
+        status: "ensured",
+      },
+      ok: true,
+    });
+    expect(execute).toHaveBeenCalledTimes(2);
+
     const unbuiltIcon = await client.callTool({
       arguments: {
         assetId: "icon/check",
@@ -294,7 +389,7 @@ describe("createHatchkitMcpServer", () => {
     });
     expect(unbuiltIcon.isError).toBe(true);
     expect(JSON.stringify(unbuiltIcon)).toContain("IDENTITY_NOT_FOUND");
-    expect(execute).not.toHaveBeenCalled();
+    expect(execute).toHaveBeenCalledTimes(2);
 
     const unbuiltInput = await client.callTool({
       arguments: {
@@ -313,7 +408,7 @@ describe("createHatchkitMcpServer", () => {
     });
     expect(unbuiltInput.isError).toBe(true);
     expect(JSON.stringify(unbuiltInput)).toContain("IDENTITY_NOT_FOUND");
-    expect(execute).not.toHaveBeenCalled();
+    expect(execute).toHaveBeenCalledTimes(2);
 
     const result = await client.callTool({
       arguments: {
@@ -336,7 +431,7 @@ describe("createHatchkitMcpServer", () => {
       },
       ok: true,
     });
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(3);
   });
 
   it("returns a tool-level failure without leaking an invalid absolute root", async () => {

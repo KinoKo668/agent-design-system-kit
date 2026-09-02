@@ -28,10 +28,12 @@ import { HATCHKIT_STATUS_TOOL_NAME } from "./server.js";
 import {
   HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+  HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
   HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
+  HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
 } from "./write-tools.js";
 
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "../../..");
@@ -42,6 +44,15 @@ const TROUBLESHOOTING_PATH = resolve(
 const ARCHITECTURE_PATH = resolve(
   WORKSPACE_ROOT,
   "docs/DOC-002-当前架构与运行边界.md",
+);
+const HOST_SETUP_PATH = resolve(
+  WORKSPACE_ROOT,
+  "docs/DOC-003-Agent-Host接入说明.md",
+);
+const CONTRIBUTING_PATH = resolve(WORKSPACE_ROOT, "CONTRIBUTING.md");
+const CONTRIBUTOR_LICENSE_PATH = resolve(
+  WORKSPACE_ROOT,
+  "docs/GOV-002-贡献者许可与CLA策略.md",
 );
 
 function text(path: string): string {
@@ -120,6 +131,8 @@ describe("DOC-002 documentation contracts", () => {
       HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
       HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
       HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+      HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+      HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
       HATCHKIT_STYLE_AUDIT_TOOL_NAME,
       HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
       HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
@@ -173,5 +186,53 @@ describe("DOC-002 documentation contracts", () => {
     }
     expectLocalMarkdownLinksToExist(TROUBLESHOOTING_PATH);
     expectLocalMarkdownLinksToExist(ARCHITECTURE_PATH);
+  });
+});
+
+describe("Agent Host and contributor documentation contracts", () => {
+  it("documents every supported local Host without committing Writer secrets", () => {
+    const document = readFileSync(HOST_SETUP_PATH, "utf8");
+    for (const host of [
+      "Codex",
+      "ChatGPT Desktop",
+      "Claude Code",
+      "Cursor",
+      "Antigravity",
+    ]) {
+      expect(document).toContain(host);
+    }
+    for (const toolName of [
+      HATCHKIT_STATUS_TOOL_NAME,
+      HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+      HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+      HATCHKIT_STYLE_AUDIT_TOOL_NAME,
+      HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+      HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
+    ]) {
+      expect(document).toContain(toolName);
+    }
+    expect(document).toContain("HATCHKIT_FIGMA_BRIDGE_URL");
+    expect(document).toContain("HATCHKIT_FIGMA_BRIDGE_TOKEN");
+    expect(text("config/codex-mcp.example.toml")).not.toContain(
+      "HATCHKIT_FIGMA_BRIDGE_TOKEN",
+    );
+    expectLocalMarkdownLinksToExist(HOST_SETUP_PATH);
+  });
+
+  it("keeps the contribution gate and CLA strategy discoverable", () => {
+    const entrypoints = [text("README.md"), text("README.zh-CN.md")];
+    for (const entrypoint of entrypoints) {
+      expect(entrypoint).toContain("CONTRIBUTING.md");
+      expect(entrypoint).toContain("GOV-002-贡献者许可与CLA策略.md");
+      expect(entrypoint).toContain("DOC-003-Agent-Host接入说明.md");
+    }
+    expect(readFileSync(CONTRIBUTING_PATH, "utf8")).toContain(
+      "will not be merged",
+    );
+    expect(readFileSync(CONTRIBUTOR_LICENSE_PATH, "utf8")).toContain(
+      "Harmony Contributor License Agreement",
+    );
+    expectLocalMarkdownLinksToExist(CONTRIBUTING_PATH);
+    expectLocalMarkdownLinksToExist(CONTRIBUTOR_LICENSE_PATH);
   });
 });

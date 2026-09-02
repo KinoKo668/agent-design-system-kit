@@ -16,7 +16,11 @@ import { createGitApprovalVerifier } from "./approval-verifier.js";
 import { createFigmaBridge, type FigmaBridge } from "./figma-bridge.js";
 import { createLocalWriterClient } from "./local-writer-client.js";
 import { createHatchkitMcpServer } from "./server.js";
-import { HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME } from "./write-tools.js";
+import {
+  HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
+  HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+  HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+} from "./write-tools.js";
 
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "../../..");
 const DESIGN_SYSTEM_ROOT = resolve(WORKSPACE_ROOT, "design-system/hatch-demo");
@@ -126,6 +130,28 @@ describe("Agent Loop approval boundary", () => {
       expectedProjectId: "hatch-demo",
     });
     const { bridge, client } = await startLoop(verify);
+
+    const variables = await client.callTool({
+      arguments: {
+        assetId: "button-foundation",
+        assetVersion: "1.0.0",
+        requestId: "0c73620e-29b0-4285-8861-1a65b18f11dc",
+        waitTimeoutMs: 1_000,
+      },
+      name: HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
+    });
+    expectRejectedWithoutQueue(variables, bridge, "APPROVAL_REQUIRED");
+
+    const component = await client.callTool({
+      arguments: {
+        assetId: "button",
+        assetVersion: "1.0.0",
+        requestId: "1c73620e-29b0-4285-8861-1a65b18f11dc",
+        waitTimeoutMs: 1_000,
+      },
+      name: HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
+    });
+    expectRejectedWithoutQueue(component, bridge, "APPROVAL_REQUIRED");
 
     expectRejectedWithoutQueue(
       await insert(client),

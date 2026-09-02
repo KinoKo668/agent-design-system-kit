@@ -121,6 +121,7 @@ Registry · 历史             │
 - 确定性的 Icon Writer 与 `components.icon.ensure` 协议链路：建立或收敛一个三尺寸 Component Set、真实 Vector Glyph、准确 Variable Binding 与稳定 Marker，并支持无变化重试和部分恢复；
 - 确定性的 Input Writer 与 `components.input.ensure` 协议链路：建立或收敛准确的 8 Variant State × Content 矩阵、三个文本属性、始终可见的 Label／Helper／Error 层和全部受管 Variable Binding，并支持无变化重试和部分恢复；
 - 原子 Registry 最终化：只在 Figma 审计成功后登记 Button、Icon 或 Input Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
+- 可选的 `hatchkit_ensure_variables` 与 `hatchkit_ensure_component` MCP Tool：让 Agent 能调用受审批的建库链路，同时禁止调用方注入 Approval ID、内容摘要、Figma Node ID 或文件绑定；
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
 - 可选的 `hatchkit_insert_button_instance` MCP Tool：一次调用完成 Registry／Variant 查询、确定性计划、认证 Bridge 提交、Plugin 等待与真实 Instance 审计结果；默认不配置本地凭据时完全保持只读；
@@ -237,6 +238,8 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [只读设计资产 MCP 查询](docs/MCP-002-只读设计资产查询Tools.md)
 - [组件解析与变更申请 MCP Tools](docs/MCP-003-组件解析与变更申请Tools.md)
 - [真实 Codex Agent 契约测试](docs/MCP-004-Codex真实Agent契约测试.md)
+- [Agent 建库 Tools](docs/MCP-005-Agent建库Tools.md)
+- [Codex、ChatGPT Desktop、Claude Code、Cursor 与 Antigravity 接入](docs/DOC-003-Agent-Host接入说明.md)
 - [最小 Figma Plugin UI](docs/FIG-001-最小Figma-Plugin-UI.md)
 - [Plugin Bridge 与单 Writer 队列](docs/FIG-002-Plugin-Bridge与单Writer队列.md)
 - [确定性 Figma Variables Ensure](docs/FIG-003-基础Figma-Variables-Ensure.md)
@@ -257,6 +260,8 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [v0.1.0-alpha.1 发布说明](docs/REL-001-v0.1.0-alpha.1发布说明.md)
 - [变更记录](CHANGELOG.md)
 - [安全策略](SECURITY.md)
+- [贡献指南](CONTRIBUTING.md)
+- [贡献者许可与 CLA 策略](docs/GOV-002-贡献者许可与CLA策略.md)
 - [审批记录与写前校验](docs/GOV-001-审批记录与写前校验.md)
 - [MVP 演示脚本与成功标准](docs/DEMO-001-MVP演示脚本与成功标准.md)
 
