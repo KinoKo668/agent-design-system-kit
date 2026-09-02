@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryType": "component-registry",
+  "projectId": "hatch-demo",
+  "entries": [
+    {
+      "asset": {
+        "type": "component",
+        "id": "input/text",
+        "version": "1.0.0",
+        "contentDigest": "sha256:b8d36a1ce1ad8126d1fcdd1c3a8a627712087068695608d34193e7477efd7f38"
+      },
+      "approvalId": "approval.component.input.text.1.0.0",
+      "lifecycle": "active",
+      "lifecycleReason": null,
+      "figma": {
+        "status": "unbuilt",
+        "fileBindingId": "00000000-0000-4000-8000-000000000001",
+        "channel": "library",
+        "majorVersion": 1,
+        "role": "component-set",
+        "slotId": "root"
+      },
+      "supersedes": null,
+      "replacedBy": null
+    }
+  ]
+}

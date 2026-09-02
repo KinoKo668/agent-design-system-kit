@@ -128,6 +128,39 @@ describe("Hatchkit MCP resolution tools", () => {
     expect(JSON.stringify(result)).not.toContain("nodeId");
   });
 
+  it("resolves an exact unbuilt Input state and content without approximation", async () => {
+    const result = await client.callTool({
+      arguments: {
+        assetId: "input/text",
+        variantSelections: { content: "filled", state: "error" },
+      },
+      name: HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      data: {
+        contract: { profile: "input-v1" },
+        nextAction: "verify-approval-then-ensure-library-asset",
+        selectedVariant: { id: "state-error/content-filled" },
+        sources: {
+          contractSourcePath: "components/input-text.component.json",
+          registrySourcePath: "registry/inputs.registry.json",
+        },
+        status: "ensure-required",
+        variantSelections: { content: "filled", state: "error" },
+      },
+      ok: true,
+    });
+    expect(resultWarnings(result)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "APPROVAL_GUARD_REQUIRED" }),
+        expect.objectContaining({ code: "FIGMA_ENSURE_REQUIRED" }),
+      ]),
+    );
+    expect(JSON.stringify(result)).not.toContain("nodeId");
+  });
+
   it("returns the original Not Found failure from exact Resolve", async () => {
     const result = await client.callTool({
       arguments: { assetId: "select" },

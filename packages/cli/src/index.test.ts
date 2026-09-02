@@ -44,6 +44,18 @@ const ICON_CATALOG_ARGUMENTS = [
   "--registry",
   "registry/icons.registry.json",
 ] as const;
+const INPUT_CATALOG_ARGUMENTS = [
+  "--project",
+  "hatch-demo",
+  "--root",
+  "design-system/hatch-demo",
+  "--token-set",
+  "tokens/input-foundation.tokens.json",
+  "--component",
+  "components/input-text.component.json",
+  "--registry",
+  "registry/inputs.registry.json",
+] as const;
 
 function parseOutput(result: Awaited<ReturnType<typeof runCli>>): unknown {
   return JSON.parse(result.output) as unknown;
@@ -170,6 +182,49 @@ describe("runCli", () => {
         selectedVariant: { id: "size-large" },
         status: "ensure-required",
         variantSelections: { size: "large" },
+      },
+      ok: true,
+    });
+  });
+
+  it("searches and resolves the exact unbuilt Input Contract", async () => {
+    const search = await runCli(
+      ["search", ...INPUT_CATALOG_ARGUMENTS, "--term", "Input / Text"],
+      { cwd: WORKSPACE_ROOT },
+    );
+    const resolved = await runCli(
+      [
+        "resolve",
+        ...INPUT_CATALOG_ARGUMENTS,
+        "--asset-id",
+        "input/text",
+        "--variant",
+        "state=error",
+        "--variant",
+        "content=filled",
+      ],
+      { cwd: WORKSPACE_ROOT },
+    );
+
+    expect(search.exitCode).toBe(CLI_EXIT_CODES.success);
+    expect(parseOutput(search)).toMatchObject({
+      data: {
+        items: [
+          {
+            asset: { id: "input/text", version: "1.0.0" },
+            availability: "ensure-required",
+            profile: "input-v1",
+          },
+        ],
+      },
+      ok: true,
+    });
+    expect(resolved.exitCode).toBe(CLI_EXIT_CODES.success);
+    expect(parseOutput(resolved)).toMatchObject({
+      data: {
+        selectedVariant: { id: "state-error/content-filled" },
+        status: "ensure-required",
+        variantSelections: { content: "filled", state: "error" },
       },
       ok: true,
     });

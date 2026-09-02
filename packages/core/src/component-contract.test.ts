@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import validButtonContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import validIconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
 import validIconTokenSet from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
+import validInputContract from "../../../design-system/hatch-demo/components/input-text.component.json" with { type: "json" };
+import validInputTokenSet from "../../../design-system/hatch-demo/tokens/input-foundation.tokens.json" with { type: "json" };
 
 import {
   toComponentContractDigestSubject,
@@ -12,15 +14,22 @@ import {
 import { isFailureResult, isSuccessResult } from "./results.js";
 
 describe("Component Contract profile dispatch", () => {
-  it("accepts the supported Button and Icon profiles", () => {
+  it("accepts the supported Button, Icon and Input profiles", () => {
     const button = validateComponentContract(validButtonContract);
     const icon = validateComponentContract(validIconContract);
+    const input = validateComponentContract(validInputContract);
 
     expect(isSuccessResult(button)).toBe(true);
     expect(isSuccessResult(icon)).toBe(true);
-    if (isSuccessResult(button) && isSuccessResult(icon)) {
+    expect(isSuccessResult(input)).toBe(true);
+    if (
+      isSuccessResult(button) &&
+      isSuccessResult(icon) &&
+      isSuccessResult(input)
+    ) {
       expect(button.data.profile).toBe("button-v1");
       expect(icon.data.profile).toBe("icon-v1");
+      expect(input.data.profile).toBe("input-v1");
       expect(toComponentContractDigestSubject(icon.data)).not.toHaveProperty(
         "contentDigest",
       );
@@ -35,6 +44,13 @@ describe("Component Contract profile dispatch", () => {
 
     expect(isSuccessResult(result)).toBe(true);
     if (isSuccessResult(result)) expect(result.data.profile).toBe("icon-v1");
+
+    const input = validateComponentContractWithTokenSet(
+      validInputContract,
+      validInputTokenSet,
+    );
+    expect(isSuccessResult(input)).toBe(true);
+    if (isSuccessResult(input)) expect(input.data.profile).toBe("input-v1");
   });
 
   it("rejects unknown profiles instead of treating them as Button", () => {

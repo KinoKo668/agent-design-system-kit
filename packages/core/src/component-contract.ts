@@ -18,21 +18,31 @@ import {
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { ToolkitResult } from "./results.js";
 import { toValidationIssues } from "./schema-validation.js";
+import {
+  INPUT_CONTRACT_PROFILE,
+  inputComponentContractSchema,
+  toInputComponentContractDigestSubject,
+  validateInputComponentContractWithTokenSet,
+  type InputComponentContract,
+} from "./input-contract.js";
 
 export const COMPONENT_CONTRACT_PROFILES = [
   BUTTON_CONTRACT_PROFILE,
   ICON_CONTRACT_PROFILE,
+  INPUT_CONTRACT_PROFILE,
 ] as const;
 
 export const componentContractSchema = z.discriminatedUnion("profile", [
   buttonComponentContractSchema,
   iconComponentContractSchema,
+  inputComponentContractSchema,
 ]);
 
 export type ComponentContract = z.infer<typeof componentContractSchema>;
 export type ComponentContractDigestSubject =
   | Omit<ButtonComponentContract, "contentDigest">
-  | Omit<IconComponentContract, "contentDigest">;
+  | Omit<IconComponentContract, "contentDigest">
+  | Omit<InputComponentContract, "contentDigest">;
 
 export function validateComponentContract(
   input: unknown,
@@ -58,12 +68,18 @@ export function validateComponentContractWithTokenSet(
 ): ToolkitResult<ComponentContract> {
   const contractResult = validateComponentContract(contractInput);
   if (!contractResult.ok) return contractResult;
-  return contractResult.data.profile === BUTTON_CONTRACT_PROFILE
-    ? validateButtonComponentContractWithTokenSet(
+  if (contractResult.data.profile === BUTTON_CONTRACT_PROFILE) {
+    return validateButtonComponentContractWithTokenSet(
+      contractResult.data,
+      tokenSetInput,
+    );
+  }
+  return contractResult.data.profile === ICON_CONTRACT_PROFILE
+    ? validateIconComponentContractWithTokenSet(
         contractResult.data,
         tokenSetInput,
       )
-    : validateIconComponentContractWithTokenSet(
+    : validateInputComponentContractWithTokenSet(
         contractResult.data,
         tokenSetInput,
       );
@@ -72,7 +88,10 @@ export function validateComponentContractWithTokenSet(
 export function toComponentContractDigestSubject(
   contract: ComponentContract,
 ): ComponentContractDigestSubject {
-  return contract.profile === BUTTON_CONTRACT_PROFILE
-    ? toButtonComponentContractDigestSubject(contract)
-    : toIconComponentContractDigestSubject(contract);
+  if (contract.profile === BUTTON_CONTRACT_PROFILE) {
+    return toButtonComponentContractDigestSubject(contract);
+  }
+  return contract.profile === ICON_CONTRACT_PROFILE
+    ? toIconComponentContractDigestSubject(contract)
+    : toInputComponentContractDigestSubject(contract);
 }

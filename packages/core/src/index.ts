@@ -17,6 +17,7 @@ export * from "./direction-review.js";
 export * from "./errors.js";
 export * from "./figma-variable-plan.js";
 export * from "./icon-contract.js";
+export * from "./input-contract.js";
 export * from "./figma-button-plan.js";
 export * from "./figma-button-instance-plan.js";
 export * from "./figma-icon-plan.js";

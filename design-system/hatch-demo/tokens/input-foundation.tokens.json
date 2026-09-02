@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "token-set",
+  "projectId": "hatch-demo",
+  "assetId": "input-foundation",
+  "assetVersion": "1.0.0",
+  "contentDigest": "sha256:4369f4f267164fbeda7a152f2c4066b9506d03226b071e36eb374543ed5d343b",
+  "name": "Input foundation",
+  "description": "The color, dimension and typography decisions required by the governed text Input vertical slice.",
+  "dtcgVersion": "2025.10",
+  "defaultMode": "light",
+  "modes": [
+    {
+      "id": "light",
+      "name": "Light",
+      "tokens": [
+        {
+          "path": ["primitive", "color", "white"],
+          "$type": "color",
+          "$description": "Opaque white surface.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1, 1, 1],
+            "alpha": 1,
+            "hex": "#ffffff"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-900"],
+          "$type": "color",
+          "$description": "Primary high-contrast neutral text.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.122, 0.161, 0.216],
+            "alpha": 1,
+            "hex": "#1f2937"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-700"],
+          "$type": "color",
+          "$description": "Secondary readable neutral text.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.216, 0.255, 0.318],
+            "alpha": 1,
+            "hex": "#374151"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-500"],
+          "$type": "color",
+          "$description": "Placeholder and supporting text neutral.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.42, 0.447, 0.502],
+            "alpha": 1,
+            "hex": "#6b7280"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-300"],
+          "$type": "color",
+          "$description": "Default control border.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.82, 0.835, 0.859],
+            "alpha": 1,
+            "hex": "#d1d5db"
+          }
+        },
+        {
+          "path": ["primitive", "color", "neutral-200"],
+          "$type": "color",
+          "$description": "Disabled control border.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.898, 0.906, 0.922],
+            "alpha": 1,
+            "hex": "#e5e7eb"
+          }
+        },
+        {
+          "path": ["primitive", "color", "blue-600"],
+          "$type": "color",
+          "$description": "Visible keyboard focus accent.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.145, 0.388, 0.922],
+            "alpha": 1,
+            "hex": "#2563eb"
+          }
+        },
+        {
+          "path": ["primitive", "color", "red-600"],
+          "$type": "color",
+          "$description": "Accessible error accent and message color.",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.863, 0.149, 0.149],
+            "alpha": 1,
+            "hex": "#dc2626"
+          }
+        },
+        {
+          "path": ["primitive", "dimension", "control-height-48"],
+          "$type": "dimension",
+          "$description": "Touch-friendly text field height.",
+          "$value": { "value": 48, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "radius-8"],
+          "$type": "dimension",
+          "$description": "Medium control corner radius.",
+          "$value": { "value": 8, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "space-12"],
+          "$type": "dimension",
+          "$description": "Horizontal field padding.",
+          "$value": { "value": 12, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "space-6"],
+          "$type": "dimension",
+          "$description": "Vertical field content gap.",
+          "$value": { "value": 6, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "border-1"],
+          "$type": "dimension",
+          "$description": "Default control border width.",
+          "$value": { "value": 1, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "border-2"],
+          "$type": "dimension",
+          "$description": "Visible focus border width.",
+          "$value": { "value": 2, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "font-size-14"],
+          "$type": "dimension",
+          "$description": "Input label and value font size.",
+          "$value": { "value": 14, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "font-size-12"],
+          "$type": "dimension",
+          "$description": "Supporting text font size.",
+          "$value": { "value": 12, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "dimension", "letter-spacing-0"],
+          "$type": "dimension",
+          "$description": "Default interface letter spacing.",
+          "$value": { "value": 0, "unit": "px" }
+        },
+        {
+          "path": ["primitive", "font-family", "sans"],
+          "$type": "fontFamily",
+          "$description": "Primary sans-serif font stack.",
+          "$value": ["Inter", "Arial", "sans-serif"]
+        },
+        {
+          "path": ["primitive", "font-weight", "regular"],
+          "$type": "fontWeight",
+          "$description": "Regular input value weight.",
+          "$value": 400
+        },
+        {
+          "path": ["primitive", "font-weight", "medium"],
+          "$type": "fontWeight",
+          "$description": "Medium visible label weight.",
+          "$value": 500
+        },
+        {
+          "path": ["primitive", "number", "line-height-compact"],
+          "$type": "number",
+          "$description": "Compact line-height multiplier for labels and values.",
+          "$value": 1.43
+        },
+        {
+          "path": ["primitive", "number", "line-height-support"],
+          "$type": "number",
+          "$description": "Readable line-height multiplier for supporting text.",
+          "$value": 1.5
+        },
+        {
+          "path": ["semantic", "color", "input-background"],
+          "$type": "color",
+          "$description": "Input field surface color.",
+          "$value": "{primitive.color.white}"
+        },
+        {
+          "path": ["semantic", "color", "input-label"],
+          "$type": "color",
+          "$description": "Persistent visible Input label color.",
+          "$value": "{primitive.color.neutral-700}"
+        },
+        {
+          "path": ["semantic", "color", "input-value"],
+          "$type": "color",
+          "$description": "Entered Input value color.",
+          "$value": "{primitive.color.neutral-900}"
+        },
+        {
+          "path": ["semantic", "color", "input-placeholder"],
+          "$type": "color",
+          "$description": "Placeholder text color that does not replace the label.",
+          "$value": "{primitive.color.neutral-500}"
+        },
+        {
+          "path": ["semantic", "color", "input-helper"],
+          "$type": "color",
+          "$description": "Default supporting text color.",
+          "$value": "{primitive.color.neutral-500}"
+        },
+        {
+          "path": ["semantic", "color", "input-disabled"],
+          "$type": "color",
+          "$description": "Disabled Input text color.",
+          "$value": "{primitive.color.neutral-500}"
+        },
+        {
+          "path": ["semantic", "color", "input-error"],
+          "$type": "color",
+          "$description": "Error message color paired with text evidence.",
+          "$value": "{primitive.color.red-600}"
+        },
+        {
+          "path": ["semantic", "color", "input-border-default"],
+          "$type": "color",
+          "$description": "Default Input field border.",
+          "$value": "{primitive.color.neutral-300}"
+        },
+        {
+          "path": ["semantic", "color", "input-border-focused"],
+          "$type": "color",
+          "$description": "Keyboard-visible focused Input border.",
+          "$value": "{primitive.color.blue-600}"
+        },
+        {
+          "path": ["semantic", "color", "input-border-error"],
+          "$type": "color",
+          "$description": "Error Input border paired with a message.",
+          "$value": "{primitive.color.red-600}"
+        },
+        {
+          "path": ["semantic", "color", "input-border-disabled"],
+          "$type": "color",
+          "$description": "Disabled Input border.",
+          "$value": "{primitive.color.neutral-200}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-height"],
+          "$type": "dimension",
+          "$description": "Touch-friendly Input field height.",
+          "$value": "{primitive.dimension.control-height-48}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-radius"],
+          "$type": "dimension",
+          "$description": "Input field corner radius.",
+          "$value": "{primitive.dimension.radius-8}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-padding-inline"],
+          "$type": "dimension",
+          "$description": "Input field horizontal padding.",
+          "$value": "{primitive.dimension.space-12}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-gap"],
+          "$type": "dimension",
+          "$description": "Gap between Input label, field and supporting text.",
+          "$value": "{primitive.dimension.space-6}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-border-width-default"],
+          "$type": "dimension",
+          "$description": "Default Input border width.",
+          "$value": "{primitive.dimension.border-1}"
+        },
+        {
+          "path": ["semantic", "dimension", "input-border-width-focused"],
+          "$type": "dimension",
+          "$description": "Focused Input border width.",
+          "$value": "{primitive.dimension.border-2}"
+        },
+        {
+          "path": ["semantic", "typography", "input-label"],
+          "$type": "typography",
+          "$description": "Typography for the persistent Input label.",
+          "$value": {
+            "fontFamily": "{primitive.font-family.sans}",
+            "fontSize": "{primitive.dimension.font-size-14}",
+            "fontWeight": "{primitive.font-weight.medium}",
+            "letterSpacing": "{primitive.dimension.letter-spacing-0}",
+            "lineHeight": "{primitive.number.line-height-compact}"
+          }
+        },
+        {
+          "path": ["semantic", "typography", "input-value"],
+          "$type": "typography",
+          "$description": "Typography for Input placeholder and entered value.",
+          "$value": {
+            "fontFamily": "{primitive.font-family.sans}",
+            "fontSize": "{primitive.dimension.font-size-14}",
+            "fontWeight": "{primitive.font-weight.regular}",
+            "letterSpacing": "{primitive.dimension.letter-spacing-0}",
+            "lineHeight": "{primitive.number.line-height-compact}"
+          }
+        },
+        {
+          "path": ["semantic", "typography", "input-support"],
+          "$type": "typography",
+          "$description": "Typography for helper and error messages.",
+          "$value": {
+            "fontFamily": "{primitive.font-family.sans}",
+            "fontSize": "{primitive.dimension.font-size-12}",
+            "fontWeight": "{primitive.font-weight.regular}",
+            "letterSpacing": "{primitive.dimension.letter-spacing-0}",
+            "lineHeight": "{primitive.number.line-height-support}"
+          }
+        }
+      ]
+    }
+  ]
+}

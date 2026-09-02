@@ -100,6 +100,7 @@ Registry · 历史             │
 - 带类型 Alias、Mode、依赖规则和 Button 样例的 DTCG 2025.10 Token Set 子集；
 - 带严格属性、完整 Variant 矩阵、稳定 Slot 和类型化 Token Binding 的 Button v1 Component Contract；
 - 带 Token 驱动的 16／24／32 尺寸、固定光学几何、无障碍规则、精确 Registry 解析和诚实 `unbuilt` 公开样例的 Icon v1 垂直切片；
+- 严格的 Input v1 Contract 与诚实 `unbuilt` 公开样例：包含 8 个 State × Content Variant、始终可见的 Label、就近 Helper／Error、语义 Token Binding 和精确 CLI／MCP 解析；
 - 连接准确 Contract 摘要、审批引用、生命周期与可修复 Figma Locator 的 Component Registry Schema；
 - 根据准确内容、必需人工角色、验证证据、终止事件和上游状态推导结果的严格 Approval Record Schema；
 - 可确定复现的本地 Loader，能够安全发现正式文件、校验跨资产引用，并用相对路径报告内容摘要漂移；
@@ -224,6 +225,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [基础 Token Schema 与 DTCG 子集](docs/SCH-002-基础Token-Schema与DTCG子集.md)
 - [Button Component Contract](docs/SCH-003-Button-Component-Contract.md)
 - [Icon 契约与 Figma 组件链路](docs/COMP-001-Icon契约与Figma组件链路.md)
+- [Input 契约与 Figma 组件链路](docs/COMP-002-Input契约与Figma组件链路.md)
 - [Component Registry Schema](docs/SCH-004-Component-Registry-Schema.md)
 - [文件加载与完整性校验](docs/REG-001-文件加载与完整性校验.md)
 - [组件搜索与精确解析](docs/REG-002-组件搜索与精确解析.md)

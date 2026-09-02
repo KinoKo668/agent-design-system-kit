@@ -8,6 +8,7 @@ import {
   componentChangeRequestSubmissionSchema,
   componentRegistryEntrySchema,
   iconVariantSchema,
+  inputVariantSchema,
   resolveComponent,
   resolveComponentOrRequestChange,
   stableAssetIdSchema,
@@ -64,7 +65,11 @@ const componentSourcesSchema = z.strictObject({
 
 const componentResolutionCommonShape = {
   contract: componentContractSchema,
-  selectedVariant: z.union([buttonVariantSchema, iconVariantSchema]),
+  selectedVariant: z.union([
+    buttonVariantSchema,
+    iconVariantSchema,
+    inputVariantSchema,
+  ]),
   sources: componentSourcesSchema,
   variantSelections: z.record(stableIdSegmentSchema, stableIdSegmentSchema),
 };

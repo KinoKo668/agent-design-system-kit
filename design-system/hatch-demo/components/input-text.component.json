@@ -1,0 +1,331 @@
+{
+  "schemaVersion": "1.0.0",
+  "assetType": "component",
+  "projectId": "hatch-demo",
+  "assetId": "input/text",
+  "assetVersion": "1.0.0",
+  "contentDigest": "sha256:b8d36a1ce1ad8126d1fcdd1c3a8a627712087068695608d34193e7477efd7f38",
+  "name": "Input / Text",
+  "description": "A governed single-line text Input with visible labeling, helper and error feedback, and explicit interaction states.",
+  "componentKind": "component-set",
+  "profile": "input-v1",
+  "size": "medium",
+  "tokenSource": {
+    "assetType": "token-set",
+    "projectId": "hatch-demo",
+    "assetId": "input-foundation",
+    "assetVersion": "1.0.0"
+  },
+  "properties": [
+    {
+      "kind": "variant",
+      "id": "state",
+      "figmaName": "State",
+      "description": "Selects the visible interaction or validation state.",
+      "defaultOptionId": "default",
+      "options": [
+        {
+          "id": "default",
+          "figmaValue": "Default",
+          "description": "Enabled field without keyboard focus or validation failure."
+        },
+        {
+          "id": "focused",
+          "figmaValue": "Focused",
+          "description": "Field with a visible keyboard focus indicator."
+        },
+        {
+          "id": "error",
+          "figmaValue": "Error",
+          "description": "Invalid field paired with a nearby recovery message."
+        },
+        {
+          "id": "disabled",
+          "figmaValue": "Disabled",
+          "description": "Unavailable field that cannot receive input."
+        }
+      ]
+    },
+    {
+      "kind": "variant",
+      "id": "content",
+      "figmaName": "Content",
+      "description": "Distinguishes placeholder content from an entered value.",
+      "defaultOptionId": "empty",
+      "options": [
+        {
+          "id": "empty",
+          "figmaValue": "Empty",
+          "description": "No entered value; Text is presented as a placeholder."
+        },
+        {
+          "id": "filled",
+          "figmaValue": "Filled",
+          "description": "Text is presented as an entered value."
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "id": "label",
+      "figmaName": "Label",
+      "description": "Persistent visible label that identifies the field.",
+      "defaultValue": "Email address"
+    },
+    {
+      "kind": "text",
+      "id": "text",
+      "figmaName": "Text",
+      "description": "Placeholder or entered value selected by the Content Variant.",
+      "defaultValue": "name@example.com"
+    },
+    {
+      "kind": "text",
+      "id": "supporting-text",
+      "figmaName": "Supporting text",
+      "description": "Nearby helper, error or disabled explanation.",
+      "defaultValue": "We only use this for account updates."
+    }
+  ],
+  "layout": {
+    "width": 320,
+    "fieldHeight": 48,
+    "paddingInline": 12,
+    "gap": 6
+  },
+  "sharedBindings": [
+    {
+      "target": "field.background",
+      "token": "{semantic.color.input-background}"
+    },
+    {
+      "target": "field.radius",
+      "token": "{semantic.dimension.input-radius}"
+    },
+    {
+      "target": "field.height",
+      "token": "{semantic.dimension.input-height}"
+    },
+    {
+      "target": "field.padding-inline",
+      "token": "{semantic.dimension.input-padding-inline}"
+    },
+    {
+      "target": "layout.gap",
+      "token": "{semantic.dimension.input-gap}"
+    },
+    {
+      "target": "label.fill",
+      "token": "{semantic.color.input-label}"
+    },
+    {
+      "target": "label.typography",
+      "token": "{semantic.typography.input-label}"
+    },
+    {
+      "target": "value.typography",
+      "token": "{semantic.typography.input-value}"
+    },
+    {
+      "target": "support.typography",
+      "token": "{semantic.typography.input-support}"
+    }
+  ],
+  "variants": [
+    {
+      "id": "state-default/content-empty",
+      "name": "Default / Empty",
+      "slotId": "variant/state-default/content-empty",
+      "selections": { "state": "default", "content": "empty" },
+      "textDefaults": {
+        "text": "name@example.com",
+        "supportingText": "We only use this for account updates."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-default}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-placeholder}"
+        },
+        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+      ]
+    },
+    {
+      "id": "state-default/content-filled",
+      "name": "Default / Filled",
+      "slotId": "variant/state-default/content-filled",
+      "selections": { "state": "default", "content": "filled" },
+      "textDefaults": {
+        "text": "alex@example.com",
+        "supportingText": "We only use this for account updates."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-default}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        { "target": "value.fill", "token": "{semantic.color.input-value}" },
+        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+      ]
+    },
+    {
+      "id": "state-focused/content-empty",
+      "name": "Focused / Empty",
+      "slotId": "variant/state-focused/content-empty",
+      "selections": { "state": "focused", "content": "empty" },
+      "textDefaults": {
+        "text": "name@example.com",
+        "supportingText": "We only use this for account updates."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-focused}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-focused}"
+        },
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-placeholder}"
+        },
+        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+      ]
+    },
+    {
+      "id": "state-focused/content-filled",
+      "name": "Focused / Filled",
+      "slotId": "variant/state-focused/content-filled",
+      "selections": { "state": "focused", "content": "filled" },
+      "textDefaults": {
+        "text": "alex@example.com",
+        "supportingText": "We only use this for account updates."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-focused}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-focused}"
+        },
+        { "target": "value.fill", "token": "{semantic.color.input-value}" },
+        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+      ]
+    },
+    {
+      "id": "state-error/content-empty",
+      "name": "Error / Empty",
+      "slotId": "variant/state-error/content-empty",
+      "selections": { "state": "error", "content": "empty" },
+      "textDefaults": {
+        "text": "name@example.com",
+        "supportingText": "Enter a valid email address."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-error}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-placeholder}"
+        },
+        { "target": "support.fill", "token": "{semantic.color.input-error}" }
+      ]
+    },
+    {
+      "id": "state-error/content-filled",
+      "name": "Error / Filled",
+      "slotId": "variant/state-error/content-filled",
+      "selections": { "state": "error", "content": "filled" },
+      "textDefaults": {
+        "text": "alex@",
+        "supportingText": "Enter a valid email address."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-error}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        { "target": "value.fill", "token": "{semantic.color.input-value}" },
+        { "target": "support.fill", "token": "{semantic.color.input-error}" }
+      ]
+    },
+    {
+      "id": "state-disabled/content-empty",
+      "name": "Disabled / Empty",
+      "slotId": "variant/state-disabled/content-empty",
+      "selections": { "state": "disabled", "content": "empty" },
+      "textDefaults": {
+        "text": "name@example.com",
+        "supportingText": "This field is unavailable."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-disabled}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        { "target": "value.fill", "token": "{semantic.color.input-disabled}" },
+        { "target": "support.fill", "token": "{semantic.color.input-disabled}" }
+      ]
+    },
+    {
+      "id": "state-disabled/content-filled",
+      "name": "Disabled / Filled",
+      "slotId": "variant/state-disabled/content-filled",
+      "selections": { "state": "disabled", "content": "filled" },
+      "textDefaults": {
+        "text": "alex@example.com",
+        "supportingText": "This field is unavailable."
+      },
+      "bindings": [
+        {
+          "target": "field.border",
+          "token": "{semantic.color.input-border-disabled}"
+        },
+        {
+          "target": "field.border-width",
+          "token": "{semantic.dimension.input-border-width-default}"
+        },
+        { "target": "value.fill", "token": "{semantic.color.input-disabled}" },
+        { "target": "support.fill", "token": "{semantic.color.input-disabled}" }
+      ]
+    }
+  ],
+  "accessibility": {
+    "visibleLabelRequired": true,
+    "placeholderAsOnlyLabelAllowed": false,
+    "errorMessageNearField": true,
+    "errorNotColorOnly": true,
+    "focusIndicatorRequired": true,
+    "disabledStateRequired": true,
+    "minimumInteractiveTarget": 44,
+    "minimumTextContrast": 4.5
+  }
+}

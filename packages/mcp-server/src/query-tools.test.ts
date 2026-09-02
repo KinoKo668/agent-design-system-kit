@@ -217,6 +217,35 @@ describe("Hatchkit MCP query tools", () => {
     expect(JSON.stringify(result)).not.toContain("nodeId");
   });
 
+  it("finds the governed Input exactly without exposing a Figma locator", async () => {
+    const result = await client.callTool({
+      arguments: { term: "Input / Text" },
+      name: HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      data: {
+        items: [
+          {
+            asset: { id: "input/text", version: "1.0.0" },
+            availability: "ensure-required",
+            profile: "input-v1",
+            size: "medium",
+            sources: {
+              contractSourcePath: "components/input-text.component.json",
+              registrySourcePath: "registry/inputs.registry.json",
+            },
+          },
+        ],
+        page: { returned: 1, total: 1 },
+      },
+      ok: true,
+    });
+    expect(JSON.stringify(result)).not.toContain("nodeId");
+    expect(JSON.stringify(result)).not.toContain("fileBindingId");
+  });
+
   it("returns a Toolkit Failure for a well-formed missing exact Brief", async () => {
     const result = await client.callTool({
       arguments: {
