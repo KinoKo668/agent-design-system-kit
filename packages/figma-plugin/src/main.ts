@@ -21,6 +21,8 @@ import { createFigmaButtonPort } from "./figma-button-port.js";
 import { createFigmaIconPort } from "./figma-icon-port.js";
 import { createFigmaInputPort } from "./figma-input-port.js";
 import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
+import { createFigmaPlatformInstancePort } from "./figma-platform-instance-port.js";
+import { createFigmaPlatformAuditPort } from "./figma-platform-audit-port.js";
 import { createFigmaStyleAuditPort } from "./figma-style-audit-port.js";
 import { createFigmaComponentAuditPort } from "./figma-component-audit-port.js";
 import { createFigmaRegistryDriftAuditPort } from "./figma-registry-drift-audit-port.js";
@@ -37,6 +39,14 @@ import {
   InputInstanceWriterError,
   insertFigmaInputInstance,
 } from "./input-instance-writer.js";
+import {
+  PlatformInstanceWriterError,
+  insertFigmaPlatformInstance,
+} from "./platform-instance-writer.js";
+import {
+  PlatformAuditError,
+  runFigmaPlatformAudit,
+} from "./platform-audit-runner.js";
 import {
   bindFigmaLibraryFile,
   ensureFigmaVariables,
@@ -139,6 +149,8 @@ const buttonPort = createFigmaButtonPort(figma);
 const iconPort = createFigmaIconPort(figma);
 const inputPort = createFigmaInputPort(figma);
 const buttonInstancePort = createFigmaButtonInstancePort(figma);
+const platformInstancePort = createFigmaPlatformInstancePort(figma);
+const platformAuditPort = createFigmaPlatformAuditPort(figma);
 const styleAuditPort = createFigmaStyleAuditPort(figma);
 const componentAuditPort = createFigmaComponentAuditPort(figma);
 const registryDriftAuditPort = createFigmaRegistryDriftAuditPort(figma);
@@ -229,6 +241,34 @@ async function executeCommand(
       result: { pong: true },
       schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
     };
+  } else if (
+    command.command.type === "audit.platform-components.scan" &&
+    command.approval.mode === "not_required" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: await runFigmaPlatformAudit(
+          platformAuditPort,
+          command.command.payload.plan,
+        ),
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof PlatformAuditError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message:
+                "The official Platform component audit failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect Plugin diagnostics and retry the read-only audit.",
+            });
+    }
   } else if (
     command.command.type === "audit.registry-drift.scan" &&
     command.approval.mode === "not_required" &&
@@ -549,6 +589,41 @@ async function executeCommand(
                 "Inspect the local Plugin diagnostics before retrying.",
             });
     }
+  } else if (
+    command.command.type === "instances.platform.insert" &&
+    command.approval.mode === "approved" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      const instanceResult = await insertFigmaPlatformInstance(
+        platformInstancePort,
+        command.command.payload.plan,
+        {
+          approvalId: command.approval.approvalId,
+          fileBindingId: command.target.fileBindingId,
+          operationId: command.operationId,
+          projectId: command.projectId,
+        },
+      );
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: instanceResult,
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof PlatformInstanceWriterError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message:
+                "The official Platform Instance writer failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect Plugin diagnostics and the official Library access before retrying.",
+            });
+    }
   } else {
     result = failureResult(command, pluginInstanceId, {
       code: "APPROVAL_REQUIRED",
@@ -599,7 +674,7 @@ function scheduleFileBinding(binding: FigmaLibraryFileBinding): void {
       publishFileBinding();
       figma.notify(
         result.status === "bound"
-          ? "This file is now bound as the Hatchkit design-system library."
+          ? `This file is now bound as a Hatchkit ${binding.fileRole}.`
           : "This file already has the same Hatchkit binding.",
         { timeout: 3000 },
       );

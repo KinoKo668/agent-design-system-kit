@@ -28,6 +28,15 @@ import { createToolkitError } from "./errors.js";
 import type { JsonObject, JsonValue } from "./json.js";
 import { createFailureResult, createSuccessResult } from "./results.js";
 import type { FailureResult, ToolkitResult } from "./results.js";
+import {
+  platformComponentRegistrySchema,
+  platformTargetSchema,
+  toPlatformBindingDigestSubject,
+  toPlatformTargetDigestSubject,
+  validatePlatformComponentRegistryWithAssets,
+  type PlatformComponentRegistry,
+  type PlatformTarget,
+} from "./platform-library.js";
 import { stableIdSegmentSchema } from "./schema-primitives.js";
 import { compareSemanticVersions } from "./semantic-version.js";
 import { toJsonPointer, toValidationIssues } from "./schema-validation.js";
@@ -43,6 +52,8 @@ export const DESIGN_SYSTEM_DOCUMENT_KINDS = [
   "component",
   "component-registry",
   "direction",
+  "platform-component-registry",
+  "platform-target",
   "token-set",
 ] as const;
 
@@ -65,6 +76,8 @@ export interface DesignSystemSnapshot {
   readonly briefs: readonly LocatedDesignAsset<DesignBrief>[];
   readonly components: readonly LocatedDesignAsset<ComponentContract>[];
   readonly directions: readonly LocatedDesignAsset<DirectionReview>[];
+  readonly platformRegistries: readonly LocatedDesignAsset<PlatformComponentRegistry>[];
+  readonly platformTargets: readonly LocatedDesignAsset<PlatformTarget>[];
   readonly projectId: string;
   readonly registries: readonly LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: readonly LocatedDesignAsset<TokenSet>[];
@@ -85,6 +98,8 @@ interface MutableSnapshot {
   readonly briefs: LocatedDesignAsset<DesignBrief>[];
   readonly components: LocatedDesignAsset<ComponentContract>[];
   readonly directions: LocatedDesignAsset<DirectionReview>[];
+  readonly platformRegistries: LocatedDesignAsset<PlatformComponentRegistry>[];
+  readonly platformTargets: LocatedDesignAsset<PlatformTarget>[];
   readonly registries: LocatedDesignAsset<ComponentRegistry>[];
   readonly tokenSets: LocatedDesignAsset<TokenSet>[];
 }
@@ -201,6 +216,18 @@ function briefIdentity(brief: DesignBrief): string {
 
 function directionIdentity(direction: DirectionReview): string {
   return `${direction.projectId}/direction/${direction.assetId}@${direction.assetVersion}`;
+}
+
+function platformTargetIdentity(target: PlatformTarget): string {
+  return `${target.projectId}/platform-target/${target.assetId}@${target.assetVersion}`;
+}
+
+function platformBindingIdentity(
+  projectId: string,
+  bindingId: string,
+  bindingVersion: string,
+): string {
+  return `${projectId}/platform-binding/${bindingId}@${bindingVersion}`;
 }
 
 function approvalIdentity(approval: ApprovalRecord): string {
@@ -340,6 +367,104 @@ function validateMergedRegistries(
   }
 }
 
+function validateMergedPlatformRegistries(
+  expectedProjectId: string,
+  snapshot: MutableSnapshot,
+  issues: DesignSystemIntegrityIssue[],
+): void {
+  if (snapshot.platformRegistries.length < 2) return;
+  const entries: PlatformComponentRegistry["entries"][number][] = [];
+  const locations: RegistryEntryLocation[] = [];
+  for (const registry of snapshot.platformRegistries) {
+    registry.data.entries.forEach((entry, localEntryIndex) => {
+      entries.push(entry);
+      locations.push({ localEntryIndex, sourcePath: registry.sourcePath });
+    });
+  }
+  const result = platformComponentRegistrySchema.safeParse({
+    entries,
+    projectId: expectedProjectId,
+    registryType: "platform-component-registry",
+    schemaVersion: "1.0.0",
+  });
+  if (result.success) return;
+  for (const issue of result.error.issues) {
+    const globalEntryIndex =
+      issue.path[0] === "entries" ? issue.path[1] : undefined;
+    const location =
+      typeof globalEntryIndex === "number"
+        ? locations[globalEntryIndex]
+        : undefined;
+    const localPath =
+      location === undefined
+        ? issue.path
+        : ["entries", location.localEntryIndex, ...issue.path.slice(2)];
+    issues.push({
+      code: issue.code,
+      message: issue.message,
+      path: toJsonPointer(localPath),
+      sourcePath:
+        location?.sourcePath ??
+        snapshot.platformRegistries[0]?.sourcePath ??
+        ".",
+    });
+  }
+}
+
+function validatePlatformRegistryReferences(
+  snapshot: MutableSnapshot,
+  issues: DesignSystemIntegrityIssue[],
+): void {
+  for (const registry of snapshot.platformRegistries) {
+    const result = validatePlatformComponentRegistryWithAssets(
+      registry.data,
+      snapshot.platformTargets.map(({ data }) => data),
+      snapshot.components.map(({ data }) => data),
+    );
+    if (!result.ok) {
+      for (const issue of extractValidationIssues(
+        result.error.context?.details?.issues,
+      )) {
+        issues.push({ ...issue, sourcePath: registry.sourcePath });
+      }
+    }
+    registry.data.entries.forEach((entry, entryIndex) => {
+      if (entry.review.status !== "approved") return;
+      const approval = snapshot.approvals.find(
+        ({ data }) => data.approvalId === entry.review.approvalId,
+      );
+      const path = `/entries/${String(entryIndex)}/review/approvalId`;
+      if (approval === undefined) {
+        issues.push({
+          code: "missing_reference",
+          message: `Platform binding Approval '${entry.review.approvalId}' was not loaded.`,
+          path,
+          sourcePath: registry.sourcePath,
+        });
+        return;
+      }
+      const subject = approval.data.subject;
+      if (
+        approval.data.status !== "approved" ||
+        subject.type !== "platform-binding" ||
+        subject.projectId !== registry.data.projectId ||
+        subject.assetId !== entry.bindingId ||
+        subject.assetVersion !== entry.bindingVersion ||
+        subject.contentDigest !== entry.contentDigest
+      ) {
+        issues.push({
+          code: "approval_dependency_mismatch",
+          message:
+            "Platform binding review does not match an approved exact binding subject.",
+          path,
+          relatedSourcePath: approval.sourcePath,
+          sourcePath: registry.sourcePath,
+        });
+      }
+    });
+  }
+}
+
 function validateRegistryComponentReferences(
   snapshot: MutableSnapshot,
   issues: DesignSystemIntegrityIssue[],
@@ -436,6 +561,27 @@ function validateApprovalReferences(
       located,
     ]),
   );
+  const platformTargets = new Map(
+    snapshot.platformTargets.map((located) => [
+      platformTargetIdentity(located.data),
+      located,
+    ]),
+  );
+  const platformBindings = new Map(
+    snapshot.platformRegistries.flatMap((registry) =>
+      registry.data.entries.map(
+        (entry) =>
+          [
+            platformBindingIdentity(
+              registry.data.projectId,
+              entry.bindingId,
+              entry.bindingVersion,
+            ),
+            { data: entry, sourcePath: registry.sourcePath },
+          ] as const,
+      ),
+    ),
+  );
 
   for (const located of snapshot.approvals) {
     const approval = located.data;
@@ -495,6 +641,36 @@ function validateApprovalReferences(
       } else {
         subjectDigest = calculateDigest(
           toComponentContractDigestSubject(asset.data),
+        );
+        subjectSourcePath = asset.sourcePath;
+      }
+    } else if (approval.subject.type === "platform-target") {
+      const asset = platformTargets.get(subjectKey);
+      if (asset === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/subject",
+          subjectKey,
+        );
+      } else {
+        subjectDigest = calculateDigest(
+          toPlatformTargetDigestSubject(asset.data),
+        );
+        subjectSourcePath = asset.sourcePath;
+      }
+    } else if (approval.subject.type === "platform-binding") {
+      const asset = platformBindings.get(subjectKey);
+      if (asset === undefined) {
+        addMissingApprovalReference(
+          issues,
+          located.sourcePath,
+          "/subject",
+          subjectKey,
+        );
+      } else {
+        subjectDigest = calculateDigest(
+          toPlatformBindingDigestSubject(asset.data),
         );
         subjectSourcePath = asset.sourcePath;
       }
@@ -686,6 +862,8 @@ export function validateDesignSystemSnapshot(
     briefs: [],
     components: [],
     directions: [],
+    platformRegistries: [],
+    platformTargets: [],
     registries: [],
     tokenSets: [],
   };
@@ -802,6 +980,44 @@ export function validateDesignSystemSnapshot(
       continue;
     }
 
+    if (document.kind === "platform-target") {
+      const result = platformTargetSchema.safeParse(document.value);
+      if (!result.success) {
+        addZodIssues(issues, document.sourcePath, result.error);
+      } else {
+        addProjectMismatch(
+          issues,
+          expectedProjectId,
+          document.sourcePath,
+          result.data.projectId,
+        );
+        snapshot.platformTargets.push({
+          data: result.data,
+          sourcePath: document.sourcePath,
+        });
+      }
+      continue;
+    }
+
+    if (document.kind === "platform-component-registry") {
+      const result = platformComponentRegistrySchema.safeParse(document.value);
+      if (!result.success) {
+        addZodIssues(issues, document.sourcePath, result.error);
+      } else {
+        addProjectMismatch(
+          issues,
+          expectedProjectId,
+          document.sourcePath,
+          result.data.projectId,
+        );
+        snapshot.platformRegistries.push({
+          data: result.data,
+          sourcePath: document.sourcePath,
+        });
+      }
+      continue;
+    }
+
     const result = componentRegistrySchema.safeParse(document.value);
     if (!result.success) {
       addZodIssues(issues, document.sourcePath, result.error);
@@ -844,6 +1060,11 @@ export function validateDesignSystemSnapshot(
     ({ data }) => directionIdentity(data),
     issues,
   );
+  addDuplicateAssetIssues(
+    snapshot.platformTargets,
+    ({ data }) => platformTargetIdentity(data),
+    issues,
+  );
 
   if (issues.length > 0) {
     return createDesignSystemIntegrityFailure(issues);
@@ -853,6 +1074,8 @@ export function validateDesignSystemSnapshot(
   validateDirectionBriefReferences(snapshot, issues);
   validateMergedRegistries(expectedProjectId, snapshot, issues);
   validateRegistryComponentReferences(snapshot, issues);
+  validateMergedPlatformRegistries(expectedProjectId, snapshot, issues);
+  validatePlatformRegistryReferences(snapshot, issues);
   if (issues.length > 0) {
     return createDesignSystemIntegrityFailure(issues);
   }
@@ -862,6 +1085,8 @@ export function validateDesignSystemSnapshot(
     briefs: snapshot.briefs,
     components: snapshot.components,
     directions: snapshot.directions,
+    platformRegistries: snapshot.platformRegistries,
+    platformTargets: snapshot.platformTargets,
     projectId: expectedProjectId,
     registries: snapshot.registries,
     tokenSets: snapshot.tokenSets,
@@ -945,6 +1170,37 @@ export function verifyDesignSystemContentDigests(
           sourcePath: component.sourcePath,
         });
       }
+    }
+    for (const target of snapshot.platformTargets) {
+      if (
+        target.data.contentDigest !== undefined &&
+        calculateDigest(toPlatformTargetDigestSubject(target.data)) !==
+          target.data.contentDigest
+      ) {
+        issues.push({
+          code: "content_digest_mismatch",
+          message:
+            "Stored Platform Target contentDigest does not match its canonical content.",
+          path: "/contentDigest",
+          sourcePath: target.sourcePath,
+        });
+      }
+    }
+    for (const registry of snapshot.platformRegistries) {
+      registry.data.entries.forEach((entry, entryIndex) => {
+        if (
+          calculateDigest(toPlatformBindingDigestSubject(entry)) !==
+          entry.contentDigest
+        ) {
+          issues.push({
+            code: "content_digest_mismatch",
+            message:
+              "Stored Platform Binding contentDigest does not match its canonical content.",
+            path: `/entries/${String(entryIndex)}/contentDigest`,
+            sourcePath: registry.sourcePath,
+          });
+        }
+      });
     }
     validateDirectionBriefReferences(snapshot, issues, calculateDigest);
     validateApprovalReferences(snapshot, issues, calculateDigest);

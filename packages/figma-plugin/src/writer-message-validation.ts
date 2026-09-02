@@ -16,6 +16,8 @@ const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-z-][0-9a-z-]*))*))?(?:\+([0-9a-z-]+(?:\.[0-9a-z-]+)*))?$/iu;
 const TOKEN_APPROVAL_ID_PATTERN = /^approval\.tokens\.[a-z0-9.+-]+$/u;
 const COMPONENT_APPROVAL_ID_PATTERN = /^approval\.component\.[a-z0-9.+-]+$/u;
+const PLATFORM_BINDING_APPROVAL_ID_PATTERN =
+  /^approval\.platform-binding\.[a-z0-9.+-]+$/u;
 const DELIVERY_KEYS = new Set([
   "approval",
   "attempt",
@@ -1608,6 +1610,168 @@ function isPingCommand(value: Record<string, unknown>): boolean {
   );
 }
 
+function isFigmaPlatformInstancePlan(
+  value: unknown,
+): value is Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(
+      value,
+      new Set([
+        "constraints",
+        "instance",
+        "propertyOverrides",
+        "schemaVersion",
+        "selectedVariantId",
+        "source",
+      ]),
+    ) ||
+    value.schemaVersion !== "1.0.0" ||
+    !isStableAssetId(value.selectedVariantId) ||
+    !isRecord(value.constraints) ||
+    !hasOnlyKeys(
+      value.constraints,
+      new Set([
+        "allowComponentMutation",
+        "allowDetach",
+        "allowFallback",
+        "requireRemote",
+      ]),
+    ) ||
+    value.constraints.allowComponentMutation !== false ||
+    value.constraints.allowDetach !== false ||
+    value.constraints.allowFallback !== false ||
+    value.constraints.requireRemote !== true ||
+    !isRecord(value.instance) ||
+    !hasOnlyKeys(value.instance, new Set(["stableId", "x", "y"])) ||
+    !isStableAssetId(value.instance.stableId) ||
+    ![value.instance.x, value.instance.y].every(
+      (position) =>
+        typeof position === "number" &&
+        Number.isFinite(position) &&
+        position >= -1_000_000 &&
+        position <= 1_000_000,
+    ) ||
+    !Array.isArray(value.propertyOverrides) ||
+    value.propertyOverrides.length > 64 ||
+    !value.propertyOverrides.every(
+      (property) =>
+        isRecord(property) &&
+        hasOnlyKeys(
+          property,
+          new Set(["contractPropertyId", "figmaPropertyName", "value"]),
+        ) &&
+        isStableAssetId(property.contractPropertyId) &&
+        isBoundedString(property.figmaPropertyName, 1, 240) &&
+        isBoundedString(property.value, 1, 1_000) &&
+        property.value.trim() === property.value,
+    ) ||
+    !isRecord(value.source) ||
+    !hasOnlyKeys(
+      value.source,
+      new Set([
+        "approvalId",
+        "bindingId",
+        "bindingVersion",
+        "componentContentDigest",
+        "componentId",
+        "componentKey",
+        "componentVersion",
+        "contentDigest",
+        "fileBindingId",
+        "libraryId",
+        "libraryKey",
+        "platformTargetContentDigest",
+        "platformTargetId",
+        "platformTargetVersion",
+        "projectId",
+        "vendor",
+        "verifiedAt",
+      ]),
+    )
+  ) {
+    return false;
+  }
+  const source = value.source;
+  const propertyIds = value.propertyOverrides.map(
+    (property) => (property as Record<string, unknown>).contractPropertyId,
+  );
+  return (
+    PLATFORM_BINDING_APPROVAL_ID_PATTERN.test(String(source.approvalId)) &&
+    isStableAssetId(source.bindingId) &&
+    SEMVER_PATTERN.test(String(source.bindingVersion)) &&
+    CONTENT_DIGEST_PATTERN.test(String(source.componentContentDigest)) &&
+    isStableAssetId(source.componentId) &&
+    isBoundedString(source.componentKey, 8, 256) &&
+    /^[a-z0-9_-]+$/iu.test(String(source.componentKey)) &&
+    SEMVER_PATTERN.test(String(source.componentVersion)) &&
+    CONTENT_DIGEST_PATTERN.test(String(source.contentDigest)) &&
+    isUuid(source.fileBindingId) &&
+    isStableAssetId(source.libraryId) &&
+    isBoundedString(source.libraryKey, 8, 256) &&
+    /^[a-z0-9_-]+$/iu.test(String(source.libraryKey)) &&
+    CONTENT_DIGEST_PATTERN.test(String(source.platformTargetContentDigest)) &&
+    isStableAssetId(source.platformTargetId) &&
+    SEMVER_PATTERN.test(String(source.platformTargetVersion)) &&
+    isStableIdSegment(source.projectId) &&
+    ["apple", "google"].includes(String(source.vendor)) &&
+    isBoundedString(source.verifiedAt, 1, 64) &&
+    !Number.isNaN(Date.parse(String(source.verifiedAt))) &&
+    source.approvalId ===
+      `approval.platform-binding.${String(source.bindingId).replaceAll("/", ".")}.${String(source.bindingVersion)}` &&
+    String(value.instance.stableId).startsWith(
+      `${String(source.projectId)}/instance/`,
+    ) &&
+    new Set(propertyIds).size === propertyIds.length
+  );
+}
+
+function isPlatformInstanceCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "instances.platform.insert" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isFigmaPlatformInstancePlan(value.payload.plan) ||
+    approval.mode !== "approved" ||
+    !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
+    !PLATFORM_BINDING_APPROVAL_ID_PATTERN.test(String(approval.approvalId)) ||
+    !isRecord(approval.subject) ||
+    !hasOnlyKeys(
+      approval.subject,
+      new Set([
+        "assetId",
+        "assetVersion",
+        "contentDigest",
+        "projectId",
+        "type",
+      ]),
+    ) ||
+    approval.subject.type !== "platform-binding" ||
+    target.kind !== "figma-file" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  ) {
+    return false;
+  }
+  const source = value.payload.plan.source;
+  return (
+    isRecord(source) &&
+    approval.approvalId === source.approvalId &&
+    approval.subject.projectId === source.projectId &&
+    approval.subject.assetId === source.bindingId &&
+    approval.subject.assetVersion === source.bindingVersion &&
+    approval.subject.contentDigest === source.contentDigest &&
+    target.fileBindingId === source.fileBindingId &&
+    projectId === source.projectId
+  );
+}
+
 function isVariablesCommand(
   value: Record<string, unknown>,
   approval: Record<string, unknown>,
@@ -2064,6 +2228,76 @@ function isRegistryDriftAuditPlan(value: unknown): boolean {
   );
 }
 
+function isPlatformAuditPlan(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(
+      value,
+      new Set([
+        "fileBindingId",
+        "projectId",
+        "schemaVersion",
+        "scope",
+        "sources",
+      ]),
+    ) ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    !isStableIdSegment(value.projectId) ||
+    !isUuid(value.fileBindingId) ||
+    !Array.isArray(value.sources) ||
+    value.sources.length < 1 ||
+    value.sources.length > 5_000
+  ) {
+    return false;
+  }
+  const identities = new Set<string>();
+  return value.sources.every((source: unknown) => {
+    if (
+      !isRecord(source) ||
+      !hasOnlyKeys(
+        source,
+        new Set([
+          "bindingId",
+          "bindingVersion",
+          "componentKeys",
+          "contentDigest",
+          "libraryId",
+          "libraryKey",
+          "platform",
+          "platformTargetId",
+          "platformTargetVersion",
+          "releaseChannel",
+          "vendor",
+        ]),
+      ) ||
+      !isStableAssetId(source.bindingId) ||
+      !SEMVER_PATTERN.test(String(source.bindingVersion)) ||
+      !Array.isArray(source.componentKeys) ||
+      source.componentKeys.length < 1 ||
+      source.componentKeys.length > 256 ||
+      !source.componentKeys.every(
+        (key) => isBoundedString(key, 8, 256) && /^[a-z0-9_-]+$/iu.test(key),
+      ) ||
+      new Set(source.componentKeys).size !== source.componentKeys.length ||
+      !CONTENT_DIGEST_PATTERN.test(String(source.contentDigest)) ||
+      !isStableAssetId(source.libraryId) ||
+      !isBoundedString(source.libraryKey, 8, 256) ||
+      !["android", "ios", "ipados"].includes(String(source.platform)) ||
+      !isStableAssetId(source.platformTargetId) ||
+      !SEMVER_PATTERN.test(String(source.platformTargetVersion)) ||
+      !["preview", "stable"].includes(String(source.releaseChannel)) ||
+      !["apple", "google"].includes(String(source.vendor))
+    ) {
+      return false;
+    }
+    const identity = `${String(source.bindingId)}@${String(source.bindingVersion)}`;
+    if (identities.has(identity)) return false;
+    identities.add(identity);
+    return true;
+  });
+}
+
 function isComponentAuditCommand(
   value: Record<string, unknown>,
   approval: Record<string, unknown>,
@@ -2144,6 +2378,30 @@ function isRegistryDriftAuditCommand(
   );
 }
 
+function isPlatformAuditCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  return (
+    value.type === "audit.platform-components.scan" &&
+    isRecord(value.payload) &&
+    hasOnlyKeys(value.payload, new Set(["plan"])) &&
+    isPlatformAuditPlan(value.payload.plan) &&
+    isRecord(value.payload.plan) &&
+    hasOnlyKeys(approval, new Set(["mode", "reason"])) &&
+    approval.mode === "not_required" &&
+    approval.reason === "read_only_diagnostic" &&
+    hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) &&
+    target.kind === "figma-file" &&
+    isUuid(target.fileBindingId) &&
+    isStableAssetId(target.stableId) &&
+    projectId === value.payload.plan.projectId &&
+    target.fileBindingId === value.payload.plan.fileBindingId
+  );
+}
+
 export function isWriterCommandDelivery(
   value: unknown,
 ): value is WriterCommandDelivery {
@@ -2178,6 +2436,16 @@ export function isWriterCommandDelivery(
   }
   if (
     isRegistryDriftAuditCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    )
+  ) {
+    return true;
+  }
+  if (
+    isPlatformAuditCommand(
       value.command,
       value.approval,
       value.target,
@@ -2244,6 +2512,12 @@ export function isWriterCommandDelivery(
       value.projectId,
     ) ||
     isInputInstanceCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
+    ) ||
+    isPlatformInstanceCommand(
       value.command,
       value.approval,
       value.target,
@@ -2466,6 +2740,132 @@ function isInputInstanceResult(value: Record<string, unknown>): boolean {
     isRecord(value.variant) &&
     hasOnlyKeys(value.variant, new Set(["stableId"])) &&
     isStableAssetId(value.variant.stableId)
+  );
+}
+
+function isPlatformInstanceResult(value: Record<string, unknown>): boolean {
+  return (
+    hasOnlyKeys(value, new Set(["component", "instance", "type"])) &&
+    value.type === "instances.platform.insert" &&
+    isRecord(value.component) &&
+    hasOnlyKeys(value.component, new Set(["key", "remote"])) &&
+    isBoundedString(value.component.key, 8, 256) &&
+    value.component.remote === true &&
+    isRecord(value.instance) &&
+    hasOnlyKeys(
+      value.instance,
+      new Set(["action", "detached", "nodeId", "stableId"]),
+    ) &&
+    ["created", "recovered", "unchanged"].includes(
+      String(value.instance.action),
+    ) &&
+    value.instance.detached === false &&
+    /^\d+:\d+$/u.test(String(value.instance.nodeId)) &&
+    isStableAssetId(value.instance.stableId)
+  );
+}
+
+function isPlatformAuditResult(value: Record<string, unknown>): boolean {
+  if (
+    !hasOnlyKeys(
+      value,
+      new Set([
+        "findings",
+        "page",
+        "passed",
+        "schemaVersion",
+        "scope",
+        "summary",
+        "type",
+      ]),
+    ) ||
+    value.type !== "audit.platform-components.scan" ||
+    value.schemaVersion !== "1.0.0" ||
+    value.scope !== "current-page" ||
+    typeof value.passed !== "boolean" ||
+    !Array.isArray(value.findings) ||
+    value.findings.length > 10_000 ||
+    !isRecord(value.page) ||
+    !hasOnlyKeys(value.page, new Set(["id", "name"])) ||
+    !/^\d+:\d+$/u.test(String(value.page.id)) ||
+    !isBoundedString(value.page.name, 1, 256) ||
+    !isRecord(value.summary) ||
+    !hasOnlyKeys(
+      value.summary,
+      new Set([
+        "auditedInstances",
+        "compliantInstances",
+        "detached",
+        "provenanceMismatches",
+        "sourceKeyMismatches",
+        "targetMismatches",
+        "unregisteredBindings",
+      ]),
+    ) ||
+    !Object.values(value.summary).every(
+      (count) => Number.isSafeInteger(count) && Number(count) >= 0,
+    )
+  ) {
+    return false;
+  }
+  const platformFindings = value.findings as unknown[];
+  const findingsValid = platformFindings.every(
+    (finding) =>
+      isRecord(finding) &&
+      hasOnlyKeys(
+        finding,
+        new Set([
+          "actual",
+          "code",
+          "expected",
+          "node",
+          "recoveryInstruction",
+          "severity",
+        ]),
+      ) &&
+      [
+        "OFFICIAL_INSTANCE_DETACHED",
+        "OFFICIAL_SOURCE_KEY_MISMATCH",
+        "PLATFORM_BINDING_UNREGISTERED",
+        "PLATFORM_PROVENANCE_MISMATCH",
+        "PLATFORM_TARGET_MISMATCH",
+      ].includes(String(finding.code)) &&
+      finding.severity === "error" &&
+      isRecord(finding.actual) &&
+      isRecord(finding.expected) &&
+      isRecord(finding.node) &&
+      hasOnlyKeys(finding.node, new Set(["id", "name", "type"])) &&
+      /^\d+:\d+$/u.test(String(finding.node.id)) &&
+      isBoundedString(finding.node.name, 1, 256) &&
+      isBoundedString(finding.node.type, 1, 64) &&
+      isBoundedString(finding.recoveryInstruction, 1, 500),
+  );
+  if (!findingsValid) return false;
+  const count = (code: string) =>
+    platformFindings.filter(
+      (finding) => isRecord(finding) && finding.code === code,
+    ).length;
+  const nodesWithFindings = new Set(
+    platformFindings.flatMap((finding) =>
+      isRecord(finding) &&
+      isRecord(finding.node) &&
+      typeof finding.node.id === "string"
+        ? [finding.node.id]
+        : [],
+    ),
+  ).size;
+  return (
+    value.passed === (platformFindings.length === 0) &&
+    value.summary.detached === count("OFFICIAL_INSTANCE_DETACHED") &&
+    value.summary.provenanceMismatches ===
+      count("PLATFORM_PROVENANCE_MISMATCH") &&
+    value.summary.sourceKeyMismatches ===
+      count("OFFICIAL_SOURCE_KEY_MISMATCH") &&
+    value.summary.targetMismatches === count("PLATFORM_TARGET_MISMATCH") &&
+    value.summary.unregisteredBindings ===
+      count("PLATFORM_BINDING_UNREGISTERED") &&
+    value.summary.auditedInstances ===
+      Number(value.summary.compliantInstances) + nodesWithFindings
   );
 }
 
@@ -2716,6 +3116,8 @@ export function isWriterPluginResult(
         isButtonInstanceResult(value.result) ||
         isIconInstanceResult(value.result) ||
         isInputInstanceResult(value.result) ||
+        isPlatformInstanceResult(value.result) ||
+        isPlatformAuditResult(value.result) ||
         isRegistryDriftAuditResult(value.result) ||
         isComponentAuditResult(value.result) ||
         isStyleAuditResult(value.result))

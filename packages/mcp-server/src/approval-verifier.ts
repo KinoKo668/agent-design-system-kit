@@ -7,6 +7,7 @@ import {
   createFigmaIconInstancePlan,
   createFigmaInputPlan,
   createFigmaInputInstancePlan,
+  createFigmaPlatformInstancePlan,
   createFigmaVariablePlan,
   createToolkitError,
   type DesignSystemSnapshot,
@@ -53,6 +54,21 @@ function planMismatchError(command: WriterCommandEnvelope): ToolkitError {
   });
 }
 
+function resolvePlatformVariantSelections(
+  snapshot: DesignSystemSnapshot,
+  componentId: string,
+  componentVersion: string,
+  variantId: string,
+): Readonly<Record<string, string>> {
+  const component = snapshot.components.find(
+    ({ data }) =>
+      data.assetId === componentId && data.assetVersion === componentVersion,
+  )?.data;
+  return (
+    component?.variants.find(({ id }) => id === variantId)?.selections ?? {}
+  );
+}
+
 function verifyDeterministicPlan(
   snapshot: DesignSystemSnapshot,
   command: WriterCommandEnvelope,
@@ -79,6 +95,41 @@ function verifyDeterministicPlan(
     return !expected.ok ||
       canonicalizeJson(expected.data) !==
         canonicalizeJson(command.command.payload.plan)
+      ? planMismatchError(command)
+      : null;
+  }
+
+  if (command.command.type === "instances.platform.insert") {
+    const plan = command.command.payload.plan;
+    const prefix = `${plan.source.projectId}/instance/`;
+    if (!plan.instance.stableId.startsWith(prefix)) {
+      return planMismatchError(command);
+    }
+    const expected = createFigmaPlatformInstancePlan(snapshot, {
+      assetId: plan.source.componentId,
+      assetVersion: plan.source.componentVersion,
+      fileBindingId: plan.source.fileBindingId,
+      instanceId: plan.instance.stableId.slice(prefix.length),
+      platformTargetId: plan.source.platformTargetId,
+      platformTargetVersion: plan.source.platformTargetVersion,
+      projectId: plan.source.projectId,
+      propertyValues: Object.fromEntries(
+        plan.propertyOverrides.map(({ contractPropertyId, value }) => [
+          contractPropertyId,
+          value,
+        ]),
+      ),
+      variantSelections: resolvePlatformVariantSelections(
+        snapshot,
+        plan.source.componentId,
+        plan.source.componentVersion,
+        plan.selectedVariantId,
+      ),
+      x: plan.instance.x,
+      y: plan.instance.y,
+    });
+    return !expected.ok ||
+      canonicalizeJson(expected.data) !== canonicalizeJson(plan)
       ? planMismatchError(command)
       : null;
   }

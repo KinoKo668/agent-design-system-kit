@@ -45,6 +45,8 @@ Catalog options (repeat source options when needed):
   --token-set <path>      Relative *.tokens.json source
   --component <path>      Relative *.component.json source
   --registry <path>       Relative *.registry.json source
+  --platform-target <path> Relative *.platform-target.json source
+  --platform-registry <path> Relative *.platform-registry.json source
 
 Search options:
   --term <exact-term>     Exact asset ID, name, or profile term
@@ -96,6 +98,8 @@ const COMMON_OPTIONS = new Set([
   "--brief",
   "--component",
   "--direction-review",
+  "--platform-registry",
+  "--platform-target",
   "--project",
   "--registry",
   "--root",
@@ -106,6 +110,8 @@ const SOURCE_OPTIONS = new Set([
   "--brief",
   "--component",
   "--direction-review",
+  "--platform-registry",
+  "--platform-target",
   "--registry",
   "--token-set",
 ]);
@@ -247,6 +253,8 @@ function toSources(
     ["--brief", "brief"],
     ["--component", "component"],
     ["--direction-review", "direction"],
+    ["--platform-registry", "platform-component-registry"],
+    ["--platform-target", "platform-target"],
     ["--registry", "component-registry"],
     ["--token-set", "token-set"],
   ];
@@ -298,6 +306,8 @@ function validationSummary(snapshot: DesignSystemSnapshot): JsonObject {
       briefs: snapshot.briefs.length,
       components: snapshot.components.length,
       directions: snapshot.directions.length,
+      platformRegistries: snapshot.platformRegistries.length,
+      platformTargets: snapshot.platformTargets.length,
       registries: snapshot.registries.length,
       tokenSets: snapshot.tokenSets.length,
     },
@@ -307,6 +317,8 @@ function validationSummary(snapshot: DesignSystemSnapshot): JsonObject {
       ...snapshot.briefs.map(({ sourcePath }) => sourcePath),
       ...snapshot.components.map(({ sourcePath }) => sourcePath),
       ...snapshot.directions.map(({ sourcePath }) => sourcePath),
+      ...snapshot.platformRegistries.map(({ sourcePath }) => sourcePath),
+      ...snapshot.platformTargets.map(({ sourcePath }) => sourcePath),
       ...snapshot.registries.map(({ sourcePath }) => sourcePath),
       ...snapshot.tokenSets.map(({ sourcePath }) => sourcePath),
     ].sort(),

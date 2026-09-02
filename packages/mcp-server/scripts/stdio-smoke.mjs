@@ -19,6 +19,7 @@ const EXPECTED_TOOL_NAMES = [
   "hatchkit_search_components",
   "hatchkit_resolve_component",
   "hatchkit_request_component_change",
+  "hatchkit_resolve_platform_component",
 ];
 
 async function captureProcess(arguments_) {

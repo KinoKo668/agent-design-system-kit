@@ -87,6 +87,8 @@ Registry · 历史             │
 
 **`v0.1.0-alpha.1` 是 Hatch 的首个公开源码预发布。自动化 Button 链路现已覆盖 Agent 精确查询、Registry 驱动的 Instance 编排、三类 Figma 审计、失败恢复和发布门禁。真实审批与独立 Figma Desktop 视觉验收尚未完成，因此还不可用于生产环境。**
 
+尚未发布的平台组件能力现已加入明确的 iOS／iPadOS 与 Android Target、仅外部引用的 Apple／Google Library Binding、官方 Component 精确解析、远程 Instance Writer 和来源审计。本地自动化已经完成；Apple iOS 26／27 与 Google Material 3 的真实 Key 仍需设计师使用自己的 Figma 权限完成验收。
+
 目前已经完成：
 
 - 固定依赖边界的 pnpm Workspace；
@@ -115,7 +117,7 @@ Registry · 历史             │
 - 只监听回环地址的认证 HTTP Bridge，提供单 Plugin 所有权、FIFO、单在途租约、幂等重放、结构化结果与 30 天脱敏 Operation Log；
 - Session Token 只驻留内存的连接流程，以及不会修改 Figma 的 `writer.ping` 完整往返验证；
 - 严格的 Variable Plan 与 `variables.ensure` Adapter：把 Button Token Fixture 映射为一个 Major Collection、30 个真实 Variable、精确 Scope、Alias、Code Syntax 和稳定托管身份，并支持无写入重试与部分恢复；
-- 需要设计师二次确认的 Figma 文件绑定入口：未绑定库文件只初始化一次，同一身份可安全重放，不同身份或损坏记录不会被自动覆盖或改绑；
+- 需要设计师二次确认的 Figma 文件绑定入口：明确区分设计系统库文件与产品页面文件，任一角色都只初始化一次，同一身份可安全重放，不同身份、角色或损坏记录不会被自动覆盖或改绑；
 - 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
 - 确定性的 Button Writer：建立或收敛一个真实 Main Component Set、四个已批准 Variant、Label 属性与准确 Variable Binding，不重复创建近似资产；
 - 确定性的 Icon Writer 与 `components.icon.ensure` 协议链路：建立或收敛一个三尺寸 Component Set、真实 Vector Glyph、准确 Variable Binding 与稳定 Marker，并支持无变化重试和部分恢复；
@@ -131,6 +133,8 @@ Registry · 历史             │
 - 只读 `hatchkit_audit_styles` MCP Tool：从当前 Git 设计事实生成已登记 Variable 允许清单，扫描绑定的 Figma 当前页面，并用准确 Node 与字段证据报告硬编码样式和外部 Variable；
 - 只读 `hatchkit_audit_components` MCP Tool：把真实 Instance、托管 Marker、Component Set 来源、批准 Variant 与当前 Variant Properties 和 Active Registry 交叉核对；
 - 只读 `hatchkit_audit_registry_drift` MCP Tool：盘点整个已绑定 Figma Library，报告双方缺失、重复身份、无效 Marker、版本／摘要／Locator 冲突以及不完整的 Variable／Variant 集合；
+- iOS／iPadOS 26 Stable、iOS／iPadOS 27 Preview 与 Android／Material 3 的版本化 Platform Target 和外部 Platform Component Registry，校验官方来源、发布通道、实现框架、授权边界、准确 Key、属性映射、审批与内容摘要；
+- 可选的 `hatchkit_resolve_platform_component`、`hatchkit_insert_platform_instance` 与 `hatchkit_audit_platform_components`：解析准确且已批准的厂商组件，以不 Detach 的方式保留远程 Figma Instance，并检查来源、Key、Target、Binding 与 Provenance 漂移；
 - 纳入发布门禁的 Agent 黄金路径回归：在同一个公开 Demo 场景中依次验证 MCP 状态、Button 精确搜索与解析、幂等插入编排和三类审计 Tool；
 - 系统级失败矩阵回归：证明资源缺失与 Plugin 断线不会产生 Figma 派发，精确重试不会增加 Operation，同一幂等身份下改变意图会被拒绝；
 - 架构、稳定身份、版本、幂等和迁移策略的冻结决策；
@@ -222,6 +226,7 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [系统边界与端到端数据流](docs/ARCH-001-系统边界与端到端数据流.md)
 - [工程技术栈与 Monorepo 方案](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [稳定身份、版本、幂等与迁移策略](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [平台官方组件库优先与外部资产边界](docs/ADR-003-平台官方组件库优先与外部资产边界.md)
 - [统一结果、错误与日志模型](docs/CORE-001-统一结果错误与日志模型.md)
 - [本地凭据与日志脱敏策略](docs/SEC-001-本地凭据与日志脱敏策略.md)
 - [Design Brief Schema](docs/SCH-001-Design-Brief-Schema.md)
@@ -230,9 +235,11 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [Icon 契约与 Figma 组件链路](docs/COMP-001-Icon契约与Figma组件链路.md)
 - [Input 契约与 Figma 组件链路](docs/COMP-002-Input契约与Figma组件链路.md)
 - [Component Registry Schema](docs/SCH-004-Component-Registry-Schema.md)
+- [Platform Target 与官方 Library Schema](docs/SCH-005-Platform-Target与官方Library-Schema.md)
 - [文件加载与完整性校验](docs/REG-001-文件加载与完整性校验.md)
 - [组件搜索与精确解析](docs/REG-002-组件搜索与精确解析.md)
 - [缺失组件 Change Request](docs/REG-003-缺失组件Change-Request.md)
+- [平台官方组件 Registry](docs/REG-004-平台官方组件Registry.md)
 - [本地只读 CLI](docs/CLI-001-本地只读命令.md)
 - [本地 stdio MCP Server](docs/MCP-001-本地Stdio-Server.md)
 - [只读设计资产 MCP 查询](docs/MCP-002-只读设计资产查询Tools.md)
@@ -252,6 +259,11 @@ pnpm hatchkit:figma-bridge -- --project hatch-demo --root design-system/hatch-de
 - [硬编码样式与未登记 Variable 审计](docs/AUD-001-硬编码样式与未登记Variable审计.md)
 - [Instance、Variant 与组件来源审计](docs/AUD-002-Instance-Variant与组件来源审计.md)
 - [Registry 与 Figma 双向差异审计](docs/AUD-003-Registry与Figma双向差异审计.md)
+- [Apple 官方 UI Kit 验证手册](docs/PLAT-004-Apple官方UI-Kit验证手册.md)
+- [Android 官方 UI Kit 验证手册](docs/PLAT-005-Android官方UI-Kit验证手册.md)
+- [官方外部 Instance Writer](docs/PLAT-006-官方外部Instance-Writer.md)
+- [平台组件来源审计](docs/PLAT-007-平台组件来源审计.md)
+- [平台官方组件回归矩阵](docs/PLAT-008-平台官方组件回归矩阵.md)
 - [Agent 黄金路径回归测试](docs/QA-001-Agent黄金路径回归测试.md)
 - [系统失败矩阵与零污染回归](docs/QA-002-系统失败矩阵与零污染回归.md)
 - [安装与五分钟 Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)

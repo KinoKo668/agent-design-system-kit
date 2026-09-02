@@ -2,6 +2,8 @@ import { CORE_PACKAGE_NAME } from "@agent-design-system-kit/core";
 
 export * from "./approval-verifier.js";
 export * from "./registry-files.js";
+export * from "./platform-instance-loop.js";
+export * from "./platform-audit-loop.js";
 export * from "./figma-bridge.js";
 export * from "./figma-bridge-launch.js";
 export * from "./button-instance-loop.js";

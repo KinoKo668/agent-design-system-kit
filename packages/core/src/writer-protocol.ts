@@ -15,6 +15,7 @@ import { figmaIconPlanSchema } from "./figma-icon-plan.js";
 import { figmaIconInstancePlanSchema } from "./figma-icon-instance-plan.js";
 import { figmaInputPlanSchema } from "./figma-input-plan.js";
 import { figmaInputInstancePlanSchema } from "./figma-input-instance-plan.js";
+import { figmaPlatformInstancePlanSchema } from "./figma-platform-instance-plan.js";
 import {
   figmaStyleAuditPlanSchema,
   figmaStyleAuditResultSchema,
@@ -27,6 +28,10 @@ import {
   registryDriftAuditPlanSchema,
   registryDriftAuditResultSchema,
 } from "./registry-drift-audit.js";
+import {
+  figmaPlatformAuditPlanSchema,
+  figmaPlatformAuditResultSchema,
+} from "./platform-component-audit.js";
 
 export const WRITER_PROTOCOL_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -34,6 +39,7 @@ export const WRITER_COMMAND_TYPES = {
   auditComponents: "audit.components.scan",
   auditRegistryDrift: "audit.registry-drift.scan",
   auditStyles: "audit.styles.scan",
+  auditPlatformComponents: "audit.platform-components.scan",
   ensureButton: "components.button.ensure",
   ensureIcon: "components.icon.ensure",
   ensureInput: "components.input.ensure",
@@ -41,6 +47,7 @@ export const WRITER_COMMAND_TYPES = {
   insertButtonInstance: "instances.button.insert",
   insertIconInstance: "instances.icon.insert",
   insertInputInstance: "instances.input.insert",
+  insertPlatformInstance: "instances.platform.insert",
   ping: "writer.ping",
 } as const;
 
@@ -94,6 +101,15 @@ const approvedWriterSubjectSchema = z.discriminatedUnion("type", [
       type: z.literal("component"),
     })
     .strict(),
+  z
+    .object({
+      assetId: stableAssetIdSchema,
+      assetVersion: strictSemverSchema,
+      contentDigest: contentDigestSchema,
+      projectId: stableIdSegmentSchema,
+      type: z.literal("platform-binding"),
+    })
+    .strict(),
 ]);
 
 export const writerApprovalSchema = z.discriminatedUnion("mode", [
@@ -109,7 +125,9 @@ export const writerApprovalSchema = z.discriminatedUnion("mode", [
         .string()
         .min(1)
         .max(320)
-        .regex(/^approval\.(?:component|tokens)\.[a-z0-9.+-]+$/u),
+        .regex(
+          /^approval\.(?:component|platform-binding|tokens)\.[a-z0-9.+-]+$/u,
+        ),
       mode: z.literal("approved"),
       subject: approvedWriterSubjectSchema,
     })
@@ -118,7 +136,9 @@ export const writerApprovalSchema = z.discriminatedUnion("mode", [
       const prefix =
         approval.subject.type === "token-set"
           ? "approval.tokens."
-          : "approval.component.";
+          : approval.subject.type === "platform-binding"
+            ? "approval.platform-binding."
+            : "approval.component.";
       if (!approval.approvalId.startsWith(prefix)) {
         context.addIssue({
           code: "custom",
@@ -191,6 +211,13 @@ export const writerInsertInputInstanceCommandSchema = z
   })
   .strict();
 
+export const writerInsertPlatformInstanceCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaPlatformInstancePlanSchema }).strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.insertPlatformInstance),
+  })
+  .strict();
+
 export const writerAuditStylesCommandSchema = z
   .object({
     payload: z.object({ plan: figmaStyleAuditPlanSchema }).strict(),
@@ -212,10 +239,19 @@ export const writerAuditRegistryDriftCommandSchema = z
   })
   .strict();
 
+export const writerAuditPlatformComponentsCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaPlatformAuditPlanSchema }).strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.auditPlatformComponents),
+  })
+  .strict();
+
 export const writerCommandSchema = z.discriminatedUnion("type", [
+  writerAuditPlatformComponentsCommandSchema,
   writerAuditRegistryDriftCommandSchema,
   writerAuditComponentsCommandSchema,
   writerAuditStylesCommandSchema,
+  writerInsertPlatformInstanceCommandSchema,
   writerInsertInputInstanceCommandSchema,
   writerInsertIconInstanceCommandSchema,
   writerInsertButtonInstanceCommandSchema,
@@ -260,7 +296,8 @@ export const writerCommandEnvelopeSchema = z
     if (
       envelope.command.type === WRITER_COMMAND_TYPES.auditStyles ||
       envelope.command.type === WRITER_COMMAND_TYPES.auditComponents ||
-      envelope.command.type === WRITER_COMMAND_TYPES.auditRegistryDrift
+      envelope.command.type === WRITER_COMMAND_TYPES.auditRegistryDrift ||
+      envelope.command.type === WRITER_COMMAND_TYPES.auditPlatformComponents
     ) {
       if (envelope.approval.mode !== "not_required") {
         context.addIssue({
@@ -302,16 +339,40 @@ export const writerCommandEnvelopeSchema = z
       });
     }
     const subject = envelope.approval.subject;
+    const isPlatformInstance =
+      envelope.command.type === WRITER_COMMAND_TYPES.insertPlatformInstance;
     const expectedSubjectType =
       envelope.command.type === WRITER_COMMAND_TYPES.ensureVariables
         ? "token-set"
-        : "component";
+        : isPlatformInstance
+          ? "platform-binding"
+          : "component";
+    let plannedSubject: {
+      readonly assetId: string;
+      readonly assetVersion: string;
+      readonly contentDigest: string;
+    };
+    if (envelope.command.type === WRITER_COMMAND_TYPES.insertPlatformInstance) {
+      plannedSubject = {
+        assetId: envelope.command.payload.plan.source.bindingId,
+        assetVersion: envelope.command.payload.plan.source.bindingVersion,
+        contentDigest: envelope.command.payload.plan.source.contentDigest,
+      };
+    } else {
+      plannedSubject = {
+        assetId: envelope.command.payload.plan.source.assetId,
+        assetVersion: envelope.command.payload.plan.source.assetVersion,
+        contentDigest: envelope.command.payload.plan.source.contentDigest,
+      };
+    }
     const mismatches: string[] = [
       subject.type !== expectedSubjectType ? "type" : null,
       subject.projectId !== plan.source.projectId ? "projectId" : null,
-      subject.assetId !== plan.source.assetId ? "assetId" : null,
-      subject.assetVersion !== plan.source.assetVersion ? "assetVersion" : null,
-      subject.contentDigest !== plan.source.contentDigest
+      subject.assetId !== plannedSubject.assetId ? "assetId" : null,
+      subject.assetVersion !== plannedSubject.assetVersion
+        ? "assetVersion"
+        : null,
+      subject.contentDigest !== plannedSubject.contentDigest
         ? "contentDigest"
         : null,
       envelope.projectId !== plan.source.projectId ? "envelopeProjectId" : null,
@@ -319,7 +380,8 @@ export const writerCommandEnvelopeSchema = z
     if (
       envelope.command.type === WRITER_COMMAND_TYPES.insertButtonInstance ||
       envelope.command.type === WRITER_COMMAND_TYPES.insertIconInstance ||
-      envelope.command.type === WRITER_COMMAND_TYPES.insertInputInstance
+      envelope.command.type === WRITER_COMMAND_TYPES.insertInputInstance ||
+      envelope.command.type === WRITER_COMMAND_TYPES.insertPlatformInstance
     ) {
       if (
         envelope.approval.approvalId !==
@@ -576,17 +638,42 @@ export const writerInputInstanceResultSchema = z
   })
   .strict();
 
+export const writerPlatformInstanceResultSchema = z
+  .object({
+    component: z
+      .object({
+        key: z.string().min(8).max(256),
+        remote: z.literal(true),
+      })
+      .strict(),
+    instance: z
+      .object({
+        action: z.enum(["created", "recovered", "unchanged"]),
+        detached: z.literal(false),
+        nodeId: z
+          .string()
+          .max(128)
+          .regex(/^\d+:\d+$/u),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.insertPlatformInstance),
+  })
+  .strict();
+
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
   registryDriftAuditResultSchema,
   figmaComponentAuditResultSchema,
   figmaStyleAuditResultSchema,
+  figmaPlatformAuditResultSchema,
   writerButtonResultSchema,
   writerIconResultSchema,
   writerInputResultSchema,
   writerButtonInstanceResultSchema,
   writerIconInstanceResultSchema,
   writerInputInstanceResultSchema,
+  writerPlatformInstanceResultSchema,
   writerVariablesResultSchema,
 ]);
 export type WriterSuccessResult = z.infer<typeof writerSuccessResultSchema>;

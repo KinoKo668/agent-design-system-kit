@@ -97,6 +97,19 @@ describe("Figma Plugin writer status model", () => {
     ).toBe(true);
     expect(
       isUiToMainMessage({
+        binding: {
+          fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+          fileRole: "design-page",
+          projectId: "hatch-demo",
+          schemaVersion: "1.0.0",
+        },
+        confirmation: FILE_BINDING_CONFIRMATION,
+        schemaVersion: FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION,
+        type: "file.bind",
+      }),
+    ).toBe(true);
+    expect(
+      isUiToMainMessage({
         schemaVersion: "0.1.0",
         type: "ui.ready",
       }),

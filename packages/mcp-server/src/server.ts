@@ -17,7 +17,7 @@ export const HATCHKIT_MCP_SERVER_NAME = "hatchkit" as const;
 export const HATCHKIT_MCP_SERVER_VERSION = HATCHKIT_VERSION;
 export const HATCHKIT_STATUS_TOOL_NAME = "hatchkit_status" as const;
 export const HATCHKIT_MCP_SERVER_INSTRUCTIONS =
-  "Hatchkit is a local design-system control plane. Call hatchkit_status first. Use only exact registered identities and variants; never invent or approximate. Read success is not write authorization. For an explicit approved library build, ensure Variables before the Component Set. Use Instance tools only for an explicit page request. Git approval, file binding, and Figma audit gate every write. Otherwise request a structured component change." as const;
+  "Hatchkit is a local design-system control plane. Call hatchkit_status first. Use only exact registered identities and variants; never invent or approximate. For native apps, resolve the exact Platform Target and prefer an approved official remote Instance; never detach or cross platforms. Read success is not write authorization. Git approval, file binding, and Figma audit gate every write. Otherwise request a structured change." as const;
 
 export interface HatchkitMcpServerOptions {
   readonly designSystemRoot: string;
@@ -33,6 +33,8 @@ const statusOutputSchema = z.strictObject({
         briefs: z.number().int().nonnegative(),
         components: z.number().int().nonnegative(),
         directions: z.number().int().nonnegative(),
+        platformRegistries: z.number().int().nonnegative(),
+        platformTargets: z.number().int().nonnegative(),
         registries: z.number().int().nonnegative(),
         tokenSets: z.number().int().nonnegative(),
       }),
@@ -76,6 +78,8 @@ async function createStatusResult(
         briefs: snapshot.briefs.length,
         components: snapshot.components.length,
         directions: snapshot.directions.length,
+        platformRegistries: snapshot.platformRegistries.length,
+        platformTargets: snapshot.platformTargets.length,
         registries: snapshot.registries.length,
         tokenSets: snapshot.tokenSets.length,
       },
@@ -85,6 +89,8 @@ async function createStatusResult(
         ...snapshot.briefs.map(({ sourcePath }) => sourcePath),
         ...snapshot.components.map(({ sourcePath }) => sourcePath),
         ...snapshot.directions.map(({ sourcePath }) => sourcePath),
+        ...snapshot.platformRegistries.map(({ sourcePath }) => sourcePath),
+        ...snapshot.platformTargets.map(({ sourcePath }) => sourcePath),
         ...snapshot.registries.map(({ sourcePath }) => sourcePath),
         ...snapshot.tokenSets.map(({ sourcePath }) => sourcePath),
       ].sort(),

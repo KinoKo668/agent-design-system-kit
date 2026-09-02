@@ -220,6 +220,36 @@ describe("Figma Variables writer", () => {
     expect(unbound.writeCount).toBe(1);
   });
 
+  it("supports an explicit product design page role", () => {
+    const unbound = new SharedData();
+    const binding = {
+      fileBindingId: FILE_BINDING_ID,
+      fileRole: "design-page",
+      projectId: "hatch-demo",
+      schemaVersion: "1.0.0",
+    } as const;
+
+    expect(bindFigmaLibraryFile(unbound, binding)).toEqual({
+      binding,
+      status: "bound",
+    });
+    expect(getFigmaLibraryFileBinding(unbound)).toEqual(binding);
+  });
+
+  it("refuses to create library Variables in a product design page file", async () => {
+    const pagePort = new FakePort();
+    bindFigmaLibraryFile(pagePort.document, {
+      fileBindingId: FILE_BINDING_ID,
+      fileRole: "design-page",
+      projectId: "hatch-demo",
+      schemaVersion: "1.0.0",
+    });
+
+    await expect(
+      ensureFigmaVariables(pagePort, plan, context()),
+    ).rejects.toMatchObject({ code: "FILE_BINDING_MISMATCH" });
+  });
+
   it("fails closed when an existing file binding is malformed", () => {
     const document = new SharedData();
     document.setSharedPluginData(

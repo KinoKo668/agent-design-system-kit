@@ -283,6 +283,7 @@ function assertFileBinding(
   const binding = getFigmaLibraryFileBinding(port.document);
   if (
     binding === null ||
+    binding.fileRole !== "design-system-library" ||
     binding.projectId !== context.projectId ||
     binding.fileBindingId !== context.fileBindingId
   ) {

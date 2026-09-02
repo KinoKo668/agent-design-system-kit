@@ -74,6 +74,8 @@ const bindingBadge = requiredElement<HTMLElement>("binding-badge");
 const bindingDetail = requiredElement<HTMLElement>("binding-detail");
 const bindingProjectInput =
   requiredElement<HTMLInputElement>("binding-project-id");
+const bindingRoleSelect =
+  requiredElement<HTMLSelectElement>("binding-file-role");
 const bindingIdInput = requiredElement<HTMLInputElement>("binding-file-id");
 const generateBindingIdButton = requiredElement<HTMLButtonElement>(
   "generate-binding-id",
@@ -153,8 +155,11 @@ function renderFileBinding(): void {
     bindingBadge.dataset.tone = "success";
     bindingBadge.textContent = "Bound";
     bindingDetail.textContent =
-      "This document is permanently identified as the project design-system library.";
+      fileBinding.fileRole === "design-page"
+        ? "This document is permanently identified as a product design page file."
+        : "This document is permanently identified as the project design-system library.";
     bindingProjectInput.value = fileBinding.projectId;
+    bindingRoleSelect.value = fileBinding.fileRole;
     bindingIdInput.value = fileBinding.fileBindingId;
   } else if (fileBindingError !== null) {
     bindingBadge.dataset.tone = "danger";
@@ -175,6 +180,7 @@ function renderFileBinding(): void {
   const locked =
     fileBinding !== null || fileBindingError !== null || fileBindingPending;
   bindingProjectInput.disabled = locked;
+  bindingRoleSelect.disabled = locked;
   bindingIdInput.disabled = locked;
   generateBindingIdButton.disabled = locked || operationBusy;
   bindFileButton.disabled = locked || operationBusy || !bindingDraftIsValid();
@@ -277,6 +283,8 @@ async function runCommand(
   const iconInstanceCommand = command.command.type === "instances.icon.insert";
   const inputInstanceCommand =
     command.command.type === "instances.input.insert";
+  const platformInstanceCommand =
+    command.command.type === "instances.platform.insert";
   const writeCommand =
     variablesCommand ||
     buttonCommand ||
@@ -284,7 +292,8 @@ async function runCommand(
     inputCommand ||
     instanceCommand ||
     iconInstanceCommand ||
-    inputInstanceCommand;
+    inputInstanceCommand ||
+    platformInstanceCommand;
   const totalSteps = variablesCommand
     ? 5
     : buttonCommand
@@ -299,7 +308,9 @@ async function runCommand(
               ? 4
               : inputInstanceCommand
                 ? 4
-                : 1;
+                : platformInstanceCommand
+                  ? 5
+                  : 1;
   update({
     approval: writeCommand
       ? command.approval.mode === "approved"
@@ -318,12 +329,12 @@ async function runCommand(
     operation: {
       completedSteps: 0,
       detail: writeCommand
-        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconInstanceCommand ? "Icon Instance" : inputInstanceCommand ? "Input Instance" : inputCommand ? "Input" : iconCommand ? "Icon" : "Button"} plan.`
+        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconInstanceCommand ? "Icon Instance" : inputInstanceCommand ? "Input Instance" : platformInstanceCommand ? "Official Platform Instance" : inputCommand ? "Input" : iconCommand ? "Icon" : "Button"} plan.`
         : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
       step: writeCommand
-        ? `Verify file, identities, ${variablesCommand ? "Modes" : instanceCommand || iconInstanceCommand || inputInstanceCommand ? "Registry locator and Variant" : "Token dependencies"} and conflicts`
+        ? `Verify file, identities, ${variablesCommand ? "Modes" : instanceCommand || iconInstanceCommand || inputInstanceCommand ? "Registry locator and Variant" : platformInstanceCommand ? "remote Library key, approval and no-detach policy" : "Token dependencies"} and conflicts`
         : "Validate writer.ping",
       totalSteps,
     },
@@ -390,6 +401,11 @@ async function runCommand(
       "type" in result.result && result.result.type === "instances.input.insert"
         ? result.result
         : null;
+    const platformInstanceResult =
+      "type" in result.result &&
+      result.result.type === "instances.platform.insert"
+        ? result.result
+        : null;
     update({
       operation: {
         completedSteps: totalSteps,
@@ -408,7 +424,9 @@ async function runCommand(
                       ? `Icon Instance ${iconInstanceResult.instance.action} from the registered ${iconInstanceResult.variant.stableId}.`
                       : inputInstanceResult !== null
                         ? `Input Instance ${inputInstanceResult.instance.action} from the registered ${inputInstanceResult.variant.stableId}.`
-                        : "The diagnostic round trip completed without a Figma write.",
+                        : platformInstanceResult !== null
+                          ? `Official Platform Instance ${platformInstanceResult.instance.action} from remote Component ${platformInstanceResult.component.key}.`
+                          : "The diagnostic round trip completed without a Figma write.",
         operationId: command.operationId,
         status: "succeeded",
         step:
@@ -424,7 +442,9 @@ async function runCommand(
                     ? "Icon Instance audited and managed marker committed"
                     : inputInstanceResult !== null
                       ? "Input Instance audited and managed marker committed"
-                      : "writer.ping acknowledged",
+                      : platformInstanceResult !== null
+                        ? "Remote source, properties and no-detach state audited"
+                        : "writer.ping acknowledged",
         totalSteps,
       },
       writeAuthorized: false,
@@ -642,6 +662,7 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
 connectButton.addEventListener("click", () => void connect());
 disconnectButton.addEventListener("click", () => void disconnect());
 bindingProjectInput.addEventListener("input", render);
+bindingRoleSelect.addEventListener("change", render);
 bindingIdInput.addEventListener("input", render);
 generateBindingIdButton.addEventListener("click", () => {
   bindingIdInput.value = randomUuid();
@@ -651,6 +672,8 @@ generateBindingIdButton.addEventListener("click", () => {
 bindFileButton.addEventListener("click", () => {
   const projectId = bindingProjectInput.value.trim();
   const fileBindingId = bindingIdInput.value.trim().toLowerCase();
+  const fileRole =
+    bindingRoleSelect.value as FigmaLibraryFileBinding["fileRole"];
   if (!bindingDraftIsValid()) {
     bindingDetail.textContent =
       "Use a kebab-case project ID and generate a valid file UUID.";
@@ -659,7 +682,7 @@ bindFileButton.addEventListener("click", () => {
     return;
   }
   const confirmed = window.confirm(
-    `Bind “${snapshot.context.fileName}” to project “${projectId}”?\n\nThis identity blocks writes meant for other files. Changing it later requires a separately reviewed rebind flow.`,
+    `Bind “${snapshot.context.fileName}” to project “${projectId}” as “${fileRole}”?\n\nThis identity blocks writes meant for other files or roles. Changing it later requires a separately reviewed rebind flow.`,
   );
   if (!confirmed) return;
   fileBindingPending = true;
@@ -667,7 +690,7 @@ bindFileButton.addEventListener("click", () => {
   postMessage({
     binding: {
       fileBindingId,
-      fileRole: "design-system-library",
+      fileRole,
       projectId,
       schemaVersion: "1.0.0",
     },

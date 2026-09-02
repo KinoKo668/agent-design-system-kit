@@ -20,13 +20,17 @@ export const APPROVAL_RECORD_SCHEMA_VERSION = "1.0.0" as const;
 export const APPROVAL_SUBJECT_TYPES = [
   "component",
   "direction",
+  "platform-binding",
+  "platform-target",
   "token-set",
 ] as const;
 export type ApprovalSubjectType = (typeof APPROVAL_SUBJECT_TYPES)[number];
 
 export const APPROVAL_DEPENDENCY_TYPES = [
   "brief",
+  "component",
   "direction",
+  "platform-target",
   "token-set",
 ] as const;
 export type ApprovalDependencyType = (typeof APPROVAL_DEPENDENCY_TYPES)[number];
@@ -52,14 +56,21 @@ export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
 const REQUIRED_ROLES = {
   component: ["design_owner", "technical_owner"],
   direction: ["product_owner", "design_owner"],
+  "platform-binding": ["design_owner", "technical_owner"],
+  "platform-target": ["product_owner", "design_owner", "technical_owner"],
   "token-set": ["design_owner", "technical_owner"],
 } as const satisfies Record<ApprovalSubjectType, readonly ApprovalRole[]>;
 
-const EXPECTED_DEPENDENCY_TYPE = {
-  component: "token-set",
-  direction: "brief",
-  "token-set": "direction",
-} as const satisfies Record<ApprovalSubjectType, ApprovalDependencyType>;
+const EXPECTED_DEPENDENCY_TYPES = {
+  component: ["token-set"],
+  direction: ["brief"],
+  "platform-binding": ["component", "platform-target"],
+  "platform-target": ["direction"],
+  "token-set": ["direction"],
+} as const satisfies Record<
+  ApprovalSubjectType,
+  readonly ApprovalDependencyType[]
+>;
 
 const REQUIRED_VALIDATION_CHECKS = {
   component: [
@@ -69,12 +80,22 @@ const REQUIRED_VALIDATION_CHECKS = {
     "accessibility",
   ],
   direction: ["schema", "visual-review"],
+  "platform-binding": [
+    "schema",
+    "contract-figma-parity",
+    "official-source",
+    "instance-import",
+    "no-detach",
+  ],
+  "platform-target": ["schema", "official-source", "license-boundary"],
   "token-set": ["schema", "token-references", "color-contrast"],
 } as const satisfies Record<ApprovalSubjectType, readonly string[]>;
 
 const APPROVAL_ID_PREFIX = {
   component: "component",
   direction: "direction",
+  "platform-binding": "platform-binding",
+  "platform-target": "platform-target",
   "token-set": "tokens",
 } as const satisfies Record<ApprovalSubjectType, string>;
 
@@ -108,7 +129,7 @@ function requiredText(maxLength: number): z.ZodString {
 }
 
 const approvalIdSchema = requiredText(320).regex(
-  /^approval\.(?:component|direction|tokens)\.[a-z0-9.+-]+$/u,
+  /^approval\.(?:component|direction|platform-binding|platform-target|tokens)\.[a-z0-9.+-]+$/u,
   "Must use a deterministic approval.<type>.<asset>.<version> identity.",
 );
 const gitCommitSchema = z
@@ -331,17 +352,25 @@ export const approvalRecordSchema = approvalRecordBaseSchema.superRefine(
       );
     }
 
-    const expectedDependencyType =
-      EXPECTED_DEPENDENCY_TYPE[record.subject.type];
+    const expectedDependencyTypes =
+      EXPECTED_DEPENDENCY_TYPES[record.subject.type];
+    const expectedDependencyTypeSet = new Set<ApprovalDependencyType>(
+      expectedDependencyTypes,
+    );
+    const actualDependencyTypes = record.dependencies.map(({ type }) => type);
     if (
+      record.dependencies.length !== expectedDependencyTypes.length ||
+      expectedDependencyTypes.some(
+        (type) => !actualDependencyTypes.includes(type),
+      ) ||
       record.dependencies.some(
-        (dependency) => dependency.type !== expectedDependencyType,
+        (dependency) => !expectedDependencyTypeSet.has(dependency.type),
       )
     ) {
       addCustomIssue(
         context,
         ["dependencies"],
-        `${record.subject.type} approvals may depend only on ${expectedDependencyType}.`,
+        `${record.subject.type} approvals require exactly: ${expectedDependencyTypes.join(" and ")}.`,
       );
     }
     const dependencyIdentities = record.dependencies.map(

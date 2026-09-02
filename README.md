@@ -97,6 +97,8 @@ The first release is local-first. It does not host an AI model and does not requ
 
 **`v0.1.0-alpha.1` is the first source pre-release of Hatch. The automated Button path now covers exact Agent queries, Registry-backed Instance orchestration, three Figma audits, failure recovery, and release gates. Real approvals and independent Figma Desktop visual acceptance are still outstanding, so this release is not production-ready.**
 
+Unreleased platform-library work now adds explicit iOS/iPadOS and Android targets, external-only Apple/Google Library bindings, exact official Component resolution, a remote-Instance Writer, and provenance audits. Local automation is complete; real Apple iOS 26/27 and Google Material 3 keys still require a designer's Figma access and acceptance test.
+
 What exists today:
 
 - a pnpm workspace with frozen dependency boundaries;
@@ -126,7 +128,7 @@ What exists today:
 - an authenticated loopback-only HTTP Bridge with one Plugin owner, FIFO dispatch, one in-flight lease, idempotent replay, structured results, and a 30-day redacted operation log;
 - an in-memory Session Token connection flow and a safe `writer.ping` round trip that proves the full Plugin transport without modifying Figma;
 - a strict Variable planner and `variables.ensure` adapter that maps the Button Token fixture to one Major-version Collection, 30 real Variables, targeted scopes, aliases, code syntax, stable managed identities, no-op retries, and recoverable partial writes;
-- an explicit human-confirmed Figma file-binding control that binds an unbound library once, safely replays the same identity, and refuses automatic overwrite or rebind;
+- an explicit human-confirmed Figma file-binding control that distinguishes design-system libraries from product design pages, binds either role once, safely replays the same identity, and refuses automatic overwrite or rebind;
 - a live Git Approval verifier that reloads the catalog before every write, validates the exact subject and upstream chain, and fails closed on missing, stale, revoked, superseded, duplicate, or invalid records;
 - a deterministic Button writer that ensures one real Main Component Set, four approved Variants, Label properties, and exact Variable bindings without duplicate assets;
 - a deterministic Icon writer and `components.icon.ensure` protocol path that plans and converges one three-size Component Set with real Vector glyphs, exact Variable bindings, stable markers, no-op retries, and recoverable partial writes;
@@ -142,6 +144,8 @@ What exists today:
 - a read-only `hatchkit_audit_styles` MCP tool that derives the registered Variable allowlist from current Git facts, scans the bound Figma page, and reports hard-coded styles or foreign Variables with exact node and field evidence;
 - a read-only `hatchkit_audit_components` MCP tool that cross-checks real Instances, managed markers, Component Set sources, approved Variants, and current Variant properties against the active Git Registry;
 - a read-only `hatchkit_audit_registry_drift` MCP tool that inventories the entire bound Figma library and reports bidirectional missing assets, duplicate identities, invalid markers, version or digest drift, locator conflicts, and incomplete Variable or Variant sets;
+- versioned Platform Target and external Platform Component Registry contracts for iOS/iPadOS 26 Stable, iOS/iPadOS 27 Preview, and Android/Material 3, with official-source, release-channel, framework, license-boundary, exact-key, property-mapping, approval, and digest checks;
+- optional `hatchkit_resolve_platform_component`, `hatchkit_insert_platform_instance`, and `hatchkit_audit_platform_components` tools that resolve an exact approved vendor component, preserve its remote Figma Instance without detaching, and detect source, key, target, binding, or provenance drift;
 - a release-gated Agent golden-path regression that exercises MCP status, exact Button search and resolution, idempotent insertion orchestration, and all three audit tools through one coherent public-demo scenario;
 - a system failure-matrix regression that proves missing assets and disconnected Plugins cause zero dispatches, exact retries do not duplicate Operations, and changed intent under the same idempotency identity is rejected;
 - accepted architecture, identity, versioning, idempotency, and migration decisions;
@@ -235,6 +239,7 @@ The detailed project documentation is currently written primarily in Chinese:
 - [System boundaries and end-to-end data flow](docs/ARCH-001-系统边界与端到端数据流.md)
 - [Engineering stack and monorepo decision](docs/ADR-001-工程技术栈与Monorepo方案.md)
 - [Identity, versioning, idempotency, and migration](docs/ADR-002-稳定身份版本幂等与迁移策略.md)
+- [Official platform-library priority and external-asset boundary](docs/ADR-003-平台官方组件库优先与外部资产边界.md)
 - [Shared result, error, recovery, and logging contract](docs/CORE-001-统一结果错误与日志模型.md)
 - [Local credentials and log-redaction policy](docs/SEC-001-本地凭据与日志脱敏策略.md)
 - [Design Brief schema](docs/SCH-001-Design-Brief-Schema.md)
@@ -243,9 +248,11 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Icon contract and Figma component path](docs/COMP-001-Icon契约与Figma组件链路.md)
 - [Input contract and Figma component path](docs/COMP-002-Input契约与Figma组件链路.md)
 - [Component Registry schema](docs/SCH-004-Component-Registry-Schema.md)
+- [Platform Target and official Library schema](docs/SCH-005-Platform-Target与官方Library-Schema.md)
 - [Local file loading and integrity validation](docs/REG-001-文件加载与完整性校验.md)
 - [Component search and exact resolution](docs/REG-002-组件搜索与精确解析.md)
 - [Missing-component Change Requests](docs/REG-003-缺失组件Change-Request.md)
+- [Official platform Component Registry](docs/REG-004-平台官方组件Registry.md)
 - [Read-only local CLI](docs/CLI-001-本地只读命令.md)
 - [Local stdio MCP server](docs/MCP-001-本地Stdio-Server.md)
 - [Read-only design-asset MCP queries](docs/MCP-002-只读设计资产查询Tools.md)
@@ -265,6 +272,11 @@ The detailed project documentation is currently written primarily in Chinese:
 - [Hard-coded style and unregistered Variable audit](docs/AUD-001-硬编码样式与未登记Variable审计.md)
 - [Instance, Variant, and component-source audit](docs/AUD-002-Instance-Variant与组件来源审计.md)
 - [Registry-to-Figma bidirectional drift audit](docs/AUD-003-Registry与Figma双向差异审计.md)
+- [Apple official UI Kit verification handbook](docs/PLAT-004-Apple官方UI-Kit验证手册.md)
+- [Android official UI Kit verification handbook](docs/PLAT-005-Android官方UI-Kit验证手册.md)
+- [Official external Instance Writer](docs/PLAT-006-官方外部Instance-Writer.md)
+- [Platform component provenance audit](docs/PLAT-007-平台组件来源审计.md)
+- [Official platform regression matrix](docs/PLAT-008-平台官方组件回归矩阵.md)
 - [Agent-facing golden-path regression](docs/QA-001-Agent黄金路径回归测试.md)
 - [System failure matrix and zero-pollution regression](docs/QA-002-系统失败矩阵与零污染回归.md)
 - [Installation and five-minute Quickstart](docs/DOC-001-安装与五分钟Quickstart.md)

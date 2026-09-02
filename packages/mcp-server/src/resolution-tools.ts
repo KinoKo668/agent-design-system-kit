@@ -9,8 +9,11 @@ import {
   componentRegistryEntrySchema,
   iconVariantSchema,
   inputVariantSchema,
+  platformComponentRegistryEntrySchema,
+  platformTargetSchema,
   resolveComponent,
   resolveComponentOrRequestChange,
+  resolvePlatformComponent,
   stableAssetIdSchema,
   stableIdSegmentSchema,
   strictSemverSchema,
@@ -28,6 +31,8 @@ export const HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME =
   "hatchkit_resolve_component" as const;
 export const HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME =
   "hatchkit_request_component_change" as const;
+export const HATCHKIT_PLATFORM_COMPONENT_RESOLVE_TOOL_NAME =
+  "hatchkit_resolve_platform_component" as const;
 
 const variantSelectionsSchema = z
   .record(stableIdSegmentSchema, stableIdSegmentSchema)
@@ -44,6 +49,20 @@ export const hatchkitComponentResolveInputSchema = z.strictObject({
   assetVersion: strictSemverSchema
     .optional()
     .describe("Optional exact active Component SemVer."),
+  variantSelections: variantSelectionsSchema,
+});
+
+export const hatchkitPlatformComponentResolveInputSchema = z.strictObject({
+  assetId: stableAssetIdSchema.describe("Exact Component asset ID."),
+  assetVersion: strictSemverSchema
+    .optional()
+    .describe("Optional exact active Component SemVer."),
+  platformTargetId: stableAssetIdSchema.describe(
+    "Exact Platform Target asset ID.",
+  ),
+  platformTargetVersion: strictSemverSchema.describe(
+    "Exact Platform Target SemVer; platform fallback is forbidden.",
+  ),
   variantSelections: variantSelectionsSchema,
 });
 
@@ -104,6 +123,69 @@ export const componentResolutionOutputDataSchema = z.discriminatedUnion(
 
 export const hatchkitComponentResolveOutputSchema = z.strictObject({
   data: componentResolutionOutputDataSchema,
+  ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
+});
+
+const platformPrioritySchema = z.array(
+  z.enum([
+    "platform-system",
+    "official-vendor",
+    "brand-wrapper",
+    "hatchkit-managed",
+  ]),
+);
+const platformResolutionCommonShape = {
+  componentResolution: componentResolutionOutputDataSchema,
+  platformTarget: platformTargetSchema,
+  priorityEvaluated: platformPrioritySchema,
+  sources: z.strictObject({
+    platformRegistrySourcePath: z.string().nullable(),
+    platformTargetSourcePath: z.string(),
+  }),
+};
+const activeReadyPlatformEntrySchema = platformComponentRegistryEntrySchema
+  .refine((entry) => entry.lifecycle === "active", "Must be active.")
+  .refine((entry) => entry.figma.status === "ready", "Must be ready.");
+const activeCatalogedPlatformEntrySchema = platformComponentRegistryEntrySchema
+  .refine((entry) => entry.lifecycle === "active", "Must be active.")
+  .refine((entry) => entry.figma.status === "cataloged", "Must be cataloged.");
+
+export const platformComponentResolutionOutputDataSchema = z.discriminatedUnion(
+  "status",
+  [
+    z.strictObject({
+      ...platformResolutionCommonShape,
+      componentKey: z.string(),
+      componentName: z.string(),
+      libraryKey: z.string(),
+      nextAction: z.literal(
+        "import-official-component-by-key-and-insert-instance",
+      ),
+      platformRegistryEntry: activeReadyPlatformEntrySchema,
+      status: z.literal("official-library-ready"),
+    }),
+    z.strictObject({
+      ...platformResolutionCommonShape,
+      nextAction: z.literal(
+        "verify-library-keys-and-obtain-human-binding-approval",
+      ),
+      platformRegistryEntry: activeCatalogedPlatformEntrySchema,
+      status: z.literal("official-library-verification-required"),
+    }),
+    z.strictObject({
+      ...platformResolutionCommonShape,
+      nextAction: z.enum([
+        "verify-approval-and-audit-then-insert-instance",
+        "verify-approval-then-ensure-library-asset",
+      ]),
+      platformRegistryEntry: z.null(),
+      status: z.literal("hatchkit-managed-fallback"),
+    }),
+  ],
+);
+
+export const hatchkitPlatformComponentResolveOutputSchema = z.strictObject({
+  data: platformComponentResolutionOutputDataSchema,
   ...TOOLKIT_SUCCESS_ENVELOPE_SHAPE,
 });
 
@@ -169,6 +251,27 @@ export function registerHatchkitResolutionTools(
             { ...query, projectId: options.expectedProjectId },
             submission,
           ),
+        ),
+      ),
+  );
+
+  server.registerTool(
+    HATCHKIT_PLATFORM_COMPONENT_RESOLVE_TOOL_NAME,
+    {
+      annotations: HATCHKIT_READ_ONLY_TOOL_ANNOTATIONS,
+      description:
+        "Resolve a Component for one exact native Platform Target. Evaluates platform-system and approved official-vendor mappings before any permitted Hatchkit-managed fallback; strict targets stop instead of approximating.",
+      inputSchema: hatchkitPlatformComponentResolveInputSchema,
+      outputSchema: hatchkitPlatformComponentResolveOutputSchema,
+      title: "Resolve a Hatchkit native platform component",
+    },
+    async (input) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          resolvePlatformComponent(snapshot, {
+            ...input,
+            projectId: options.expectedProjectId,
+          }),
         ),
       ),
   );

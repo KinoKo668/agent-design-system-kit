@@ -15,7 +15,7 @@ import type { FigmaLibraryFileBinding } from "./variables-writer.js";
 
 export const FIGMA_PLUGIN_MESSAGE_SCHEMA_VERSION = "1.0.0" as const;
 export const FILE_BINDING_CONFIRMATION =
-  "bind-current-file-as-design-system-library" as const;
+  "bind-current-file-to-hatchkit-project" as const;
 
 export type ConnectionStatus =
   "connected" | "connecting" | "disconnected" | "reconnecting";
@@ -323,7 +323,7 @@ function isFigmaLibraryFileBinding(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
       value.fileBindingId,
     ) &&
-    value.fileRole === "design-system-library"
+    ["design-page", "design-system-library"].includes(String(value.fileRole))
   );
 }
 

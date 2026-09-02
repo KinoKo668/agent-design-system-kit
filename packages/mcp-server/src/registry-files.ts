@@ -38,6 +38,16 @@ const DIRECTORY_SPECS: readonly DirectorySpec[] = [
   { directory: "tokens", kind: "token-set", suffix: ".tokens.json" },
   { directory: "components", kind: "component", suffix: ".component.json" },
   {
+    directory: "platforms",
+    kind: "platform-target",
+    suffix: ".platform-target.json",
+  },
+  {
+    directory: "platform-registry",
+    kind: "platform-component-registry",
+    suffix: ".platform-registry.json",
+  },
+  {
     directory: "registry",
     kind: "component-registry",
     suffix: ".registry.json",

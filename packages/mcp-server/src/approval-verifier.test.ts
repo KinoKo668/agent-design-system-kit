@@ -319,6 +319,8 @@ function snapshot(approvals: readonly ApprovalRecord[]): DesignSystemSnapshot {
       },
     ],
     directions: [],
+    platformRegistries: [],
+    platformTargets: [],
     projectId: "hatch-demo",
     registries: [
       {

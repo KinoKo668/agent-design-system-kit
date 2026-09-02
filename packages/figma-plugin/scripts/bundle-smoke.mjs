@@ -88,7 +88,7 @@ requireCondition(
   "UI missing the explicit Figma file-binding control",
 );
 requireCondition(
-  uiHtml.includes("bind-current-file-as-design-system-library"),
+  uiHtml.includes("bind-current-file-to-hatchkit-project"),
   "UI bundle missing the explicit file-binding confirmation",
 );
 requireCondition(
@@ -104,14 +104,23 @@ requireCondition(
   "main bundle missing the governed Input Instance command",
 );
 requireCondition(
+  pluginJavaScript.includes("instances.platform.insert") &&
+    pluginJavaScript.includes("audit.platform-components.scan"),
+  "main bundle missing the governed official Platform commands",
+);
+requireCondition(
+  uiHtml.includes("design-system-library") && uiHtml.includes("design-page"),
+  "UI bundle missing explicit library/page file roles",
+);
+requireCondition(
   pluginJavaScript.includes("file-binding") &&
     pluginJavaScript.includes("FILE_BINDING_MISMATCH"),
   "main bundle missing fail-closed Figma file binding",
 );
-requireCondition(pluginStat.size <= 168 * 1024, "main bundle exceeds 168 KiB");
+requireCondition(pluginStat.size <= 190 * 1024, "main bundle exceeds 190 KiB");
 requireCondition(
-  pluginGzipBytes <= 34 * 1024,
-  "main bundle exceeds 34 KiB gzip",
+  pluginGzipBytes <= 36 * 1024,
+  "main bundle exceeds 36 KiB gzip",
 );
 requireCondition(uiStat.size <= 300 * 1024, "UI bundle exceeds 300 KiB");
 

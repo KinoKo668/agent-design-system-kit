@@ -271,6 +271,8 @@ function snapshot(
     briefs: [],
     components: [],
     directions: [],
+    platformRegistries: [],
+    platformTargets: [],
     projectId: "hatch-demo",
     registries: [{ data: registry, sourcePath }],
     tokenSets: [],

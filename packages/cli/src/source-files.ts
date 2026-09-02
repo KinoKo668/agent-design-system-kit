@@ -22,6 +22,8 @@ const SOURCE_SUFFIXES = {
   component: ".component.json",
   "component-registry": ".registry.json",
   direction: ".direction-review.json",
+  "platform-component-registry": ".platform-registry.json",
+  "platform-target": ".platform-target.json",
   "token-set": ".tokens.json",
 } as const satisfies Record<DesignSystemDocumentKind, string>;
 

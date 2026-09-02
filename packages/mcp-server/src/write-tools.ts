@@ -45,6 +45,16 @@ import {
   variablesEnsureLoopInputSchema,
   variablesEnsureLoopOutputSchema,
 } from "./library-ensure-loop.js";
+import {
+  platformInstanceLoopInputSchema,
+  platformInstanceLoopOutputSchema,
+  runPlatformInstanceLoop,
+} from "./platform-instance-loop.js";
+import {
+  platformAuditLoopInputSchema,
+  platformAuditLoopOutputSchema,
+  runPlatformAuditLoop,
+} from "./platform-audit-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
@@ -52,6 +62,10 @@ export const HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_icon_instance" as const;
 export const HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_input_instance" as const;
+export const HATCHKIT_PLATFORM_INSTANCE_INSERT_TOOL_NAME =
+  "hatchkit_insert_platform_instance" as const;
+export const HATCHKIT_PLATFORM_AUDIT_TOOL_NAME =
+  "hatchkit_audit_platform_components" as const;
 export const HATCHKIT_VARIABLES_ENSURE_TOOL_NAME =
   "hatchkit_ensure_variables" as const;
 export const HATCHKIT_COMPONENT_ENSURE_TOOL_NAME =
@@ -107,6 +121,10 @@ export const hatchkitInputInstanceInsertInputSchema =
         "How long to wait for the connected Figma Plugin before returning a resumable timeout.",
       ),
   });
+export const hatchkitPlatformInstanceInsertInputSchema =
+  platformInstanceLoopInputSchema.extend({
+    waitTimeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
+  });
 
 const ensureWaitSchema = {
   waitTimeoutMs: z
@@ -133,6 +151,53 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_PLATFORM_AUDIT_TOOL_NAME,
+    {
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+      description:
+        "Audit official Apple and Google component nodes on the current bound page. Detect detached Instances, changed remote keys, stale provenance, unregistered bindings, wrong target versions and cross-platform vendor misuse without modifying Figma.",
+      inputSchema: platformAuditLoopInputSchema.extend({
+        waitTimeoutMs: z.number().int().min(1_000).max(120_000).default(30_000),
+      }),
+      outputSchema: platformAuditLoopOutputSchema,
+      title: "Audit official Platform component provenance",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runPlatformAuditLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
+  server.registerTool(
+    HATCHKIT_PLATFORM_INSTANCE_INSERT_TOOL_NAME,
+    {
+      annotations: HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS,
+      description:
+        "Import one exact approved Apple or Google published Component by key and insert a real remote Instance. The Writer refuses detached, copied, approximate, cross-platform or unapproved assets and modifies only explicitly mapped writable properties.",
+      inputSchema: hatchkitPlatformInstanceInsertInputSchema,
+      outputSchema: platformInstanceLoopOutputSchema,
+      title: "Insert an approved official platform Instance",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runPlatformInstanceLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
     {

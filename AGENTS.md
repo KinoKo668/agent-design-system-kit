@@ -28,7 +28,7 @@
 
 ## 当前阶段
 
-项目已完成 M0 架构与风险冻结、M1 工程骨架、M2 Schema／Registry／只读查询，以及 M3 的 MCP 查询、最小 Figma UI 和 FIG-002 Plugin Bridge。`core` 已提供统一结果、错误、恢复动作、日志、脱敏、设计资产 Schema／查询与严格 Writer Protocol；`cli` 已提供只读 validate、search、resolve 与 request-change；`mcp-server` 已提供六个只读 MCP Tool、认证 HTTP Bridge、单 Writer FIFO、租约、幂等恢复和 30 天脱敏 Operation Log；`figma-plugin` 已提供内存 Token 连接、长轮询、版本化消息和只读 `writer.ping` 回执。下一项是 FIG-003 基础 Variables 的确定性创建或更新。
+项目已完成 M0～M2、M3 Bridge 与最小 Plugin、基础 Variables、Button／Icon／Input 建库与 Instance 链路、审批门禁、Registry 原子登记、样式／组件／Registry Drift 审计和 Agent 回归。平台官方组件增量已完成本地 Schema、Registry、解析、Writer 与来源审计：iOS／iPadOS 26 Stable、27 Preview 和 Android／Material 3 分轨管理，官方资产仅保存外部元数据，页面 Writer 只插入准确的远程 Instance 且禁止 Detach。当前停止点是 PLAT-004／005／008 的真实 Figma 人工验收，需要设计师启用官方 Library 并提供真实 Library Key、Component Key 与 Property Mapping。
 
 开始工作前请先阅读：
 
@@ -37,6 +37,7 @@
 - `docs/Agent设计系统术语入门.md`
 - `docs/ADR-001-工程技术栈与Monorepo方案.md`
 - `docs/ADR-002-稳定身份版本幂等与迁移策略.md`
+- `docs/ADR-003-平台官方组件库优先与外部资产边界.md`
 - `docs/DEMO-001-MVP演示脚本与成功标准.md`
 - `docs/CORE-001-统一结果错误与日志模型.md`
 - `docs/SEC-001-本地凭据与日志脱敏策略.md`
@@ -44,9 +45,11 @@
 - `docs/SCH-002-基础Token-Schema与DTCG子集.md`
 - `docs/SCH-003-Button-Component-Contract.md`
 - `docs/SCH-004-Component-Registry-Schema.md`
+- `docs/SCH-005-Platform-Target与官方Library-Schema.md`
 - `docs/REG-001-文件加载与完整性校验.md`
 - `docs/REG-002-组件搜索与精确解析.md`
 - `docs/REG-003-缺失组件Change-Request.md`
+- `docs/REG-004-平台官方组件Registry.md`
 - `docs/CLI-001-本地只读命令.md`
 - `docs/MCP-001-本地Stdio-Server.md`
 - `docs/MCP-002-只读设计资产查询Tools.md`
@@ -54,6 +57,11 @@
 - `docs/MCP-004-Codex真实Agent契约测试.md`
 - `docs/FIG-001-最小Figma-Plugin-UI.md`
 - `docs/FIG-002-Plugin-Bridge与单Writer队列.md`
+- `docs/PLAT-004-Apple官方UI-Kit验证手册.md`
+- `docs/PLAT-005-Android官方UI-Kit验证手册.md`
+- `docs/PLAT-006-官方外部Instance-Writer.md`
+- `docs/PLAT-007-平台组件来源审计.md`
+- `docs/PLAT-008-平台官方组件回归矩阵.md`
 
 工程规则：
 

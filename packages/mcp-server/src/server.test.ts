@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME,
   HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
+  HATCHKIT_PLATFORM_COMPONENT_RESOLVE_TOOL_NAME,
 } from "./resolution-tools.js";
 import {
   HATCHKIT_BRIEF_QUERY_TOOL_NAME,
@@ -28,6 +29,8 @@ import {
   HATCHKIT_COMPONENT_ENSURE_TOOL_NAME,
   HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+  HATCHKIT_PLATFORM_AUDIT_TOOL_NAME,
+  HATCHKIT_PLATFORM_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_VARIABLES_ENSURE_TOOL_NAME,
   HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
@@ -156,6 +159,7 @@ describe("createHatchkitMcpServer", () => {
       HATCHKIT_COMPONENT_SEARCH_TOOL_NAME,
       HATCHKIT_COMPONENT_RESOLVE_TOOL_NAME,
       HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME,
+      HATCHKIT_PLATFORM_COMPONENT_RESOLVE_TOOL_NAME,
     ]);
     for (const tool of tools.tools) {
       expect(tool).toEqual(
@@ -289,6 +293,18 @@ describe("createHatchkitMcpServer", () => {
     });
     expect(
       tools.tools.find(
+        ({ name }) => name === HATCHKIT_PLATFORM_AUDIT_TOOL_NAME,
+      ),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
+    });
+    expect(
+      tools.tools.find(
         ({ name }) => name === HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
       ),
     ).toMatchObject({
@@ -302,6 +318,18 @@ describe("createHatchkitMcpServer", () => {
     expect(
       tools.tools.find(
         ({ name }) => name === HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+      ),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: false,
+      },
+    });
+    expect(
+      tools.tools.find(
+        ({ name }) => name === HATCHKIT_PLATFORM_INSTANCE_INSERT_TOOL_NAME,
       ),
     ).toMatchObject({
       annotations: {

@@ -191,6 +191,8 @@ export type ErrorTargetType =
   | "figma-asset"
   | "figma-file"
   | "operation"
+  | "platform-binding"
+  | "platform-target"
   | "project"
   | "registry"
   | "schema"

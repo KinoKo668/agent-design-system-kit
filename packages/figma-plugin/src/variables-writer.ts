@@ -102,7 +102,7 @@ export class VariablesWriterError extends Error {
 
 export interface FigmaLibraryFileBinding {
   readonly fileBindingId: string;
-  readonly fileRole: "design-system-library";
+  readonly fileRole: "design-page" | "design-system-library";
   readonly projectId: string;
   readonly schemaVersion: "1.0.0";
 }
@@ -172,7 +172,7 @@ function isFigmaLibraryFileBinding(
     !PROJECT_ID_PATTERN.test(value.projectId) ||
     typeof value.fileBindingId !== "string" ||
     !UUID_PATTERN.test(value.fileBindingId) ||
-    value.fileRole !== "design-system-library"
+    !["design-page", "design-system-library"].includes(String(value.fileRole))
   ) {
     return false;
   }
@@ -329,6 +329,7 @@ function assertFileBinding(
   const binding = getFigmaLibraryFileBinding(port.document);
   if (
     binding === null ||
+    binding.fileRole !== "design-system-library" ||
     binding.projectId !== context.projectId ||
     binding.fileBindingId !== context.fileBindingId
   ) {
