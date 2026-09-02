@@ -104,7 +104,7 @@ requireCondition(
     pluginJavaScript.includes("FILE_BINDING_MISMATCH"),
   "main bundle missing fail-closed Figma file binding",
 );
-requireCondition(pluginStat.size <= 128 * 1024, "main bundle exceeds 128 KiB");
+requireCondition(pluginStat.size <= 160 * 1024, "main bundle exceeds 160 KiB");
 requireCondition(
   pluginGzipBytes <= 32 * 1024,
   "main bundle exceeds 32 KiB gzip",

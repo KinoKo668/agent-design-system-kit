@@ -119,7 +119,8 @@ Registry · 历史             │
 - 实时 Git Approval Verifier：每条写命令前重读 Catalog，校验准确 Subject 与完整上游链，并阻断缺失、过期、撤销、取代、重复或无效记录；
 - 确定性的 Button Writer：建立或收敛一个真实 Main Component Set、四个已批准 Variant、Label 属性与准确 Variable Binding，不重复创建近似资产；
 - 确定性的 Icon Writer 与 `components.icon.ensure` 协议链路：建立或收敛一个三尺寸 Component Set、真实 Vector Glyph、准确 Variable Binding 与稳定 Marker，并支持无变化重试和部分恢复；
-- 原子 Registry 最终化：只在 Figma 审计成功后登记 Button Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
+- 确定性的 Input Writer 与 `components.input.ensure` 协议链路：建立或收敛准确的 8 Variant State × Content 矩阵、三个文本属性、始终可见的 Label／Helper／Error 层和全部受管 Variable Binding，并支持无变化重试和部分恢复；
+- 原子 Registry 最终化：只在 Figma 审计成功后登记 Button、Icon 或 Input Node，保护并发编辑，并把登记失败报告为可恢复的部分写入；
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
 - 可选的 `hatchkit_insert_button_instance` MCP Tool：一次调用完成 Registry／Variant 查询、确定性计划、认证 Bridge 提交、Plugin 等待与真实 Instance 审计结果；默认不配置本地凭据时完全保持只读；

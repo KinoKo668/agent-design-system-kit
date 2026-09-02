@@ -2,6 +2,7 @@ import {
   componentRegistrySchema,
   createFigmaButtonPlan,
   createFigmaIconPlan,
+  createFigmaInputPlan,
   createSuccessResult,
   writerCommandEnvelopeSchema,
   type ComponentRegistry,
@@ -26,6 +27,9 @@ import validTokenSet from "../../../design-system/hatch-demo/tokens/button-found
 import iconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
 import iconRegistry from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
 import iconTokenSet from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
+import inputContract from "../../../design-system/hatch-demo/components/input-text.component.json" with { type: "json" };
+import inputRegistry from "../../../design-system/hatch-demo/registry/inputs.registry.json" with { type: "json" };
+import inputTokenSet from "../../../design-system/hatch-demo/tokens/input-foundation.tokens.json" with { type: "json" };
 
 import {
   createRegistryWriteFinalizer,
@@ -111,6 +115,37 @@ function iconCommand() {
     },
     idempotencyKey: "registry-finalizer-icon-check",
     operationId: "59d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: "1.0.0",
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: FILE_BINDING_ID,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  });
+}
+
+function inputCommand() {
+  const planned = createFigmaInputPlan(
+    inputContract,
+    inputTokenSet,
+    "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
+    "sha256:84eff4f8b036b88b861f494251eb9c59b4066774531bd147389af611ff520e6d",
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return writerCommandEnvelopeSchema.parse({
+    approval: {
+      approvalId: "approval.component.input.text.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "components.input.ensure",
+    },
+    idempotencyKey: "registry-finalizer-input-text",
+    operationId: "69d4aa88-67a2-4de3-bf64-2b51509316be",
     projectId: "hatch-demo",
     schemaVersion: "1.0.0",
     source: { client: "mcp-server" },
@@ -208,6 +243,25 @@ const ICON_RESULT = {
   variants: { created: 3, unchanged: 0, updated: 0 },
 };
 
+const INPUT_RESULT = {
+  componentSet: {
+    action: "created" as const,
+    nodeId: "700:800",
+    stableId: "hatch-demo/component/input/text/component-set/major-1",
+  },
+  textPropertyNames: {
+    label: "Label#700:801",
+    supportingText: "Supporting text#700:803",
+    text: "Text#700:802",
+  },
+  type: "components.input.ensure" as const,
+  typography: {
+    lineHeightStrategy: "resolved-percent" as const,
+    variableBindings: 12 as const,
+  },
+  variants: { created: 8, unchanged: 0, updated: 0 },
+};
+
 function snapshot(
   registry: ComponentRegistry,
   sourcePath = SOURCE_PATH,
@@ -224,6 +278,34 @@ function snapshot(
 }
 
 describe("Registry write finalizer", () => {
+  it("promotes an audited Input Set through the atomic Registry path", async () => {
+    let current = componentRegistrySchema.parse(inputRegistry);
+    const sourcePath = "registry/inputs.registry.json";
+    const updateRegistrySource = vi.fn(
+      (input: { readonly updated: ComponentRegistry }) => {
+        current = input.updated;
+        return Promise.resolve();
+      },
+    );
+    const finalize = createRegistryWriteFinalizer(
+      { designSystemRoot: "/unused", expectedProjectId: "hatch-demo" },
+      {
+        loadSnapshot: () =>
+          Promise.resolve(createSuccessResult(snapshot(current, sourcePath))),
+        updateRegistrySource,
+      },
+    );
+
+    await expect(finalize(inputCommand(), INPUT_RESULT)).resolves.toBeNull();
+    expect(updateRegistrySource).toHaveBeenCalledOnce();
+    expect(current.entries[0]?.figma).toMatchObject({
+      appliedDigest:
+        "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
+      locator: { nodeId: "700:800" },
+      status: "ready",
+    });
+  });
+
   it("promotes an audited Icon Set through the same atomic Registry path", async () => {
     let current = componentRegistrySchema.parse(iconRegistry);
     const sourcePath = "registry/icons.registry.json";

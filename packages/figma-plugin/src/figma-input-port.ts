@@ -1,148 +1,51 @@
-import type { FigmaButtonPlan } from "@agent-design-system-kit/core";
+import type { FigmaInputPlan } from "@agent-design-system-kit/core";
 
 import type {
-  ButtonBoundField,
-  ButtonComponentPort,
-  ButtonComponentSetPort,
   ButtonTextBoundField,
-  ButtonTextPort,
   ButtonVariablePort,
-  FigmaButtonPort,
 } from "./button-writer.js";
+import { TextAdapter, VariableAdapter } from "./figma-button-port.js";
+import type {
+  FigmaInputPort,
+  InputComponentBoundField,
+  InputComponentPort,
+  InputComponentSetPort,
+  InputFieldBoundField,
+  InputFieldPort,
+  InputTextPort,
+  InputVariantChildPort,
+} from "./input-writer.js";
+
+type InputBoundField =
+  ButtonTextBoundField | InputComponentBoundField | InputFieldBoundField;
 
 function boundVariableId(
   node: SceneNode,
-  field: ButtonBoundField | ButtonTextBoundField,
+  field: InputBoundField,
 ): string | undefined {
-  const binding = node.boundVariables?.[field];
-  return Array.isArray(binding) ? binding[0]?.id : binding?.id;
+  const bindings = node.boundVariables as
+    | Record<string, VariableAlias | readonly VariableAlias[] | undefined>
+    | undefined;
+  const binding = bindings?.[field];
+  return Array.isArray(binding)
+    ? (binding as readonly VariableAlias[])[0]?.id
+    : (binding as VariableAlias | undefined)?.id;
 }
 
-export class VariableAdapter implements ButtonVariablePort {
-  constructor(readonly actual: Variable) {}
-
-  get id(): string {
-    return this.actual.id;
-  }
-
-  get resolvedType(): "COLOR" | "FLOAT" | "STRING" {
-    const type = this.actual.resolvedType;
-    if (type !== "COLOR" && type !== "FLOAT" && type !== "STRING") {
-      throw new Error(`Variable '${this.actual.id}' has an unsupported type.`);
-    }
-    return type;
-  }
-
-  getSharedPluginData(namespace: string, key: string): string {
-    return this.actual.getSharedPluginData(namespace, key);
-  }
-
-  setSharedPluginData(namespace: string, key: string, value: string): void {
-    this.actual.setSharedPluginData(namespace, key, value);
-  }
+class InputTextAdapter extends TextAdapter implements InputTextPort {
+  readonly kind = "text" as const;
 }
 
-export class TextAdapter implements ButtonTextPort {
+class FieldAdapter implements InputFieldPort {
+  readonly kind = "field" as const;
+
   constructor(
-    readonly actual: TextNode,
+    readonly actual: FrameNode,
     private readonly variables: ReadonlyMap<string, VariableAdapter>,
+    private readonly wrapText: (node: TextNode) => InputTextAdapter,
   ) {}
 
-  get characters(): string {
-    return this.actual.characters;
-  }
-  set characters(value: string) {
-    this.actual.characters = value;
-  }
-  get componentPropertyReferences(): { characters?: string } | null {
-    return this.actual.componentPropertyReferences;
-  }
-  set componentPropertyReferences(value: { characters?: string } | null) {
-    this.actual.componentPropertyReferences = value;
-  }
-  get fills(): unknown {
-    return this.actual.fills;
-  }
-  set fills(value: unknown) {
-    this.actual.fills = value as readonly Paint[];
-  }
-  get fontName(): { family: string; style: string } {
-    if (this.actual.fontName === figma.mixed) {
-      throw new Error("A managed Button label has mixed fonts.");
-    }
-    return this.actual.fontName;
-  }
-  set fontName(value: { family: string; style: string }) {
-    this.actual.fontName = value;
-  }
-  get fontSize(): number {
-    if (this.actual.fontSize === figma.mixed) {
-      throw new Error("A managed Button label has mixed font sizes.");
-    }
-    return this.actual.fontSize;
-  }
-  set fontSize(value: number) {
-    this.actual.fontSize = value;
-  }
-  get letterSpacing(): { unit: "PIXELS"; value: number } {
-    const spacing = this.actual.letterSpacing;
-    if (spacing === figma.mixed || spacing.unit !== "PIXELS") {
-      throw new Error(
-        "A managed Button label has incompatible letter spacing.",
-      );
-    }
-    return { unit: "PIXELS", value: spacing.value };
-  }
-  set letterSpacing(value: { unit: "PIXELS"; value: number }) {
-    this.actual.letterSpacing = value;
-  }
-  get lineHeight(): { unit: "PERCENT"; value: number } {
-    const lineHeight = this.actual.lineHeight;
-    if (lineHeight === figma.mixed || lineHeight.unit !== "PERCENT") {
-      throw new Error("A managed Button label has incompatible line height.");
-    }
-    return { unit: "PERCENT", value: lineHeight.value };
-  }
-  set lineHeight(value: { unit: "PERCENT"; value: number }) {
-    this.actual.lineHeight = value;
-  }
-  get name(): string {
-    return this.actual.name;
-  }
-  set name(value: string) {
-    this.actual.name = value;
-  }
-
-  getSharedPluginData(namespace: string, key: string): string {
-    return this.actual.getSharedPluginData(namespace, key);
-  }
-  setSharedPluginData(namespace: string, key: string, value: string): void {
-    this.actual.setSharedPluginData(namespace, key, value);
-  }
-  setBoundVariable(
-    field: ButtonTextBoundField,
-    variable: ButtonVariablePort,
-  ): boolean {
-    if (boundVariableId(this.actual, field) === variable.id) return false;
-    const actual = this.variables.get(variable.id)?.actual;
-    if (actual === undefined)
-      throw new Error("Variable is not owned by this adapter.");
-    this.actual.setBoundVariable(field, actual);
-    return true;
-  }
-}
-
-class ComponentAdapter implements ButtonComponentPort {
-  constructor(
-    readonly actual: ComponentNode,
-    private readonly variables: ReadonlyMap<string, VariableAdapter>,
-    private readonly wrapText: (node: TextNode) => TextAdapter,
-  ) {}
-
-  get id(): string {
-    return this.actual.id;
-  }
-  get children(): readonly ButtonTextPort[] {
+  get children(): readonly InputTextPort[] {
     return this.actual.children
       .filter((node): node is TextNode => node.type === "TEXT")
       .map(this.wrapText);
@@ -152,7 +55,7 @@ class ComponentAdapter implements ButtonComponentPort {
   }
   get cornerRadius(): number {
     if (this.actual.cornerRadius === figma.mixed)
-      throw new Error("Managed Button has mixed corner radii.");
+      throw new Error("Managed Input Field has mixed corner radii.");
     return this.actual.cornerRadius;
   }
   set cornerRadius(value: number) {
@@ -169,12 +72,6 @@ class ComponentAdapter implements ButtonComponentPort {
   }
   set counterAxisSizingMode(value: "FIXED") {
     this.actual.counterAxisSizingMode = value;
-  }
-  get description(): string {
-    return this.actual.description;
-  }
-  set description(value: string) {
-    this.actual.description = value;
   }
   get fills(): unknown {
     return this.actual.fills;
@@ -194,12 +91,6 @@ class ComponentAdapter implements ButtonComponentPort {
   set name(value: string) {
     this.actual.name = value;
   }
-  get opacity(): number {
-    return this.actual.opacity;
-  }
-  set opacity(value: number) {
-    this.actual.opacity = value;
-  }
   get paddingLeft(): number {
     return this.actual.paddingLeft;
   }
@@ -212,16 +103,10 @@ class ComponentAdapter implements ButtonComponentPort {
   set paddingRight(value: number) {
     this.actual.paddingRight = value;
   }
-  get primaryAxisAlignItems(): "CENTER" {
-    return this.actual.primaryAxisAlignItems as "CENTER";
+  get primaryAxisSizingMode(): "FIXED" {
+    return this.actual.primaryAxisSizingMode as "FIXED";
   }
-  set primaryAxisAlignItems(value: "CENTER") {
-    this.actual.primaryAxisAlignItems = value;
-  }
-  get primaryAxisSizingMode(): "AUTO" {
-    return this.actual.primaryAxisSizingMode as "AUTO";
-  }
-  set primaryAxisSizingMode(value: "AUTO") {
+  set primaryAxisSizingMode(value: "FIXED") {
     this.actual.primaryAxisSizingMode = value;
   }
   get strokeAlign(): "INSIDE" {
@@ -237,13 +122,101 @@ class ComponentAdapter implements ButtonComponentPort {
     this.actual.strokes = value as readonly Paint[];
   }
   get strokeWeight(): number {
-    if (this.actual.strokeWeight === figma.mixed) {
-      throw new Error("Managed Button has mixed stroke weights.");
-    }
+    if (this.actual.strokeWeight === figma.mixed)
+      throw new Error("Managed Input Field has mixed stroke weights.");
     return this.actual.strokeWeight;
   }
   set strokeWeight(value: number) {
     this.actual.strokeWeight = value;
+  }
+  appendChild(node: InputTextPort): void {
+    const adapter = node instanceof InputTextAdapter ? node : undefined;
+    if (adapter === undefined)
+      throw new Error("Input Text is not owned by this adapter.");
+    this.actual.appendChild(adapter.actual);
+  }
+  resize(width: number, height: number): boolean {
+    if (this.actual.width === width && this.actual.height === height)
+      return false;
+    this.actual.resizeWithoutConstraints(width, height);
+    return true;
+  }
+  setBoundVariable(
+    field: InputFieldBoundField,
+    variable: ButtonVariablePort,
+  ): boolean {
+    if (boundVariableId(this.actual, field) === variable.id) return false;
+    const actual = this.variables.get(variable.id)?.actual;
+    if (actual === undefined)
+      throw new Error("Input Variable is not owned by this adapter.");
+    this.actual.setBoundVariable(field, actual);
+    return true;
+  }
+  getSharedPluginData(namespace: string, key: string): string {
+    return this.actual.getSharedPluginData(namespace, key);
+  }
+  setSharedPluginData(namespace: string, key: string, value: string): void {
+    this.actual.setSharedPluginData(namespace, key, value);
+  }
+}
+
+class ComponentAdapter implements InputComponentPort {
+  constructor(
+    readonly actual: ComponentNode,
+    private readonly variables: ReadonlyMap<string, VariableAdapter>,
+    private readonly wrapText: (node: TextNode) => InputTextAdapter,
+    private readonly wrapField: (node: FrameNode) => FieldAdapter,
+  ) {}
+
+  get id(): string {
+    return this.actual.id;
+  }
+  get children(): readonly InputVariantChildPort[] {
+    const children: InputVariantChildPort[] = [];
+    for (const node of this.actual.children) {
+      if (node.type === "TEXT") children.push(this.wrapText(node));
+      if (node.type === "FRAME") children.push(this.wrapField(node));
+    }
+    return children;
+  }
+  get totalChildCount(): number {
+    return this.actual.children.length;
+  }
+  get counterAxisSizingMode(): "FIXED" {
+    return this.actual.counterAxisSizingMode as "FIXED";
+  }
+  set counterAxisSizingMode(value: "FIXED") {
+    this.actual.counterAxisSizingMode = value;
+  }
+  get description(): string {
+    return this.actual.description;
+  }
+  set description(value: string) {
+    this.actual.description = value;
+  }
+  get itemSpacing(): number {
+    return this.actual.itemSpacing;
+  }
+  set itemSpacing(value: number) {
+    this.actual.itemSpacing = value;
+  }
+  get layoutMode(): "VERTICAL" {
+    return this.actual.layoutMode as "VERTICAL";
+  }
+  set layoutMode(value: "VERTICAL") {
+    this.actual.layoutMode = value;
+  }
+  get name(): string {
+    return this.actual.name;
+  }
+  set name(value: string) {
+    this.actual.name = value;
+  }
+  get primaryAxisSizingMode(): "AUTO" {
+    return this.actual.primaryAxisSizingMode as "AUTO";
+  }
+  set primaryAxisSizingMode(value: "AUTO") {
+    this.actual.primaryAxisSizingMode = value;
   }
   get x(): number {
     return this.actual.x;
@@ -257,12 +230,54 @@ class ComponentAdapter implements ButtonComponentPort {
   set y(value: number) {
     this.actual.y = value;
   }
-
-  appendChild(node: ButtonTextPort): void {
-    const adapter = node instanceof TextAdapter ? node : undefined;
-    if (adapter === undefined)
-      throw new Error("Text node is not owned by this adapter.");
-    this.actual.appendChild(adapter.actual);
+  appendChild(node: InputVariantChildPort): void {
+    const actual =
+      node instanceof InputTextAdapter
+        ? node.actual
+        : node instanceof FieldAdapter
+          ? node.actual
+          : undefined;
+    if (actual === undefined)
+      throw new Error("Input child is not owned by this adapter.");
+    this.actual.appendChild(actual);
+  }
+  resizeWidth(width: number): boolean {
+    if (this.actual.width === width) return false;
+    this.actual.resizeWithoutConstraints(width, this.actual.height);
+    return true;
+  }
+  setBoundVariable(
+    field: InputComponentBoundField,
+    variable: ButtonVariablePort,
+  ): boolean {
+    if (boundVariableId(this.actual, field) === variable.id) return false;
+    const actual = this.variables.get(variable.id)?.actual;
+    if (actual === undefined)
+      throw new Error("Input Variable is not owned by this adapter.");
+    this.actual.setBoundVariable(field, actual);
+    return true;
+  }
+  setChildrenOrder(children: readonly InputVariantChildPort[]): boolean {
+    const actual = children.map((child) =>
+      child instanceof InputTextAdapter
+        ? child.actual
+        : child instanceof FieldAdapter
+          ? child.actual
+          : undefined,
+    );
+    if (actual.some((node) => node === undefined))
+      throw new Error("Input child order contains a foreign node.");
+    if (
+      actual.every(
+        (node, index) => this.actual.children[index]?.id === node?.id,
+      )
+    ) {
+      return false;
+    }
+    actual.forEach((node, index) => {
+      if (node !== undefined) this.actual.insertChild(index, node);
+    });
+    return true;
   }
   getSharedPluginData(namespace: string, key: string): string {
     return this.actual.getSharedPluginData(namespace, key);
@@ -270,25 +285,9 @@ class ComponentAdapter implements ButtonComponentPort {
   setSharedPluginData(namespace: string, key: string, value: string): void {
     this.actual.setSharedPluginData(namespace, key, value);
   }
-  resizeHeight(height: number): boolean {
-    if (this.actual.height === height) return false;
-    this.actual.resizeWithoutConstraints(this.actual.width, height);
-    return true;
-  }
-  setBoundVariable(
-    field: ButtonBoundField,
-    variable: ButtonVariablePort,
-  ): boolean {
-    if (boundVariableId(this.actual, field) === variable.id) return false;
-    const actual = this.variables.get(variable.id)?.actual;
-    if (actual === undefined)
-      throw new Error("Variable is not owned by this adapter.");
-    this.actual.setBoundVariable(field, actual);
-    return true;
-  }
 }
 
-class ComponentSetAdapter implements ButtonComponentSetPort {
+class ComponentSetAdapter implements InputComponentSetPort {
   constructor(
     readonly actual: ComponentSetNode,
     private readonly wrapComponent: (node: ComponentNode) => ComponentAdapter,
@@ -296,7 +295,7 @@ class ComponentSetAdapter implements ButtonComponentSetPort {
   get id(): string {
     return this.actual.id;
   }
-  get children(): readonly ButtonComponentPort[] {
+  get children(): readonly InputComponentPort[] {
     return this.actual.children
       .filter((node): node is ComponentNode => node.type === "COMPONENT")
       .map(this.wrapComponent);
@@ -337,9 +336,10 @@ class ComponentSetAdapter implements ButtonComponentSetPort {
   }
 }
 
-class ButtonPortAdapter implements FigmaButtonPort {
+class InputPortAdapter implements FigmaInputPort {
   private readonly variables = new Map<string, VariableAdapter>();
-  private readonly texts = new Map<string, TextAdapter>();
+  private readonly texts = new Map<string, InputTextAdapter>();
+  private readonly fields = new Map<string, FieldAdapter>();
   private readonly components = new Map<string, ComponentAdapter>();
   private readonly componentSets = new Map<string, ComponentSetAdapter>();
   private pagesLoaded = false;
@@ -357,13 +357,13 @@ class ButtonPortAdapter implements FigmaButtonPort {
   bindColor(
     variable: ButtonVariablePort,
     binding: Extract<
-      FigmaButtonPlan["variants"][number]["bindings"][number],
+      FigmaInputPlan["sharedBindings"][number],
       { kind: "color" }
     >,
   ): unknown {
     const actual = this.variables.get(variable.id)?.actual;
     if (actual === undefined)
-      throw new Error("Variable is not owned by this adapter.");
+      throw new Error("Input Variable is not owned by this adapter.");
     const paint: SolidPaint = {
       type: "SOLID",
       color: {
@@ -377,34 +377,35 @@ class ButtonPortAdapter implements FigmaButtonPort {
       this.figmaApi.variables.setBoundVariableForPaint(paint, "color", actual),
     ];
   }
-
   combineAsVariants(
-    components: readonly ButtonComponentPort[],
-  ): ButtonComponentSetPort {
+    components: readonly InputComponentPort[],
+  ): InputComponentSetPort {
     const actual = components.map((component) => {
       const adapter = this.components.get(component.id);
       if (adapter === undefined)
-        throw new Error("Component is not owned by this adapter.");
+        throw new Error("Input Component is not owned by this adapter.");
       return adapter.actual;
     });
     return this.wrapComponentSet(
       this.figmaApi.combineAsVariants(actual, this.figmaApi.currentPage),
     );
   }
-
-  createComponent(): ButtonComponentPort {
+  createComponent(): InputComponentPort {
     return this.wrapComponent(this.figmaApi.createComponent());
   }
-  createText(): ButtonTextPort {
+  createFrame(): InputFieldPort {
+    return this.wrapField(this.figmaApi.createFrame());
+  }
+  createText(): InputTextPort {
     return this.wrapText(this.figmaApi.createText());
   }
-  async getComponentSets(): Promise<readonly ButtonComponentSetPort[]> {
+  async getComponentSets(): Promise<readonly InputComponentSetPort[]> {
     await this.loadPages();
     return this.figmaApi.root
       .findAll((node) => node.type === "COMPONENT_SET")
       .map((node) => this.wrapComponentSet(node as ComponentSetNode));
   }
-  async getComponents(): Promise<readonly ButtonComponentPort[]> {
+  async getComponents(): Promise<readonly InputComponentPort[]> {
     await this.loadPages();
     return this.figmaApi.root
       .findAll((node) => node.type === "COMPONENT")
@@ -418,7 +419,6 @@ class ButtonPortAdapter implements FigmaButtonPort {
   loadFont(family: string, style: string): Promise<void> {
     return this.figmaApi.loadFontAsync({ family, style });
   }
-
   private async loadPages(): Promise<void> {
     if (this.pagesLoaded) return;
     await this.figmaApi.loadAllPagesAsync();
@@ -431,17 +431,29 @@ class ButtonPortAdapter implements FigmaButtonPort {
     this.variables.set(variable.id, adapter);
     return adapter;
   }
-  private wrapText = (node: TextNode): TextAdapter => {
+  private wrapText = (node: TextNode): InputTextAdapter => {
     const existing = this.texts.get(node.id);
     if (existing !== undefined) return existing;
-    const adapter = new TextAdapter(node, this.variables);
+    const adapter = new InputTextAdapter(node, this.variables);
     this.texts.set(node.id, adapter);
+    return adapter;
+  };
+  private wrapField = (node: FrameNode): FieldAdapter => {
+    const existing = this.fields.get(node.id);
+    if (existing !== undefined) return existing;
+    const adapter = new FieldAdapter(node, this.variables, this.wrapText);
+    this.fields.set(node.id, adapter);
     return adapter;
   };
   private wrapComponent = (node: ComponentNode): ComponentAdapter => {
     const existing = this.components.get(node.id);
     if (existing !== undefined) return existing;
-    const adapter = new ComponentAdapter(node, this.variables, this.wrapText);
+    const adapter = new ComponentAdapter(
+      node,
+      this.variables,
+      this.wrapText,
+      this.wrapField,
+    );
     this.components.set(node.id, adapter);
     return adapter;
   };
@@ -454,6 +466,6 @@ class ButtonPortAdapter implements FigmaButtonPort {
   }
 }
 
-export function createFigmaButtonPort(figmaApi: PluginAPI): FigmaButtonPort {
-  return new ButtonPortAdapter(figmaApi);
+export function createFigmaInputPort(figmaApi: PluginAPI): FigmaInputPort {
+  return new InputPortAdapter(figmaApi);
 }

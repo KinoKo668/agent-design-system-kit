@@ -4,7 +4,7 @@
   "projectId": "hatch-demo",
   "assetId": "input-foundation",
   "assetVersion": "1.0.0",
-  "contentDigest": "sha256:4369f4f267164fbeda7a152f2c4066b9506d03226b071e36eb374543ed5d343b",
+  "contentDigest": "sha256:84eff4f8b036b88b861f494251eb9c59b4066774531bd147389af611ff520e6d",
   "name": "Input foundation",
   "description": "The color, dimension and typography decisions required by the governed text Input vertical slice.",
   "dtcgVersion": "2025.10",
@@ -199,31 +199,31 @@
           "$value": "{primitive.color.neutral-700}"
         },
         {
-          "path": ["semantic", "color", "input-value"],
+          "path": ["semantic", "color", "input-value-text"],
           "$type": "color",
           "$description": "Entered Input value color.",
           "$value": "{primitive.color.neutral-900}"
         },
         {
-          "path": ["semantic", "color", "input-placeholder"],
+          "path": ["semantic", "color", "input-placeholder-text"],
           "$type": "color",
           "$description": "Placeholder text color that does not replace the label.",
           "$value": "{primitive.color.neutral-500}"
         },
         {
-          "path": ["semantic", "color", "input-helper"],
+          "path": ["semantic", "color", "input-helper-text"],
           "$type": "color",
           "$description": "Default supporting text color.",
           "$value": "{primitive.color.neutral-500}"
         },
         {
-          "path": ["semantic", "color", "input-disabled"],
+          "path": ["semantic", "color", "input-disabled-text"],
           "$type": "color",
           "$description": "Disabled Input text color.",
           "$value": "{primitive.color.neutral-500}"
         },
         {
-          "path": ["semantic", "color", "input-error"],
+          "path": ["semantic", "color", "input-error-text"],
           "$type": "color",
           "$description": "Error message color paired with text evidence.",
           "$value": "{primitive.color.red-600}"

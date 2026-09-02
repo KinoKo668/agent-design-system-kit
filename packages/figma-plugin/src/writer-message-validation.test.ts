@@ -4,6 +4,7 @@ import {
   createFigmaButtonPlan,
   createFigmaIconInstancePlan,
   createFigmaIconPlan,
+  createFigmaInputPlan,
   createFigmaVariablePlan,
   validateDesignSystemSnapshot,
   writerCommandDeliverySchema,
@@ -277,6 +278,40 @@ function iconDelivery() {
   };
 }
 
+function inputDelivery() {
+  const read = (path: string): unknown =>
+    JSON.parse(readFileSync(resolve(process.cwd(), path), "utf8")) as unknown;
+  const planned = createFigmaInputPlan(
+    read("design-system/hatch-demo/components/input-text.component.json"),
+    read("design-system/hatch-demo/tokens/input-foundation.tokens.json"),
+    "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
+    "sha256:84eff4f8b036b88b861f494251eb9c59b4066774531bd147389af611ff520e6d",
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.input.text.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "components.input.ensure",
+    },
+    idempotencyKey: "components-input-text-1.0.0",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function variablesDelivery() {
   const fixture = JSON.parse(
     readFileSync(
@@ -512,6 +547,22 @@ describe("lightweight Figma Writer boundary validation", () => {
       true,
     );
     expect(isWriterCommandDelivery(iconDelivery())).toBe(true);
+    expect(writerCommandDeliverySchema.safeParse(inputDelivery()).success).toBe(
+      true,
+    );
+    expect(isWriterCommandDelivery(inputDelivery())).toBe(true);
+    const reorderedInput = structuredClone(inputDelivery());
+    const content =
+      reorderedInput.command.payload.plan.componentSet.properties.content;
+    reorderedInput.command.payload.plan.componentSet.properties.content = {
+      options: content.options,
+      name: content.name,
+      defaultValue: content.defaultValue,
+    };
+    expect(writerCommandDeliverySchema.safeParse(reorderedInput).success).toBe(
+      true,
+    );
+    expect(isWriterCommandDelivery(reorderedInput)).toBe(true);
     expect(
       writerCommandDeliverySchema.safeParse(instanceDelivery()).success,
     ).toBe(true);
@@ -581,6 +632,13 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(changedIconGeometry).success,
     ).toBe(false);
     expect(isWriterCommandDelivery(changedIconGeometry)).toBe(false);
+
+    const missingInputState = structuredClone(inputDelivery());
+    missingInputState.command.payload.plan.variants.pop();
+    expect(
+      writerCommandDeliverySchema.safeParse(missingInputState).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(missingInputState)).toBe(false);
 
     const wrongIconInstanceSize = structuredClone(iconInstanceDelivery());
     wrongIconInstanceSize.command.payload.plan.properties.size.value = "Small";
@@ -658,12 +716,35 @@ describe("lightweight Figma Writer boundary validation", () => {
         variants: { created: 3, unchanged: 0, updated: 0 },
       },
     };
+    const input = {
+      ...success,
+      result: {
+        componentSet: {
+          action: "created",
+          nodeId: "5:6",
+          stableId: "hatch-demo/component/input/text/component-set/major-1",
+        },
+        textPropertyNames: {
+          label: "Label#5:7",
+          supportingText: "Supporting text#5:9",
+          text: "Text#5:8",
+        },
+        type: "components.input.ensure",
+        typography: {
+          lineHeightStrategy: "resolved-percent",
+          variableBindings: 12,
+        },
+        variants: { created: 8, unchanged: 0, updated: 0 },
+      },
+    };
     expect(writerPluginResultSchema.safeParse(success).success).toBe(true);
     expect(writerPluginResultSchema.safeParse(failure).success).toBe(true);
     expect(isWriterPluginResult(success)).toBe(true);
     expect(isWriterPluginResult(failure)).toBe(true);
     expect(writerPluginResultSchema.safeParse(icon).success).toBe(true);
     expect(isWriterPluginResult(icon)).toBe(true);
+    expect(writerPluginResultSchema.safeParse(input).success).toBe(true);
+    expect(isWriterPluginResult(input)).toBe(true);
 
     const instanceSuccess = {
       ok: true,

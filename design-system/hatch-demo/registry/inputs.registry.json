@@ -8,7 +8,7 @@
         "type": "component",
         "id": "input/text",
         "version": "1.0.0",
-        "contentDigest": "sha256:b8d36a1ce1ad8126d1fcdd1c3a8a627712087068695608d34193e7477efd7f38"
+        "contentDigest": "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5"
       },
       "approvalId": "approval.component.input.text.1.0.0",
       "lifecycle": "active",

@@ -66,4 +66,4 @@ Agent 调用 hatchkit_audit_registry_drift
 
 ## 7. 实现验证
 
-Core 保存权威 Schema、计划生成与分类算法；Plugin 使用与 Core 结果逐项对照的轻量实现。主线程当前受 128 KiB 原始体积与 32 KiB gzip 双门禁约束；测试覆盖双方缺失、重复身份、无效 Marker、版本／摘要／Locator／子集合冲突、错误文件绑定、全页加载、零写入、协议严格校验、Bridge 只读授权边界、MCP Tool 编排和成功结果重放。
+Core 保存权威 Schema、计划生成与分类算法；Plugin 使用与 Core 结果逐项对照的轻量实现。Input Writer 接入后，主线程当前受 160 KiB 原始体积与 32 KiB gzip 双门禁约束；测试覆盖双方缺失、重复身份、无效 Marker、版本／摘要／Locator／子集合冲突、错误文件绑定、全页加载、零写入、协议严格校验、Bridge 只读授权边界、MCP Tool 编排和成功结果重放。

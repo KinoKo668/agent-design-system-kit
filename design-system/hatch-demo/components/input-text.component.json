@@ -4,7 +4,7 @@
   "projectId": "hatch-demo",
   "assetId": "input/text",
   "assetVersion": "1.0.0",
-  "contentDigest": "sha256:b8d36a1ce1ad8126d1fcdd1c3a8a627712087068695608d34193e7477efd7f38",
+  "contentDigest": "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
   "name": "Input / Text",
   "description": "A governed single-line text Input with visible labeling, helper and error feedback, and explicit interaction states.",
   "componentKind": "component-set",
@@ -152,9 +152,12 @@
         },
         {
           "target": "value.fill",
-          "token": "{semantic.color.input-placeholder}"
+          "token": "{semantic.color.input-placeholder-text}"
         },
-        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-helper-text}"
+        }
       ]
     },
     {
@@ -175,8 +178,14 @@
           "target": "field.border-width",
           "token": "{semantic.dimension.input-border-width-default}"
         },
-        { "target": "value.fill", "token": "{semantic.color.input-value}" },
-        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-value-text}"
+        },
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-helper-text}"
+        }
       ]
     },
     {
@@ -199,9 +208,12 @@
         },
         {
           "target": "value.fill",
-          "token": "{semantic.color.input-placeholder}"
+          "token": "{semantic.color.input-placeholder-text}"
         },
-        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-helper-text}"
+        }
       ]
     },
     {
@@ -222,8 +234,14 @@
           "target": "field.border-width",
           "token": "{semantic.dimension.input-border-width-focused}"
         },
-        { "target": "value.fill", "token": "{semantic.color.input-value}" },
-        { "target": "support.fill", "token": "{semantic.color.input-helper}" }
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-value-text}"
+        },
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-helper-text}"
+        }
       ]
     },
     {
@@ -246,9 +264,12 @@
         },
         {
           "target": "value.fill",
-          "token": "{semantic.color.input-placeholder}"
+          "token": "{semantic.color.input-placeholder-text}"
         },
-        { "target": "support.fill", "token": "{semantic.color.input-error}" }
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-error-text}"
+        }
       ]
     },
     {
@@ -269,8 +290,14 @@
           "target": "field.border-width",
           "token": "{semantic.dimension.input-border-width-default}"
         },
-        { "target": "value.fill", "token": "{semantic.color.input-value}" },
-        { "target": "support.fill", "token": "{semantic.color.input-error}" }
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-value-text}"
+        },
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-error-text}"
+        }
       ]
     },
     {
@@ -291,8 +318,14 @@
           "target": "field.border-width",
           "token": "{semantic.dimension.input-border-width-default}"
         },
-        { "target": "value.fill", "token": "{semantic.color.input-disabled}" },
-        { "target": "support.fill", "token": "{semantic.color.input-disabled}" }
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-disabled-text}"
+        },
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-disabled-text}"
+        }
       ]
     },
     {
@@ -313,8 +346,14 @@
           "target": "field.border-width",
           "token": "{semantic.dimension.input-border-width-default}"
         },
-        { "target": "value.fill", "token": "{semantic.color.input-disabled}" },
-        { "target": "support.fill", "token": "{semantic.color.input-disabled}" }
+        {
+          "target": "value.fill",
+          "token": "{semantic.color.input-disabled-text}"
+        },
+        {
+          "target": "support.fill",
+          "token": "{semantic.color.input-disabled-text}"
+        }
       ]
     }
   ],

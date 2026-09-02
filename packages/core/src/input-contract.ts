@@ -257,16 +257,16 @@ function expectedVariantTokens(
         : "{semantic.dimension.input-border-width-default}",
     "support.fill":
       state === "error"
-        ? "{semantic.color.input-error}"
+        ? "{semantic.color.input-error-text}"
         : state === "disabled"
-          ? "{semantic.color.input-disabled}"
-          : "{semantic.color.input-helper}",
+          ? "{semantic.color.input-disabled-text}"
+          : "{semantic.color.input-helper-text}",
     "value.fill":
       state === "disabled"
-        ? "{semantic.color.input-disabled}"
+        ? "{semantic.color.input-disabled-text}"
         : content === "empty"
-          ? "{semantic.color.input-placeholder}"
-          : "{semantic.color.input-value}",
+          ? "{semantic.color.input-placeholder-text}"
+          : "{semantic.color.input-value-text}",
   };
 }
 

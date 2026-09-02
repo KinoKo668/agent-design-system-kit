@@ -19,12 +19,14 @@ import { shouldCacheWriterResult } from "./writer-replay-policy.js";
 import { createFigmaVariablesPort } from "./figma-variables-port.js";
 import { createFigmaButtonPort } from "./figma-button-port.js";
 import { createFigmaIconPort } from "./figma-icon-port.js";
+import { createFigmaInputPort } from "./figma-input-port.js";
 import { createFigmaButtonInstancePort } from "./figma-button-instance-port.js";
 import { createFigmaStyleAuditPort } from "./figma-style-audit-port.js";
 import { createFigmaComponentAuditPort } from "./figma-component-audit-port.js";
 import { createFigmaRegistryDriftAuditPort } from "./figma-registry-drift-audit-port.js";
 import { ButtonWriterError, ensureFigmaButton } from "./button-writer.js";
 import { IconWriterError, ensureFigmaIcon } from "./icon-writer.js";
+import { InputWriterError, ensureFigmaInput } from "./input-writer.js";
 import {
   ButtonInstanceWriterError,
   IconInstanceWriterError,
@@ -131,6 +133,7 @@ const MAX_COMPLETED_COMMANDS = 100;
 const variablesPort = createFigmaVariablesPort(figma);
 const buttonPort = createFigmaButtonPort(figma);
 const iconPort = createFigmaIconPort(figma);
+const inputPort = createFigmaInputPort(figma);
 const buttonInstancePort = createFigmaButtonInstancePort(figma);
 const styleAuditPort = createFigmaStyleAuditPort(figma);
 const componentAuditPort = createFigmaComponentAuditPort(figma);
@@ -401,6 +404,40 @@ async function executeCommand(
           : failureResult(command, pluginInstanceId, {
               code: "INTERNAL_ERROR",
               message: "The Figma Icon writer failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics and report the failure before retrying.",
+            });
+    }
+  } else if (
+    command.command.type === "components.input.ensure" &&
+    command.approval.mode === "approved" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      const inputResult = await ensureFigmaInput(
+        inputPort,
+        command.command.payload.plan,
+        {
+          approvalId: command.approval.approvalId,
+          fileBindingId: command.target.fileBindingId,
+          operationId: command.operationId,
+          projectId: command.projectId,
+        },
+      );
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: inputResult,
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof InputWriterError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Figma Input writer failed unexpectedly.",
               recoveryInstruction:
                 "Inspect the local Plugin diagnostics and report the failure before retrying.",
             });

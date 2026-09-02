@@ -216,13 +216,15 @@ export function createRegistryWriteFinalizer(
       !("type" in result) ||
       (result.type !== "components.button.ensure" &&
         result.type !== "components.icon.ensure" &&
+        result.type !== "components.input.ensure" &&
         result.type !== "instances.button.insert")
     ) {
       return null;
     }
     const plan =
       (result.type === "components.button.ensure" ||
-        result.type === "components.icon.ensure") &&
+        result.type === "components.icon.ensure" ||
+        result.type === "components.input.ensure") &&
       command.command.type === result.type
         ? command.command.payload.plan
         : result.type === "instances.button.insert" &&

@@ -130,7 +130,8 @@ What exists today:
 - a live Git Approval verifier that reloads the catalog before every write, validates the exact subject and upstream chain, and fails closed on missing, stale, revoked, superseded, duplicate, or invalid records;
 - a deterministic Button writer that ensures one real Main Component Set, four approved Variants, Label properties, and exact Variable bindings without duplicate assets;
 - a deterministic Icon writer and `components.icon.ensure` protocol path that plans and converges one three-size Component Set with real Vector glyphs, exact Variable bindings, stable markers, no-op retries, and recoverable partial writes;
-- an atomic Registry finalizer that records the audited Button node only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
+- a deterministic Input writer and `components.input.ensure` protocol path that plans and converges the exact eight-Variant State × Content matrix, three text properties, visible label/helper/error layers, and all governed Variable bindings with no-op retries and recoverable partial writes;
+- an atomic Registry finalizer that records audited Button, Icon, or Input nodes only after Figma success, preserves concurrent edits, and reports recoverable partial writes instead of false success;
 - a Registry-backed Button Instance writer that audits the real Main Component and exact Variant, creates one managed Figma Instance, and performs zero writes on an unchanged retry;
 - a unified Writer replay and destructive-action policy that forces real writes to re-audit on recovery and forbids automatic delete, detach, or component swap;
 - an optional `hatchkit_insert_button_instance` MCP tool that performs exact Registry/Variant resolution, deterministic planning, authenticated Bridge submission, Plugin waiting, and audited Instance reporting in one call while remaining absent in the default read-only configuration;

@@ -4,9 +4,12 @@ import validContract from "../../../design-system/hatch-demo/components/button.c
 import validTokenSet from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
 import iconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
 import iconTokens from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
+import inputContract from "../../../design-system/hatch-demo/components/input-text.component.json" with { type: "json" };
+import inputTokens from "../../../design-system/hatch-demo/tokens/input-foundation.tokens.json" with { type: "json" };
 
 import { createFigmaButtonPlan } from "./figma-button-plan.js";
 import { createFigmaIconPlan } from "./figma-icon-plan.js";
+import { createFigmaInputPlan } from "./figma-input-plan.js";
 
 import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
@@ -154,6 +157,37 @@ function iconCommand(): unknown {
     },
     idempotencyKey: "components-icon-check-1.0.0",
     operationId: "79d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
+function inputCommand(): unknown {
+  const planned = createFigmaInputPlan(
+    inputContract,
+    inputTokens,
+    "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
+    "sha256:84eff4f8b036b88b861f494251eb9c59b4066774531bd147389af611ff520e6d",
+  );
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: "approval.component.input.text.1.0.0",
+      mode: "approved",
+      subject: { ...planned.data.source, type: "component" },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "components.input.ensure",
+    },
+    idempotencyKey: "components-input-text-1.0.0",
+    operationId: "89d4aa88-67a2-4de3-bf64-2b51509316be",
     projectId: "hatch-demo",
     schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
     source: { client: "mcp-server" },
@@ -377,6 +411,9 @@ describe("Writer protocol", () => {
     expect(writerCommandEnvelopeSchema.safeParse(iconCommand()).success).toBe(
       true,
     );
+    expect(writerCommandEnvelopeSchema.safeParse(inputCommand()).success).toBe(
+      true,
+    );
     expect(
       writerCommandEnvelopeSchema.safeParse(iconInstanceCommand()).success,
     ).toBe(true);
@@ -465,6 +502,32 @@ describe("Writer protocol", () => {
           deferredTypographyCount: 1,
           type: "variables.ensure",
           variables: { created: 30, unchanged: 0, updated: 0 },
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+      }).success,
+    ).toBe(true);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          componentSet: {
+            action: "created",
+            nodeId: "3:4",
+            stableId: "hatch-demo/component/input/text/component-set/major-1",
+          },
+          textPropertyNames: {
+            label: "Label#3:5",
+            supportingText: "Supporting text#3:7",
+            text: "Text#3:6",
+          },
+          type: "components.input.ensure",
+          typography: {
+            lineHeightStrategy: "resolved-percent",
+            variableBindings: 12,
+          },
+          variants: { created: 8, unchanged: 0, updated: 0 },
         },
         schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
       }).success,

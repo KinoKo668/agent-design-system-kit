@@ -5,6 +5,7 @@ import {
   createFigmaButtonPlan,
   createFigmaIconPlan,
   createFigmaIconInstancePlan,
+  createFigmaInputPlan,
   createFigmaVariablePlan,
   createToolkitError,
   type DesignSystemSnapshot,
@@ -160,24 +161,37 @@ function verifyDeterministicPlan(
     (component.data.profile === "button-v1" &&
       command.command.type !== "components.button.ensure") ||
     (component.data.profile === "icon-v1" &&
-      command.command.type !== "components.icon.ensure")
+      command.command.type !== "components.icon.ensure") ||
+    (component.data.profile === "input-v1" &&
+      command.command.type !== "components.input.ensure")
   ) {
     return planMismatchError(command);
   }
-  const expected =
-    component.data.profile === "button-v1"
-      ? createFigmaButtonPlan(
-          component.data,
-          tokenSet.data,
-          subject.contentDigest,
-          tokenDependency.contentDigest,
-        )
-      : createFigmaIconPlan(
+  const expected = (() => {
+    switch (component.data.profile) {
+      case "button-v1":
+        return createFigmaButtonPlan(
           component.data,
           tokenSet.data,
           subject.contentDigest,
           tokenDependency.contentDigest,
         );
+      case "icon-v1":
+        return createFigmaIconPlan(
+          component.data,
+          tokenSet.data,
+          subject.contentDigest,
+          tokenDependency.contentDigest,
+        );
+      case "input-v1":
+        return createFigmaInputPlan(
+          component.data,
+          tokenSet.data,
+          subject.contentDigest,
+          tokenDependency.contentDigest,
+        );
+    }
+  })();
   return !expected.ok ||
     canonicalizeJson(expected.data) !==
       canonicalizeJson(command.command.payload.plan)

@@ -13,6 +13,7 @@ import { figmaButtonPlanSchema } from "./figma-button-plan.js";
 import { figmaButtonInstancePlanSchema } from "./figma-button-instance-plan.js";
 import { figmaIconPlanSchema } from "./figma-icon-plan.js";
 import { figmaIconInstancePlanSchema } from "./figma-icon-instance-plan.js";
+import { figmaInputPlanSchema } from "./figma-input-plan.js";
 import {
   figmaStyleAuditPlanSchema,
   figmaStyleAuditResultSchema,
@@ -34,6 +35,7 @@ export const WRITER_COMMAND_TYPES = {
   auditStyles: "audit.styles.scan",
   ensureButton: "components.button.ensure",
   ensureIcon: "components.icon.ensure",
+  ensureInput: "components.input.ensure",
   ensureVariables: "variables.ensure",
   insertButtonInstance: "instances.button.insert",
   insertIconInstance: "instances.icon.insert",
@@ -159,6 +161,13 @@ export const writerEnsureIconCommandSchema = z
   })
   .strict();
 
+export const writerEnsureInputCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaInputPlanSchema }).strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureInput),
+  })
+  .strict();
+
 export const writerInsertButtonInstanceCommandSchema = z
   .object({
     payload: z.object({ plan: figmaButtonInstancePlanSchema }).strict(),
@@ -200,6 +209,7 @@ export const writerCommandSchema = z.discriminatedUnion("type", [
   writerAuditStylesCommandSchema,
   writerInsertIconInstanceCommandSchema,
   writerInsertButtonInstanceCommandSchema,
+  writerEnsureInputCommandSchema,
   writerEnsureIconCommandSchema,
   writerEnsureButtonCommandSchema,
   writerEnsureVariablesCommandSchema,
@@ -441,6 +451,42 @@ export const writerIconResultSchema = z
   })
   .strict();
 
+export const writerInputResultSchema = z
+  .object({
+    componentSet: z
+      .object({
+        action: z.enum(["created", "unchanged", "updated"]),
+        nodeId: z
+          .string()
+          .max(128, "Must contain at most 128 characters.")
+          .regex(/^\d+:\d+$/u, "Must be a Figma Plugin node ID."),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    textPropertyNames: z
+      .object({
+        label: z.string().min(1).max(120),
+        supportingText: z.string().min(1).max(120),
+        text: z.string().min(1).max(120),
+      })
+      .strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.ensureInput),
+    typography: z
+      .object({
+        lineHeightStrategy: z.literal("resolved-percent"),
+        variableBindings: z.literal(12),
+      })
+      .strict(),
+    variants: z
+      .object({
+        created: z.number().int().nonnegative(),
+        unchanged: z.number().int().nonnegative(),
+        updated: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export const writerButtonInstanceResultSchema = z
   .object({
     componentSet: z
@@ -500,6 +546,7 @@ export const writerSuccessResultSchema = z.union([
   figmaStyleAuditResultSchema,
   writerButtonResultSchema,
   writerIconResultSchema,
+  writerInputResultSchema,
   writerButtonInstanceResultSchema,
   writerIconInstanceResultSchema,
   writerVariablesResultSchema,

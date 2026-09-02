@@ -1,6 +1,6 @@
 # COMP-002：Input 契约与 Figma 组件链路
 
-- 当前状态：Contract、Token、Registry 与只读查询已实现；Figma 建库和页面 Instance 插入待后续步骤完成
+- 当前状态：Contract、Token、Figma 幂等建库与 Registry 回写已实现；页面 Instance 插入待后续步骤完成
 - 实现起点：2026-09-01
 - 依赖：LOOP-003、SCH-002、SCH-004、REG-002、FIG-007
 
@@ -71,6 +71,21 @@ Input Token Set + Input Contract
 → ensure-required 或结构化 Change Request
 ```
 
+获得真实人类审批后，写入链路继续执行：
+
+```text
+Git 中的 Input Contract + Token Set + Approval
+→ 服务端重新生成并逐字比对 FigmaInputPlan
+→ Plugin 再次独立校验命令与 8 Variant 矩阵
+→ 单 Writer 串行创建或更新 Input Component Set
+→ 写入 Label / Text / Supporting text 三个文本属性
+→ 绑定颜色、尺寸和三组 Typography Variables
+→ 审计 Figma Marker
+→ 原子回写 Registry Ready Locator
+```
+
+Writer 会先验证文件绑定与全部 Token Variable，再创建任何节点；相同版本不同摘要、降级、重复身份、缺失 Variable、未受管同名资产和不完整 Variant 集合都会失败关闭。重复执行同一计划不会复制节点。
+
 公开样例保持 `unbuilt`，因为尚未有真实人类 Component Approval，也没有在用户指定的独立 Figma Desktop 文件中完成建库与视觉验收。当前 Agent 可以理解并查询 Input，但不能把它冒充为可插入的真实 Figma Instance。
 
 ## 5. 验收标准
@@ -84,11 +99,20 @@ Input Token Set + Input Contract
 - 通用 Component 联合类型、Catalog Loader、CLI 与 MCP 可以查询和解析 Input；
 - 公开输出不泄露未 Ready 的 Figma Locator。
 
-后续关闭 COMP-002 仍需：
+已完成：
 
 1. 确定性的 `FigmaInputPlan`；
 2. `components.input.ensure` Writer Protocol 与 Plugin Adapter；
 3. 8 Variant、文本属性和 Variable Binding 的幂等建库；
-4. Registry Ready 原子最终化；
-5. Input Instance Plan、MCP 插入 Tool 与写后来源审计；
-6. 真实审批、Figma Desktop 双次运行、重开定位和设计师视觉验收。
+4. Registry Ready 原子最终化。
+
+后续关闭 COMP-002 仍需：
+
+1. Input Instance Plan、MCP 插入 Tool 与写后来源审计；
+2. 真实审批、Figma Desktop 双次运行、重开定位和设计师视觉验收。
+
+## 6. Plugin 包体预算
+
+Input 是主线程中的第三类完整组件 Writer。接入前主线程为 129,521 bytes；完成独立协议校验、8 Variant Writer 与真实 Figma Adapter 后为 156,923 bytes，gzip 为 31,362 bytes。
+
+因此原始体积门禁从 128 KiB 调整为 160 KiB，同时继续保留更严格的 32 KiB gzip 门禁和 300 KiB UI 门禁。调整只覆盖新增的可执行能力，不移除压缩门禁、不内嵌 Source Map，也不以无限制增大预算掩盖膨胀。
