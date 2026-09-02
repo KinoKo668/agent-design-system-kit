@@ -275,13 +275,16 @@ async function runCommand(
   const inputCommand = command.command.type === "components.input.ensure";
   const instanceCommand = command.command.type === "instances.button.insert";
   const iconInstanceCommand = command.command.type === "instances.icon.insert";
+  const inputInstanceCommand =
+    command.command.type === "instances.input.insert";
   const writeCommand =
     variablesCommand ||
     buttonCommand ||
     iconCommand ||
     inputCommand ||
     instanceCommand ||
-    iconInstanceCommand;
+    iconInstanceCommand ||
+    inputInstanceCommand;
   const totalSteps = variablesCommand
     ? 5
     : buttonCommand
@@ -294,7 +297,9 @@ async function runCommand(
             ? 4
             : iconInstanceCommand
               ? 4
-              : 1;
+              : inputInstanceCommand
+                ? 4
+                : 1;
   update({
     approval: writeCommand
       ? command.approval.mode === "approved"
@@ -313,12 +318,12 @@ async function runCommand(
     operation: {
       completedSteps: 0,
       detail: writeCommand
-        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconInstanceCommand ? "Icon Instance" : inputCommand ? "Input" : iconCommand ? "Icon" : "Button"} plan.`
+        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconInstanceCommand ? "Icon Instance" : inputInstanceCommand ? "Input Instance" : inputCommand ? "Input" : iconCommand ? "Icon" : "Button"} plan.`
         : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
       step: writeCommand
-        ? `Verify file, identities, ${variablesCommand ? "Modes" : instanceCommand ? "Registry locator and Variant" : "Token dependencies"} and conflicts`
+        ? `Verify file, identities, ${variablesCommand ? "Modes" : instanceCommand || iconInstanceCommand || inputInstanceCommand ? "Registry locator and Variant" : "Token dependencies"} and conflicts`
         : "Validate writer.ping",
       totalSteps,
     },
@@ -381,6 +386,10 @@ async function runCommand(
       "type" in result.result && result.result.type === "instances.icon.insert"
         ? result.result
         : null;
+    const inputInstanceResult =
+      "type" in result.result && result.result.type === "instances.input.insert"
+        ? result.result
+        : null;
     update({
       operation: {
         completedSteps: totalSteps,
@@ -397,7 +406,9 @@ async function runCommand(
                     ? `Button Instance ${instanceResult.instance.action} from the registered ${instanceResult.variant.stableId}.`
                     : iconInstanceResult !== null
                       ? `Icon Instance ${iconInstanceResult.instance.action} from the registered ${iconInstanceResult.variant.stableId}.`
-                      : "The diagnostic round trip completed without a Figma write.",
+                      : inputInstanceResult !== null
+                        ? `Input Instance ${inputInstanceResult.instance.action} from the registered ${inputInstanceResult.variant.stableId}.`
+                        : "The diagnostic round trip completed without a Figma write.",
         operationId: command.operationId,
         status: "succeeded",
         step:
@@ -411,7 +422,9 @@ async function runCommand(
                   ? "Button Instance audited and managed marker committed"
                   : iconInstanceResult !== null
                     ? "Icon Instance audited and managed marker committed"
-                    : "writer.ping acknowledged",
+                    : inputInstanceResult !== null
+                      ? "Input Instance audited and managed marker committed"
+                      : "writer.ping acknowledged",
         totalSteps,
       },
       writeAuthorized: false,

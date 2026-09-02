@@ -100,14 +100,18 @@ requireCondition(
   "main bundle missing the safe diagnostic command",
 );
 requireCondition(
+  pluginJavaScript.includes("instances.input.insert"),
+  "main bundle missing the governed Input Instance command",
+);
+requireCondition(
   pluginJavaScript.includes("file-binding") &&
     pluginJavaScript.includes("FILE_BINDING_MISMATCH"),
   "main bundle missing fail-closed Figma file binding",
 );
-requireCondition(pluginStat.size <= 160 * 1024, "main bundle exceeds 160 KiB");
+requireCondition(pluginStat.size <= 168 * 1024, "main bundle exceeds 168 KiB");
 requireCondition(
-  pluginGzipBytes <= 32 * 1024,
-  "main bundle exceeds 32 KiB gzip",
+  pluginGzipBytes <= 34 * 1024,
+  "main bundle exceeds 34 KiB gzip",
 );
 requireCondition(uiStat.size <= 300 * 1024, "UI bundle exceeds 300 KiB");
 

@@ -32,11 +32,18 @@ import {
   iconInstanceLoopOutputSchema,
   runIconInstanceLoop,
 } from "./icon-instance-loop.js";
+import {
+  inputInstanceLoopInputSchema,
+  inputInstanceLoopOutputSchema,
+  runInputInstanceLoop,
+} from "./input-instance-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
 export const HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_icon_instance" as const;
+export const HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME =
+  "hatchkit_insert_input_instance" as const;
 export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
 export const HATCHKIT_COMPONENT_AUDIT_TOOL_NAME =
   "hatchkit_audit_components" as const;
@@ -76,6 +83,19 @@ export const hatchkitIconInstanceInsertInputSchema =
       ),
   });
 
+export const hatchkitInputInstanceInsertInputSchema =
+  inputInstanceLoopInputSchema.extend({
+    waitTimeoutMs: z
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(30_000)
+      .describe(
+        "How long to wait for the connected Figma Plugin before returning a resumable timeout.",
+      ),
+  });
+
 export interface HatchkitWriteToolOptions extends HatchkitCatalogOptions {
   readonly writer: LocalWriterClient;
 }
@@ -84,6 +104,26 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+    {
+      annotations: HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS,
+      description:
+        "Resolve one exact Ready Input State and Content from the current Git Registry, build the deterministic approved plan, insert one real Figma Instance through the authenticated single Writer, and return its audited result. Label, field text, and nearby supporting or error text are explicit governed properties.",
+      inputSchema: hatchkitInputInstanceInsertInputSchema,
+      outputSchema: inputInstanceLoopOutputSchema,
+      title: "Insert an approved Input Instance",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runInputInstanceLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
     {

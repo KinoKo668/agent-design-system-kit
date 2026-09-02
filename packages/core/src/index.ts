@@ -23,6 +23,7 @@ export * from "./figma-button-instance-plan.js";
 export * from "./figma-icon-plan.js";
 export * from "./figma-icon-instance-plan.js";
 export * from "./figma-input-plan.js";
+export * from "./figma-input-instance-plan.js";
 export * from "./json.js";
 export * from "./logging.js";
 export * from "./results.js";

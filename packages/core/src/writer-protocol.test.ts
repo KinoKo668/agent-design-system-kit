@@ -261,6 +261,82 @@ function iconInstanceCommand(): unknown {
   };
 }
 
+function inputInstanceCommand(): unknown {
+  const root = "hatch-demo/component/input/text/component-set/major-1";
+  const plan = {
+    componentSet: {
+      expectedVariantStableIds: [
+        "default",
+        "focused",
+        "error",
+        "disabled",
+      ].flatMap((state) =>
+        ["empty", "filled"].map(
+          (content) => `${root}/variant/state-${state}/content-${content}`,
+        ),
+      ),
+      majorVersion: 1,
+      nodeId: "700:800",
+      stableId: root,
+    },
+    instance: {
+      stableId: "hatch-demo/instance/screen-sign-up/email",
+      x: 120,
+      y: 240,
+    },
+    properties: {
+      content: { name: "Content", value: "Filled" },
+      label: { name: "Label", value: "Email address" },
+      state: { name: "State", value: "Error" },
+      supportingText: {
+        name: "Supporting text",
+        value: "Enter a valid work email address.",
+      },
+      text: { name: "Text", value: "alex@example.com" },
+    },
+    schemaVersion: "1.0.0",
+    selectedVariant: {
+      figmaName: "State=Error, Content=Filled",
+      selections: { content: "filled", state: "error" },
+      slotId: "variant/state-error/content-filled",
+      stableId: `${root}/variant/state-error/content-filled`,
+    },
+    source: {
+      approvalId: "approval.component.input.text.1.0.0",
+      assetId: "input/text",
+      assetVersion: "1.0.0",
+      contentDigest:
+        "sha256:cdcc977da4014343e91edef042a55335821d8eaffc8d8098dc865f798321cfc5",
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      projectId: "hatch-demo",
+    },
+  };
+  return {
+    approval: {
+      approvalId: plan.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: plan.source.assetId,
+        assetVersion: plan.source.assetVersion,
+        contentDigest: plan.source.contentDigest,
+        projectId: plan.source.projectId,
+        type: "component",
+      },
+    },
+    command: { payload: { plan }, type: "instances.input.insert" },
+    idempotencyKey: "input-instance-screen-sign-up-email",
+    operationId: "99d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: plan.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function styleAuditCommand(): unknown {
   return {
     approval: {
@@ -418,6 +494,9 @@ describe("Writer protocol", () => {
       writerCommandEnvelopeSchema.safeParse(iconInstanceCommand()).success,
     ).toBe(true);
     expect(
+      writerCommandEnvelopeSchema.safeParse(inputInstanceCommand()).success,
+    ).toBe(true);
+    expect(
       writerCommandEnvelopeSchema.safeParse(styleAuditCommand()).success,
     ).toBe(true);
     expect(
@@ -487,6 +566,30 @@ describe("Writer protocol", () => {
         pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
         schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
         transport: "http",
+      }).success,
+    ).toBe(true);
+    expect(
+      writerPluginResultSchema.safeParse({
+        ok: true,
+        operationId: validCommand().operationId,
+        pluginInstanceId: "c45c06e8-80ae-4478-ad55-9c49c60ecc56",
+        result: {
+          componentSet: {
+            nodeId: "700:800",
+            stableId: "hatch-demo/component/input/text/component-set/major-1",
+          },
+          instance: {
+            action: "created",
+            nodeId: "700:810",
+            stableId: "hatch-demo/instance/screen-sign-up/email",
+          },
+          type: "instances.input.insert",
+          variant: {
+            stableId:
+              "hatch-demo/component/input/text/component-set/major-1/variant/state-error/content-filled",
+          },
+        },
+        schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
       }).success,
     ).toBe(true);
     expect(

@@ -6,6 +6,7 @@ import {
   createFigmaIconPlan,
   createFigmaIconInstancePlan,
   createFigmaInputPlan,
+  createFigmaInputInstancePlan,
   createFigmaVariablePlan,
   createToolkitError,
   type DesignSystemSnapshot,
@@ -84,7 +85,8 @@ function verifyDeterministicPlan(
 
   if (
     command.command.type === "instances.button.insert" ||
-    command.command.type === "instances.icon.insert"
+    command.command.type === "instances.icon.insert" ||
+    command.command.type === "instances.input.insert"
   ) {
     if (command.command.type === "instances.button.insert") {
       const plan = command.command.payload.plan;
@@ -107,16 +109,39 @@ function verifyDeterministicPlan(
         ? planMismatchError(command)
         : null;
     }
+    if (command.command.type === "instances.icon.insert") {
+      const plan = command.command.payload.plan;
+      const prefix = `${plan.source.projectId}/instance/`;
+      if (!plan.instance.stableId.startsWith(prefix)) {
+        return planMismatchError(command);
+      }
+      const expected = createFigmaIconInstancePlan(snapshot, {
+        assetId: plan.source.assetId,
+        assetVersion: plan.source.assetVersion,
+        instanceId: plan.instance.stableId.slice(prefix.length),
+        projectId: plan.source.projectId,
+        variantSelections: plan.selectedVariant.selections,
+        x: plan.instance.x,
+        y: plan.instance.y,
+      });
+      return !expected.ok ||
+        canonicalizeJson(expected.data) !== canonicalizeJson(plan)
+        ? planMismatchError(command)
+        : null;
+    }
     const plan = command.command.payload.plan;
     const prefix = `${plan.source.projectId}/instance/`;
     if (!plan.instance.stableId.startsWith(prefix)) {
       return planMismatchError(command);
     }
-    const expected = createFigmaIconInstancePlan(snapshot, {
+    const expected = createFigmaInputInstancePlan(snapshot, {
       assetId: plan.source.assetId,
       assetVersion: plan.source.assetVersion,
       instanceId: plan.instance.stableId.slice(prefix.length),
+      label: plan.properties.label.value,
       projectId: plan.source.projectId,
+      supportingText: plan.properties.supportingText.value,
+      text: plan.properties.text.value,
       variantSelections: plan.selectedVariant.selections,
       x: plan.instance.x,
       y: plan.instance.y,

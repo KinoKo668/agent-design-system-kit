@@ -5,6 +5,7 @@ import {
   createFigmaIconInstancePlan,
   createFigmaIconPlan,
   createFigmaInputPlan,
+  createFigmaInputInstancePlan,
   createFigmaVariablePlan,
   validateDesignSystemSnapshot,
   writerCommandDeliverySchema,
@@ -16,6 +17,7 @@ import { describe, expect, it } from "vitest";
 
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import iconRegistry from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
+import inputRegistry from "../../../design-system/hatch-demo/registry/inputs.registry.json" with { type: "json" };
 
 import {
   FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
@@ -513,6 +515,104 @@ function iconInstanceDelivery() {
   };
 }
 
+function inputInstanceDelivery() {
+  const tokens = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/tokens/input-foundation.tokens.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const contract = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/components/input-text.component.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const entry = inputRegistry.entries[0];
+  if (entry === undefined) throw new Error("Input Registry fixture missing.");
+  const snapshot = validateDesignSystemSnapshot("hatch-demo", [
+    {
+      kind: "token-set",
+      sourcePath: "tokens/input.tokens.json",
+      value: tokens,
+    },
+    {
+      kind: "component",
+      sourcePath: "components/input.component.json",
+      value: contract,
+    },
+    {
+      kind: "component-registry",
+      sourcePath: "registry/input.registry.json",
+      value: {
+        ...inputRegistry,
+        entries: [
+          {
+            ...entry,
+            figma: {
+              ...entry.figma,
+              appliedDigest: entry.asset.contentDigest,
+              appliedVersion: entry.asset.version,
+              locator: {
+                componentSetKey: "input-text-component-set-key",
+                nodeId: "700:800",
+              },
+              status: "ready",
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  if (!snapshot.ok) throw new Error(snapshot.error.message);
+  const planned = createFigmaInputInstancePlan(snapshot.data, {
+    assetId: "input/text",
+    instanceId: "screen-sign-up/email",
+    label: "Email address",
+    projectId: "hatch-demo",
+    supportingText: "Enter a valid work email address.",
+    text: "alex@example.com",
+    variantSelections: { content: "filled", state: "error" },
+    x: 120,
+    y: 240,
+  });
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: planned.data.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: planned.data.source.assetId,
+        assetVersion: planned.data.source.assetVersion,
+        contentDigest: planned.data.source.contentDigest,
+        projectId: planned.data.source.projectId,
+        type: "component",
+      },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "instances.input.insert",
+    },
+    idempotencyKey: "input-instance-screen-sign-up-email",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: planned.data.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("lightweight Figma Writer boundary validation", () => {
   it("stays version-aligned with the authoritative Core schema", () => {
     expect(FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION).toBe(
@@ -571,6 +671,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(iconInstanceDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(iconInstanceDelivery())).toBe(true);
+    expect(
+      writerCommandDeliverySchema.safeParse(inputInstanceDelivery()).success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(inputInstanceDelivery())).toBe(true);
   });
 
   it("rejects the same unsafe command extensions at the Plugin boundary", () => {
@@ -654,6 +758,22 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(invalidIconInstanceMajor).success,
     ).toBe(false);
     expect(isWriterCommandDelivery(invalidIconInstanceMajor)).toBe(false);
+
+    const mismatchedInputState = structuredClone(inputInstanceDelivery());
+    mismatchedInputState.command.payload.plan.properties.state.value =
+      "Focused";
+    expect(
+      writerCommandDeliverySchema.safeParse(mismatchedInputState).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(mismatchedInputState)).toBe(false);
+
+    const paddedInputText = structuredClone(inputInstanceDelivery());
+    paddedInputText.command.payload.plan.properties.text.value =
+      " alex@example.com";
+    expect(writerCommandDeliverySchema.safeParse(paddedInputText).success).toBe(
+      false,
+    );
+    expect(isWriterCommandDelivery(paddedInputText)).toBe(false);
   });
 
   it("matches strict success and failure Result envelopes", () => {
@@ -795,6 +915,29 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerPluginResultSchema.safeParse(iconInstanceSuccess).success,
     ).toBe(true);
     expect(isWriterPluginResult(iconInstanceSuccess)).toBe(true);
+    const inputInstanceSuccess = {
+      ...instanceSuccess,
+      result: {
+        componentSet: {
+          nodeId: "700:800",
+          stableId: "hatch-demo/component/input/text/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "800:900",
+          stableId: "hatch-demo/instance/screen-sign-up/email",
+        },
+        type: "instances.input.insert",
+        variant: {
+          stableId:
+            "hatch-demo/component/input/text/component-set/major-1/variant/state-error/content-filled",
+        },
+      },
+    };
+    expect(
+      writerPluginResultSchema.safeParse(inputInstanceSuccess).success,
+    ).toBe(true);
+    expect(isWriterPluginResult(inputInstanceSuccess)).toBe(true);
     const auditSuccess = {
       ok: true,
       operationId: OPERATION_ID,

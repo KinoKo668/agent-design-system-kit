@@ -217,7 +217,9 @@ export function createRegistryWriteFinalizer(
       (result.type !== "components.button.ensure" &&
         result.type !== "components.icon.ensure" &&
         result.type !== "components.input.ensure" &&
-        result.type !== "instances.button.insert")
+        result.type !== "instances.button.insert" &&
+        result.type !== "instances.icon.insert" &&
+        result.type !== "instances.input.insert")
     ) {
       return null;
     }
@@ -227,8 +229,12 @@ export function createRegistryWriteFinalizer(
         result.type === "components.input.ensure") &&
       command.command.type === result.type
         ? command.command.payload.plan
-        : result.type === "instances.button.insert" &&
-            command.command.type === "instances.button.insert"
+        : (result.type === "instances.button.insert" &&
+              command.command.type === "instances.button.insert") ||
+            (result.type === "instances.icon.insert" &&
+              command.command.type === "instances.icon.insert") ||
+            (result.type === "instances.input.insert" &&
+              command.command.type === "instances.input.insert")
           ? command.command.payload.plan
           : null;
     if (

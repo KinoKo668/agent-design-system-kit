@@ -22,6 +22,7 @@ import {
   HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
   HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
+  HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
 } from "./write-tools.js";
@@ -250,6 +251,18 @@ describe("createHatchkitMcpServer", () => {
         readOnlyHint: false,
       },
     });
+    expect(
+      tools.tools.find(
+        ({ name }) => name === HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+      ),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: false,
+      },
+    });
     expect(tools.tools.at(-1)).toMatchObject({
       annotations: {
         destructiveHint: false,
@@ -281,6 +294,25 @@ describe("createHatchkitMcpServer", () => {
     });
     expect(unbuiltIcon.isError).toBe(true);
     expect(JSON.stringify(unbuiltIcon)).toContain("IDENTITY_NOT_FOUND");
+    expect(execute).not.toHaveBeenCalled();
+
+    const unbuiltInput = await client.callTool({
+      arguments: {
+        assetId: "input/text",
+        instanceId: "settings/email",
+        label: "Email address",
+        requestId: "4c73620e-29b0-4285-8861-1a65b18f11dc",
+        supportingText: "Use your work email address.",
+        text: "alex@example.com",
+        variantSelections: { content: "filled", state: "default" },
+        waitTimeoutMs: 5_000,
+        x: 320,
+        y: 320,
+      },
+      name: HATCHKIT_INPUT_INSTANCE_INSERT_TOOL_NAME,
+    });
+    expect(unbuiltInput.isError).toBe(true);
+    expect(JSON.stringify(unbuiltInput)).toContain("IDENTITY_NOT_FOUND");
     expect(execute).not.toHaveBeenCalled();
 
     const result = await client.callTool({

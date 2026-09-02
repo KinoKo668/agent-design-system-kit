@@ -34,6 +34,10 @@ import {
   insertFigmaIconInstance,
 } from "./button-instance-writer.js";
 import {
+  InputInstanceWriterError,
+  insertFigmaInputInstance,
+} from "./input-instance-writer.js";
+import {
   bindFigmaLibraryFile,
   ensureFigmaVariables,
   getFigmaLibraryFileBinding,
@@ -507,6 +511,40 @@ async function executeCommand(
           : failureResult(command, pluginInstanceId, {
               code: "INTERNAL_ERROR",
               message: "The Figma Icon Instance writer failed unexpectedly.",
+              recoveryInstruction:
+                "Inspect the local Plugin diagnostics before retrying.",
+            });
+    }
+  } else if (
+    command.command.type === "instances.input.insert" &&
+    command.approval.mode === "approved" &&
+    command.target.kind === "figma-file"
+  ) {
+    try {
+      const instanceResult = await insertFigmaInputInstance(
+        buttonInstancePort,
+        command.command.payload.plan,
+        {
+          approvalId: command.approval.approvalId,
+          fileBindingId: command.target.fileBindingId,
+          operationId: command.operationId,
+          projectId: command.projectId,
+        },
+      );
+      result = {
+        ok: true,
+        operationId: command.operationId,
+        pluginInstanceId,
+        result: instanceResult,
+        schemaVersion: FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
+      };
+    } catch (cause) {
+      result =
+        cause instanceof InputInstanceWriterError
+          ? failureResult(command, pluginInstanceId, cause)
+          : failureResult(command, pluginInstanceId, {
+              code: "INTERNAL_ERROR",
+              message: "The Figma Input Instance writer failed unexpectedly.",
               recoveryInstruction:
                 "Inspect the local Plugin diagnostics before retrying.",
             });

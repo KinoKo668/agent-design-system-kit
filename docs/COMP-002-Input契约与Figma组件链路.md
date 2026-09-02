@@ -1,6 +1,6 @@
 # COMP-002：Input 契约与 Figma 组件链路
 
-- 当前状态：Contract、Token、Figma 幂等建库与 Registry 回写已实现；页面 Instance 插入待后续步骤完成
+- 当前状态：Contract、Token、Figma 幂等建库、Registry 回写与页面 Instance 插入链路已实现；等待真实 Figma 验收
 - 实现起点：2026-09-01
 - 依赖：LOOP-003、SCH-002、SCH-004、REG-002、FIG-007
 
@@ -88,6 +88,21 @@ Writer 会先验证文件绑定与全部 Token Variable，再创建任何节点�
 
 公开样例保持 `unbuilt`，因为尚未有真实人类 Component Approval，也没有在用户指定的独立 Figma Desktop 文件中完成建库与视觉验收。当前 Agent 可以理解并查询 Input，但不能把它冒充为可插入的真实 Figma Instance。
 
+页面复用链路已经实现，但同样遵守上述 Ready 门禁：
+
+```text
+hatchkit_insert_input_instance
+→ Registry 唯一 Ready 解析
+→ 确定性 FigmaInputInstancePlan
+→ Git Approval 重验
+→ instances.input.insert
+→ Plugin 核对完整 8 Variant 与五个属性
+→ 创建、恢复或返回同一稳定 Instance
+→ 写后来源、属性与位置审计
+```
+
+Agent 只能提交页面意图和可见文本，不能注入 Figma Node ID、File Binding、Approval 或内容摘要。相同 `requestId` 和相同意图可以安全重试；稳定 Instance ID 被其他内容占用、真实属性被手工改动、Main Component 脱离或 Variant 矩阵漂移时均拒绝覆盖。
+
 ## 5. 验收标准
 
 当前阶段已经验证：
@@ -105,14 +120,16 @@ Writer 会先验证文件绑定与全部 Token Variable，再创建任何节点�
 2. `components.input.ensure` Writer Protocol 与 Plugin Adapter；
 3. 8 Variant、文本属性和 Variable Binding 的幂等建库；
 4. Registry Ready 原子最终化。
+5. `FigmaInputInstancePlan` 与 `instances.input.insert` Writer Protocol；
+6. `hatchkit_insert_input_instance` MCP Tool；
+7. Instance 创建、无变化重试、部分恢复与写后来源审计。
 
 后续关闭 COMP-002 仍需：
 
-1. Input Instance Plan、MCP 插入 Tool 与写后来源审计；
-2. 真实审批、Figma Desktop 双次运行、重开定位和设计师视觉验收。
+1. 真实审批、Figma Desktop 双次运行、重开定位和设计师视觉验收。
 
 ## 6. Plugin 包体预算
 
-Input 是主线程中的第三类完整组件 Writer。接入前主线程为 129,521 bytes；完成独立协议校验、8 Variant Writer 与真实 Figma Adapter 后为 156,923 bytes，gzip 为 31,362 bytes。
+Input 是主线程中的第三类完整组件 Writer。接入前主线程为 129,521 bytes；完成独立协议校验、8 Variant Writer 与真实 Figma Adapter 后为 156,923 bytes，gzip 为 31,362 bytes。继续加入确定性 Input Instance 写入、严格消息边界、幂等恢复、写后审计和产物能力检查后，主线程为 169,082 bytes，gzip 为 32,926 bytes。
 
-因此原始体积门禁从 128 KiB 调整为 160 KiB，同时继续保留更严格的 32 KiB gzip 门禁和 300 KiB UI 门禁。调整只覆盖新增的可执行能力，不移除压缩门禁、不内嵌 Source Map，也不以无限制增大预算掩盖膨胀。
+因此原始体积门禁随两次可执行能力增量从 128 KiB 调整到 160 KiB，再调整为 168 KiB；gzip 门禁从 32 KiB 调整为 34 KiB，UI 仍保持 300 KiB。最终门禁仅比实测分别保留约 2.9 KiB 和 2.1 KiB 余量，同时新增对 `instances.input.insert` 的产物存在性检查。调整不移除压缩门禁、不内嵌 Source Map，也不以无限制增大预算掩盖膨胀。
