@@ -44,6 +44,7 @@ Icon Token Set + Icon Contract
 - 同一批准内容重试时不重复创建，部分写入可按稳定 Marker 恢复；
 - 同名未托管资产、重复稳定身份、陈旧 Variable、降级或同版本摘要冲突均失败关闭；
 - Bridge 写前从 Git 重建完整 Icon Plan，成功后使用同一 Registry 原子最终化流程。
+- Registry 驱动的 `FigmaIconInstancePlan`、`instances.icon.insert` Plugin Writer 与可选 `hatchkit_insert_icon_instance` MCP Tool 已形成完整页面插入链路；只接受准确 Ready Registry、Size 和稳定 Instance 身份，支持无变化重试、部分恢复与写后来源审计。
 - 主线程新增完整 Icon Adapter 后采用 128 KiB 原始体积与 32 KiB gzip 双门禁；当前仍远低于 Figma UI 的 300 KiB 上限，并保留独立 Source Map。
 
 ## 4. 稳定身份
@@ -64,7 +65,7 @@ hatch-demo/component/icon/check/component-set/major-1
 - Agent 可以查询并理解 Icon Contract；
 - Resolver 会返回 `ensure-required`，不会提供虚假的 Node ID；
 - `components.icon.ensure` 已进入正式 Writer Protocol 和 Plugin 主线程，但尚未暴露为公开 MCP Tool；
-- Icon Instance 插入尚未实现，页面 Agent 不能把 `unbuilt` Icon 当成可复用的真实 Instance；
+- Icon Instance 插入代码链路已经实现，但页面 Agent 仍不能把 `unbuilt` Icon 当成可复用的真实 Instance；MCP 会在 Writer 派发前返回 `IDENTITY_NOT_FOUND`；
 - 完成真实审批、Variables 写入、两次 Icon Ensure、重开定位和设计师验收后，Registry 才能进入 `ready`。
 
 ## 6. 验收标准

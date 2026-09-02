@@ -2,6 +2,7 @@ import {
   WRITER_PROTOCOL_SCHEMA_VERSION,
   createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
+  createFigmaIconInstancePlan,
   createFigmaIconPlan,
   createFigmaVariablePlan,
   validateDesignSystemSnapshot,
@@ -13,6 +14,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
+import iconRegistry from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
 
 import {
   FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION,
@@ -381,6 +383,101 @@ function instanceDelivery() {
   };
 }
 
+function iconInstanceDelivery() {
+  const tokens = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/tokens/icon-foundation.tokens.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const contract = JSON.parse(
+    readFileSync(
+      resolve(
+        process.cwd(),
+        "design-system/hatch-demo/components/icon-check.component.json",
+      ),
+      "utf8",
+    ),
+  ) as unknown;
+  const entry = iconRegistry.entries[0];
+  if (entry === undefined) throw new Error("Icon Registry fixture missing.");
+  const snapshot = validateDesignSystemSnapshot("hatch-demo", [
+    { kind: "token-set", sourcePath: "tokens/icon.tokens.json", value: tokens },
+    {
+      kind: "component",
+      sourcePath: "components/icon.component.json",
+      value: contract,
+    },
+    {
+      kind: "component-registry",
+      sourcePath: "registry/icon.registry.json",
+      value: {
+        ...iconRegistry,
+        entries: [
+          {
+            ...entry,
+            figma: {
+              appliedDigest: entry.asset.contentDigest,
+              appliedVersion: entry.asset.version,
+              channel: entry.figma.channel,
+              fileBindingId: entry.figma.fileBindingId,
+              locator: {
+                componentSetKey: "icon-check-component-set-key",
+                nodeId: "500:600",
+              },
+              majorVersion: entry.figma.majorVersion,
+              role: "component-set",
+              slotId: "root",
+              status: "ready",
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  if (!snapshot.ok) throw new Error(snapshot.error.message);
+  const planned = createFigmaIconInstancePlan(snapshot.data, {
+    assetId: "icon/check",
+    instanceId: "screen-checkout/success-check",
+    projectId: "hatch-demo",
+    variantSelections: { size: "large" },
+    x: 180,
+    y: 260,
+  });
+  if (!planned.ok) throw new Error(planned.error.message);
+  return {
+    approval: {
+      approvalId: planned.data.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: planned.data.source.assetId,
+        assetVersion: planned.data.source.assetVersion,
+        contentDigest: planned.data.source.contentDigest,
+        projectId: planned.data.source.projectId,
+        type: "component",
+      },
+    },
+    attempt: 1,
+    command: {
+      payload: { plan: planned.data },
+      type: "instances.icon.insert",
+    },
+    idempotencyKey: "icon-instance-screen-checkout-success-check",
+    operationId: OPERATION_ID,
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: planned.data.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 describe("lightweight Figma Writer boundary validation", () => {
   it("stays version-aligned with the authoritative Core schema", () => {
     expect(FIGMA_WRITER_PROTOCOL_SCHEMA_VERSION).toBe(
@@ -419,6 +516,10 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(instanceDelivery()).success,
     ).toBe(true);
     expect(isWriterCommandDelivery(instanceDelivery())).toBe(true);
+    expect(
+      writerCommandDeliverySchema.safeParse(iconInstanceDelivery()).success,
+    ).toBe(true);
+    expect(isWriterCommandDelivery(iconInstanceDelivery())).toBe(true);
   });
 
   it("rejects the same unsafe command extensions at the Plugin boundary", () => {
@@ -480,6 +581,21 @@ describe("lightweight Figma Writer boundary validation", () => {
       writerCommandDeliverySchema.safeParse(changedIconGeometry).success,
     ).toBe(false);
     expect(isWriterCommandDelivery(changedIconGeometry)).toBe(false);
+
+    const wrongIconInstanceSize = structuredClone(iconInstanceDelivery());
+    wrongIconInstanceSize.command.payload.plan.properties.size.value = "Small";
+    expect(
+      writerCommandDeliverySchema.safeParse(wrongIconInstanceSize).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(wrongIconInstanceSize)).toBe(false);
+
+    const invalidIconInstanceMajor = structuredClone(iconInstanceDelivery());
+    invalidIconInstanceMajor.command.payload.plan.componentSet.majorVersion =
+      -1;
+    expect(
+      writerCommandDeliverySchema.safeParse(invalidIconInstanceMajor).success,
+    ).toBe(false);
+    expect(isWriterCommandDelivery(invalidIconInstanceMajor)).toBe(false);
   });
 
   it("matches strict success and failure Result envelopes", () => {
@@ -575,6 +691,29 @@ describe("lightweight Figma Writer boundary validation", () => {
       true,
     );
     expect(isWriterPluginResult(instanceSuccess)).toBe(true);
+    const iconInstanceSuccess = {
+      ...instanceSuccess,
+      result: {
+        componentSet: {
+          nodeId: "500:600",
+          stableId: "hatch-demo/component/icon/check/component-set/major-1",
+        },
+        instance: {
+          action: "created",
+          nodeId: "600:700",
+          stableId: "hatch-demo/instance/screen-checkout/success-check",
+        },
+        type: "instances.icon.insert",
+        variant: {
+          stableId:
+            "hatch-demo/component/icon/check/component-set/major-1/variant/size-large",
+        },
+      },
+    };
+    expect(
+      writerPluginResultSchema.safeParse(iconInstanceSuccess).success,
+    ).toBe(true);
+    expect(isWriterPluginResult(iconInstanceSuccess)).toBe(true);
     const auditSuccess = {
       ok: true,
       operationId: OPERATION_ID,

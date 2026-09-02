@@ -12,6 +12,7 @@ import { figmaVariablePlanSchema } from "./figma-variable-plan.js";
 import { figmaButtonPlanSchema } from "./figma-button-plan.js";
 import { figmaButtonInstancePlanSchema } from "./figma-button-instance-plan.js";
 import { figmaIconPlanSchema } from "./figma-icon-plan.js";
+import { figmaIconInstancePlanSchema } from "./figma-icon-instance-plan.js";
 import {
   figmaStyleAuditPlanSchema,
   figmaStyleAuditResultSchema,
@@ -35,6 +36,7 @@ export const WRITER_COMMAND_TYPES = {
   ensureIcon: "components.icon.ensure",
   ensureVariables: "variables.ensure",
   insertButtonInstance: "instances.button.insert",
+  insertIconInstance: "instances.icon.insert",
   ping: "writer.ping",
 } as const;
 
@@ -164,6 +166,13 @@ export const writerInsertButtonInstanceCommandSchema = z
   })
   .strict();
 
+export const writerInsertIconInstanceCommandSchema = z
+  .object({
+    payload: z.object({ plan: figmaIconInstancePlanSchema }).strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.insertIconInstance),
+  })
+  .strict();
+
 export const writerAuditStylesCommandSchema = z
   .object({
     payload: z.object({ plan: figmaStyleAuditPlanSchema }).strict(),
@@ -189,6 +198,7 @@ export const writerCommandSchema = z.discriminatedUnion("type", [
   writerAuditRegistryDriftCommandSchema,
   writerAuditComponentsCommandSchema,
   writerAuditStylesCommandSchema,
+  writerInsertIconInstanceCommandSchema,
   writerInsertButtonInstanceCommandSchema,
   writerEnsureIconCommandSchema,
   writerEnsureButtonCommandSchema,
@@ -286,7 +296,10 @@ export const writerCommandEnvelopeSchema = z
         : null,
       envelope.projectId !== plan.source.projectId ? "envelopeProjectId" : null,
     ].filter((value): value is string => value !== null);
-    if (envelope.command.type === WRITER_COMMAND_TYPES.insertButtonInstance) {
+    if (
+      envelope.command.type === WRITER_COMMAND_TYPES.insertButtonInstance ||
+      envelope.command.type === WRITER_COMMAND_TYPES.insertIconInstance
+    ) {
       if (
         envelope.approval.approvalId !==
         envelope.command.payload.plan.source.approvalId
@@ -454,6 +467,32 @@ export const writerButtonInstanceResultSchema = z
   })
   .strict();
 
+export const writerIconInstanceResultSchema = z
+  .object({
+    componentSet: z
+      .object({
+        nodeId: z
+          .string()
+          .max(128)
+          .regex(/^\d+:\d+$/u),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    instance: z
+      .object({
+        action: z.enum(["created", "recovered", "unchanged"]),
+        nodeId: z
+          .string()
+          .max(128)
+          .regex(/^\d+:\d+$/u),
+        stableId: stableAssetIdSchema,
+      })
+      .strict(),
+    type: z.literal(WRITER_COMMAND_TYPES.insertIconInstance),
+    variant: z.object({ stableId: stableAssetIdSchema }).strict(),
+  })
+  .strict();
+
 export const writerSuccessResultSchema = z.union([
   z.object({ pong: z.literal(true) }).strict(),
   registryDriftAuditResultSchema,
@@ -462,6 +501,7 @@ export const writerSuccessResultSchema = z.union([
   writerButtonResultSchema,
   writerIconResultSchema,
   writerButtonInstanceResultSchema,
+  writerIconInstanceResultSchema,
   writerVariablesResultSchema,
 ]);
 export type WriterSuccessResult = z.infer<typeof writerSuccessResultSchema>;

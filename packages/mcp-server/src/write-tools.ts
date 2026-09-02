@@ -27,9 +27,16 @@ import {
   registryDriftAuditLoopOutputSchema,
   runRegistryDriftAuditLoop,
 } from "./registry-drift-audit-loop.js";
+import {
+  iconInstanceLoopInputSchema,
+  iconInstanceLoopOutputSchema,
+  runIconInstanceLoop,
+} from "./icon-instance-loop.js";
 
 export const HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME =
   "hatchkit_insert_button_instance" as const;
+export const HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME =
+  "hatchkit_insert_icon_instance" as const;
 export const HATCHKIT_STYLE_AUDIT_TOOL_NAME = "hatchkit_audit_styles" as const;
 export const HATCHKIT_COMPONENT_AUDIT_TOOL_NAME =
   "hatchkit_audit_components" as const;
@@ -56,6 +63,19 @@ export const hatchkitButtonInstanceInsertInputSchema =
       ),
   });
 
+export const hatchkitIconInstanceInsertInputSchema =
+  iconInstanceLoopInputSchema.extend({
+    waitTimeoutMs: z
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(30_000)
+      .describe(
+        "How long to wait for the connected Figma Plugin before returning a resumable timeout.",
+      ),
+  });
+
 export interface HatchkitWriteToolOptions extends HatchkitCatalogOptions {
   readonly writer: LocalWriterClient;
 }
@@ -64,6 +84,26 @@ export function registerHatchkitWriteTools(
   server: McpServer,
   options: HatchkitWriteToolOptions,
 ): void {
+  server.registerTool(
+    HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
+    {
+      annotations: HATCHKIT_ADDITIVE_WRITE_TOOL_ANNOTATIONS,
+      description:
+        "Resolve one exact Ready Icon and Size from the current Git Registry, build the deterministic approved plan, insert one real Figma Instance through the authenticated single Writer, and return its audited result. The 44px interactive target remains the consumer component's responsibility.",
+      inputSchema: hatchkitIconInstanceInsertInputSchema,
+      outputSchema: iconInstanceLoopOutputSchema,
+      title: "Insert an approved Icon Instance",
+    },
+    async ({ waitTimeoutMs, ...request }) =>
+      toMcpToolResponse(
+        await withDesignSystemSnapshot(options, (snapshot) =>
+          runIconInstanceLoop(snapshot, request, options, {
+            timeoutMs: waitTimeoutMs,
+          }),
+        ),
+      ),
+  );
+
   server.registerTool(
     HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
     {

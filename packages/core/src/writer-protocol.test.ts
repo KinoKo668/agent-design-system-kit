@@ -165,6 +165,68 @@ function iconCommand(): unknown {
   };
 }
 
+function iconInstanceCommand(): unknown {
+  const root = "hatch-demo/component/icon/check/component-set/major-1";
+  const plan = {
+    componentSet: {
+      expectedVariantStableIds: [
+        `${root}/variant/size-small`,
+        `${root}/variant/size-medium`,
+        `${root}/variant/size-large`,
+      ],
+      majorVersion: 1,
+      nodeId: "500:600",
+      stableId: root,
+    },
+    instance: {
+      stableId: "hatch-demo/instance/checkout/success-check",
+      x: 180,
+      y: 260,
+    },
+    properties: { size: { name: "Size", value: "Large" } },
+    schemaVersion: "1.0.0",
+    selectedVariant: {
+      figmaName: "Size=Large",
+      selections: { size: "large" },
+      slotId: "variant/size-large",
+      stableId: `${root}/variant/size-large`,
+    },
+    source: {
+      approvalId: "approval.component.icon.check.1.0.0",
+      assetId: "icon/check",
+      assetVersion: "1.0.0",
+      contentDigest:
+        "sha256:1b1231911fc691152b6d5e0f95d9681f02995033c97457d3aafccbda592fa260",
+      fileBindingId: "2227db09-eb2f-4dcb-8f6a-386c6271e577",
+      projectId: "hatch-demo",
+    },
+  };
+  return {
+    approval: {
+      approvalId: plan.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: plan.source.assetId,
+        assetVersion: plan.source.assetVersion,
+        contentDigest: plan.source.contentDigest,
+        projectId: plan.source.projectId,
+        type: "component",
+      },
+    },
+    command: { payload: { plan }, type: "instances.icon.insert" },
+    idempotencyKey: "icon-instance-checkout-success-check",
+    operationId: "89d4aa88-67a2-4de3-bf64-2b51509316be",
+    projectId: "hatch-demo",
+    schemaVersion: WRITER_PROTOCOL_SCHEMA_VERSION,
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: plan.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  };
+}
+
 function styleAuditCommand(): unknown {
   return {
     approval: {
@@ -315,6 +377,9 @@ describe("Writer protocol", () => {
     expect(writerCommandEnvelopeSchema.safeParse(iconCommand()).success).toBe(
       true,
     );
+    expect(
+      writerCommandEnvelopeSchema.safeParse(iconInstanceCommand()).success,
+    ).toBe(true);
     expect(
       writerCommandEnvelopeSchema.safeParse(styleAuditCommand()).success,
     ).toBe(true);

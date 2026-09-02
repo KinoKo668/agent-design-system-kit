@@ -1079,6 +1079,115 @@ function isFigmaButtonInstancePlan(
   );
 }
 
+function isFigmaIconInstancePlan(
+  value: unknown,
+): value is Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(
+      value,
+      new Set([
+        "componentSet",
+        "instance",
+        "properties",
+        "schemaVersion",
+        "selectedVariant",
+        "source",
+      ]),
+    ) ||
+    value.schemaVersion !== "1.0.0" ||
+    !isRecord(value.source) ||
+    !hasOnlyKeys(
+      value.source,
+      new Set([
+        "approvalId",
+        "assetId",
+        "assetVersion",
+        "contentDigest",
+        "fileBindingId",
+        "projectId",
+      ]),
+    ) ||
+    !COMPONENT_APPROVAL_ID_PATTERN.test(String(value.source.approvalId)) ||
+    !isStableAssetId(value.source.assetId) ||
+    !SEMVER_PATTERN.test(String(value.source.assetVersion)) ||
+    !CONTENT_DIGEST_PATTERN.test(String(value.source.contentDigest)) ||
+    !isUuid(value.source.fileBindingId) ||
+    !isStableIdSegment(value.source.projectId) ||
+    !isRecord(value.componentSet) ||
+    !hasOnlyKeys(
+      value.componentSet,
+      new Set([
+        "expectedVariantStableIds",
+        "majorVersion",
+        "nodeId",
+        "stableId",
+      ]),
+    ) ||
+    !Array.isArray(value.componentSet.expectedVariantStableIds) ||
+    value.componentSet.expectedVariantStableIds.length !== 3 ||
+    !value.componentSet.expectedVariantStableIds.every(isStableAssetId) ||
+    new Set(value.componentSet.expectedVariantStableIds).size !== 3 ||
+    !Number.isSafeInteger(value.componentSet.majorVersion) ||
+    Number(value.componentSet.majorVersion) < 0 ||
+    !isBoundedString(value.componentSet.nodeId, 1, 128) ||
+    !/^\d+:\d+$/u.test(value.componentSet.nodeId) ||
+    !isStableAssetId(value.componentSet.stableId) ||
+    !isRecord(value.instance) ||
+    !hasOnlyKeys(value.instance, new Set(["stableId", "x", "y"])) ||
+    !isStableAssetId(value.instance.stableId) ||
+    ![value.instance.x, value.instance.y].every(
+      (position) =>
+        typeof position === "number" &&
+        Number.isFinite(position) &&
+        position >= -1_000_000 &&
+        position <= 1_000_000,
+    ) ||
+    !isRecord(value.properties) ||
+    !hasOnlyKeys(value.properties, new Set(["size"])) ||
+    !isRecord(value.properties.size) ||
+    !hasOnlyKeys(value.properties.size, new Set(["name", "value"])) ||
+    value.properties.size.name !== "Size" ||
+    !["Small", "Medium", "Large"].includes(
+      String(value.properties.size.value),
+    ) ||
+    !isRecord(value.selectedVariant) ||
+    !hasOnlyKeys(
+      value.selectedVariant,
+      new Set(["figmaName", "selections", "slotId", "stableId"]),
+    ) ||
+    !isBoundedString(value.selectedVariant.figmaName, 1, 120) ||
+    !isRecord(value.selectedVariant.selections) ||
+    !hasOnlyKeys(value.selectedVariant.selections, new Set(["size"])) ||
+    !["small", "medium", "large"].includes(
+      String(value.selectedVariant.selections.size),
+    ) ||
+    !isStableAssetId(value.selectedVariant.slotId) ||
+    !isStableAssetId(value.selectedVariant.stableId)
+  ) {
+    return false;
+  }
+  const root = `${String(value.source.projectId)}/component/${String(value.source.assetId)}/component-set/major-${String(value.componentSet.majorVersion)}`;
+  return (
+    value.componentSet.stableId === root &&
+    String(value.source.assetVersion).split(".")[0] ===
+      String(value.componentSet.majorVersion) &&
+    value.selectedVariant.stableId ===
+      `${root}/${String(value.selectedVariant.slotId)}` &&
+    value.componentSet.expectedVariantStableIds.every((stableId) =>
+      String(stableId).startsWith(`${root}/`),
+    ) &&
+    value.componentSet.expectedVariantStableIds.includes(
+      value.selectedVariant.stableId,
+    ) &&
+    value.selectedVariant.figmaName ===
+      `${String(value.properties.size.name)}=${String(value.properties.size.value)}` &&
+    String(value.instance.stableId).startsWith(
+      `${String(value.source.projectId)}/instance/`,
+    )
+  );
+}
+
 function isPingCommand(value: Record<string, unknown>): boolean {
   return (
     value.type === "writer.ping" &&
@@ -1232,6 +1341,52 @@ function isButtonInstanceCommand(
     !isRecord(value.payload) ||
     !hasOnlyKeys(value.payload, new Set(["plan"])) ||
     !isFigmaButtonInstancePlan(value.payload.plan) ||
+    approval.mode !== "approved" ||
+    !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
+    !COMPONENT_APPROVAL_ID_PATTERN.test(String(approval.approvalId)) ||
+    !isRecord(approval.subject) ||
+    !hasOnlyKeys(
+      approval.subject,
+      new Set([
+        "assetId",
+        "assetVersion",
+        "contentDigest",
+        "projectId",
+        "type",
+      ]),
+    ) ||
+    approval.subject.type !== "component" ||
+    target.kind !== "figma-file" ||
+    !hasOnlyKeys(target, new Set(["fileBindingId", "kind", "stableId"])) ||
+    !isUuid(target.fileBindingId) ||
+    !isStableAssetId(target.stableId)
+  ) {
+    return false;
+  }
+  const source = value.payload.plan.source;
+  return (
+    isRecord(source) &&
+    approval.approvalId === source.approvalId &&
+    approval.subject.projectId === source.projectId &&
+    approval.subject.assetId === source.assetId &&
+    approval.subject.assetVersion === source.assetVersion &&
+    approval.subject.contentDigest === source.contentDigest &&
+    target.fileBindingId === source.fileBindingId &&
+    projectId === source.projectId
+  );
+}
+
+function isIconInstanceCommand(
+  value: Record<string, unknown>,
+  approval: Record<string, unknown>,
+  target: Record<string, unknown>,
+  projectId: string,
+): boolean {
+  if (
+    value.type !== "instances.icon.insert" ||
+    !isRecord(value.payload) ||
+    !hasOnlyKeys(value.payload, new Set(["plan"])) ||
+    !isFigmaIconInstancePlan(value.payload.plan) ||
     approval.mode !== "approved" ||
     !hasOnlyKeys(approval, new Set(["approvalId", "mode", "subject"])) ||
     !COMPONENT_APPROVAL_ID_PATTERN.test(String(approval.approvalId)) ||
@@ -1612,6 +1767,12 @@ export function isWriterCommandDelivery(
       value.approval,
       value.target,
       value.projectId,
+    ) ||
+    isIconInstanceCommand(
+      value.command,
+      value.approval,
+      value.target,
+      value.projectId,
     )
   );
 }
@@ -1730,6 +1891,30 @@ function isButtonInstanceResult(value: Record<string, unknown>): boolean {
     ) &&
     isBoundedString(value.instance.nodeId, 1, 128) &&
     /^\d+:\d+$/u.test(value.instance.nodeId) &&
+    isStableAssetId(value.instance.stableId) &&
+    isRecord(value.variant) &&
+    hasOnlyKeys(value.variant, new Set(["stableId"])) &&
+    isStableAssetId(value.variant.stableId)
+  );
+}
+
+function isIconInstanceResult(value: Record<string, unknown>): boolean {
+  return (
+    hasOnlyKeys(
+      value,
+      new Set(["componentSet", "instance", "type", "variant"]),
+    ) &&
+    value.type === "instances.icon.insert" &&
+    isRecord(value.componentSet) &&
+    hasOnlyKeys(value.componentSet, new Set(["nodeId", "stableId"])) &&
+    /^\d+:\d+$/u.test(String(value.componentSet.nodeId)) &&
+    isStableAssetId(value.componentSet.stableId) &&
+    isRecord(value.instance) &&
+    hasOnlyKeys(value.instance, new Set(["action", "nodeId", "stableId"])) &&
+    ["created", "recovered", "unchanged"].includes(
+      String(value.instance.action),
+    ) &&
+    /^\d+:\d+$/u.test(String(value.instance.nodeId)) &&
     isStableAssetId(value.instance.stableId) &&
     isRecord(value.variant) &&
     hasOnlyKeys(value.variant, new Set(["stableId"])) &&
@@ -1981,6 +2166,7 @@ export function isWriterPluginResult(
         isButtonResult(value.result) ||
         isIconResult(value.result) ||
         isButtonInstanceResult(value.result) ||
+        isIconInstanceResult(value.result) ||
         isRegistryDriftAuditResult(value.result) ||
         isComponentAuditResult(value.result) ||
         isStyleAuditResult(value.result))

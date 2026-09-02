@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import { Client } from "@modelcontextprotocol/client";
 import { InMemoryTransport } from "@modelcontextprotocol/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   HATCHKIT_COMPONENT_CHANGE_REQUEST_TOOL_NAME,
@@ -21,6 +21,7 @@ import {
 import {
   HATCHKIT_BUTTON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_COMPONENT_AUDIT_TOOL_NAME,
+  HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
   HATCHKIT_REGISTRY_DRIFT_AUDIT_TOOL_NAME,
   HATCHKIT_STYLE_AUDIT_TOOL_NAME,
 } from "./write-tools.js";
@@ -154,7 +155,7 @@ describe("createHatchkitMcpServer", () => {
     });
   });
 
-  it("exposes one additive write Tool only when a local Writer is configured", async () => {
+  it("exposes additive Instance Tools only when a local Writer is configured", async () => {
     const requestId = "2c73620e-29b0-4285-8861-1a65b18f11dc";
     const operation: WriterOperation = {
       attempt: 1,
@@ -186,18 +187,18 @@ describe("createHatchkitMcpServer", () => {
       status: "succeeded",
       targetStableId: "hatch-demo/figma-file/library",
     };
+    const execute = vi.fn(() =>
+      Promise.resolve({
+        data: operation,
+        ok: true as const,
+        schemaVersion: "1.0.0" as const,
+        warnings: [],
+      }),
+    );
     const client = await connect({
       designSystemRoot: resolve(WORKSPACE_ROOT, "design-system/hatch-demo"),
       expectedProjectId: "hatch-demo",
-      writer: {
-        execute: () =>
-          Promise.resolve({
-            data: operation,
-            ok: true,
-            schemaVersion: "1.0.0",
-            warnings: [],
-          }),
-      },
+      writer: { execute },
     });
     const tools = await client.listTools();
     expect(
@@ -234,6 +235,18 @@ describe("createHatchkitMcpServer", () => {
         readOnlyHint: true,
       },
     });
+    expect(
+      tools.tools.find(
+        ({ name }) => name === HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
+      ),
+    ).toMatchObject({
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        readOnlyHint: false,
+      },
+    });
     expect(tools.tools.at(-1)).toMatchObject({
       annotations: {
         destructiveHint: false,
@@ -250,6 +263,22 @@ describe("createHatchkitMcpServer", () => {
     expect(status.structuredContent).toMatchObject({
       data: { server: { access: "writer-enabled" } },
     });
+
+    const unbuiltIcon = await client.callTool({
+      arguments: {
+        assetId: "icon/check",
+        instanceId: "settings/check-icon",
+        requestId: "3c73620e-29b0-4285-8861-1a65b18f11dc",
+        variantSelections: { size: "medium" },
+        waitTimeoutMs: 5_000,
+        x: 280,
+        y: 240,
+      },
+      name: HATCHKIT_ICON_INSTANCE_INSERT_TOOL_NAME,
+    });
+    expect(unbuiltIcon.isError).toBe(true);
+    expect(JSON.stringify(unbuiltIcon)).toContain("IDENTITY_NOT_FOUND");
+    expect(execute).not.toHaveBeenCalled();
 
     const result = await client.callTool({
       arguments: {
@@ -272,6 +301,7 @@ describe("createHatchkitMcpServer", () => {
       },
       ok: true,
     });
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 
   it("returns a tool-level failure without leaking an invalid absolute root", async () => {

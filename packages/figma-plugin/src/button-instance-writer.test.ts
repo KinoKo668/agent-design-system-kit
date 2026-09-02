@@ -1,14 +1,19 @@
 import {
   canonicalizeJson,
   createFigmaButtonInstancePlan,
+  createFigmaIconInstancePlan,
   validateDesignSystemSnapshot,
   type FigmaButtonInstancePlan,
+  type FigmaIconInstancePlan,
 } from "@agent-design-system-kit/core";
 import { describe, expect, it } from "vitest";
 
 import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import validTokens from "../../../design-system/hatch-demo/tokens/button-foundation.tokens.json" with { type: "json" };
+import iconContract from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
+import iconRegistry from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
+import iconTokens from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
 
 import {
   HATCHKIT_SHARED_NAMESPACE,
@@ -18,6 +23,7 @@ import {
 import {
   ButtonInstanceWriterError,
   insertFigmaButtonInstance,
+  insertFigmaIconInstance,
   type ButtonInstanceComponentPort,
   type ButtonInstanceComponentSetPort,
   type ButtonInstanceNodePort,
@@ -86,22 +92,24 @@ class FakeComponent extends SharedData implements ButtonInstanceComponentPort {
 }
 
 class FakeSet extends SharedData implements ButtonInstanceComponentSetPort {
-  readonly componentPropertyDefinitions = {
-    Appearance: {
-      type: "VARIANT" as const,
-      variantOptions: ["Primary", "Secondary"],
-    },
-    "Label#101:999": { type: "TEXT" as const },
-    State: {
-      type: "VARIANT" as const,
-      variantOptions: ["Default", "Disabled"],
-    },
-  };
+  readonly componentPropertyDefinitions;
   constructor(
     readonly id: string,
     readonly children: readonly ButtonInstanceComponentPort[],
+    definitions: ButtonInstanceComponentSetPort["componentPropertyDefinitions"] = {
+      Appearance: {
+        type: "VARIANT",
+        variantOptions: ["Primary", "Secondary"],
+      },
+      "Label#101:999": { type: "TEXT" },
+      State: {
+        type: "VARIANT",
+        variantOptions: ["Default", "Disabled"],
+      },
+    },
   ) {
     super();
+    this.componentPropertyDefinitions = definitions;
   }
 }
 
@@ -138,7 +146,7 @@ function plan(): FigmaButtonInstancePlan {
 }
 
 function componentMarker(
-  plan: FigmaButtonInstancePlan,
+  plan: FigmaButtonInstancePlan | FigmaIconInstancePlan,
   role: string,
   slotId: string,
 ) {
@@ -300,5 +308,172 @@ describe("insertFigmaButtonInstance", () => {
     await expect(
       insertFigmaButtonInstance(current.port, current.plan, CONTEXT),
     ).rejects.toBeInstanceOf(ButtonInstanceWriterError);
+  });
+});
+
+function iconPlan(): FigmaIconInstancePlan {
+  const entry = iconRegistry.entries[0];
+  if (entry === undefined) throw new Error("Icon Registry fixture missing.");
+  const snapshot = validateDesignSystemSnapshot("hatch-demo", [
+    {
+      kind: "token-set",
+      sourcePath: "tokens/icon.tokens.json",
+      value: iconTokens,
+    },
+    {
+      kind: "component",
+      sourcePath: "components/icon.component.json",
+      value: iconContract,
+    },
+    {
+      kind: "component-registry",
+      sourcePath: "registry/icon.registry.json",
+      value: {
+        ...iconRegistry,
+        entries: [
+          {
+            ...entry,
+            figma: {
+              ...entry.figma,
+              appliedDigest: entry.asset.contentDigest,
+              appliedVersion: entry.asset.version,
+              locator: {
+                componentSetKey: "icon-set-key",
+                nodeId: "500:600",
+              },
+              status: "ready",
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  if (!snapshot.ok) throw new Error(snapshot.error.message);
+  const result = createFigmaIconInstancePlan(snapshot.data, {
+    assetId: "icon/check",
+    instanceId: "screen-checkout/success-check",
+    projectId: "hatch-demo",
+    variantSelections: { size: "large" },
+    x: 180,
+    y: 260,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+  return result.data;
+}
+
+function iconFixture(failOnce = false) {
+  const planned = iconPlan();
+  const instances: FakeInstance[] = [];
+  let fail = failOnce;
+  const components = planned.componentSet.expectedVariantStableIds.map(
+    (stableId, index) => {
+      const slotId = stableId.slice(`${planned.componentSet.stableId}/`.length);
+      const component = new FakeComponent(
+        `501:${String(index + 1)}`,
+        stableId === planned.selectedVariant.stableId
+          ? planned.selectedVariant.figmaName
+          : `Size Variant ${String(index + 1)}`,
+        (componentId) => {
+          const instance = new FakeInstance(
+            `600:${String(instances.length + 1)}`,
+            componentId,
+            () => {
+              if (!fail) return false;
+              fail = false;
+              return true;
+            },
+          );
+          instance.properties.Size = "Small";
+          instances.push(instance);
+          return instance;
+        },
+      );
+      component.setSharedPluginData(
+        HATCHKIT_SHARED_NAMESPACE,
+        MANAGED_ASSET_SHARED_KEY,
+        componentMarker(planned, "component-variant", slotId),
+      );
+      return component;
+    },
+  );
+  const set = new FakeSet(planned.componentSet.nodeId, components, {
+    Size: {
+      type: "VARIANT",
+      variantOptions: ["Small", "Medium", "Large"],
+    },
+  });
+  set.setSharedPluginData(
+    HATCHKIT_SHARED_NAMESPACE,
+    MANAGED_ASSET_SHARED_KEY,
+    componentMarker(planned, "component-set", "root"),
+  );
+  const document = new SharedData();
+  document.setSharedPluginData(
+    HATCHKIT_SHARED_NAMESPACE,
+    "file-binding",
+    canonicalizeJson({
+      fileBindingId: FILE_BINDING_ID,
+      fileRole: "design-system-library",
+      projectId: "hatch-demo",
+      schemaVersion: "1.0.0",
+    }),
+  );
+  const port: FigmaButtonInstancePort = {
+    document,
+    appendToCurrentPage: () => undefined,
+    getComponentSetById: (nodeId) =>
+      Promise.resolve(nodeId === set.id ? set : null),
+    getComponentSets: () => Promise.resolve([set]),
+    getInstances: () => Promise.resolve(instances),
+  };
+  return { instances, plan: planned, port };
+}
+
+const ICON_CONTEXT = {
+  ...CONTEXT,
+  approvalId: "approval.component.icon.check.1.0.0",
+};
+
+describe("insertFigmaIconInstance", () => {
+  it("creates one exact Icon Instance and repeats without writes", async () => {
+    const current = iconFixture();
+    const first = await insertFigmaIconInstance(
+      current.port,
+      current.plan,
+      ICON_CONTEXT,
+    );
+    const writes = {
+      marker: current.instances[0]?.writes,
+      properties: current.instances[0]?.propertyWrites,
+    };
+    const second = await insertFigmaIconInstance(
+      current.port,
+      current.plan,
+      ICON_CONTEXT,
+    );
+
+    expect(first.instance.action).toBe("created");
+    expect(second.instance.action).toBe("unchanged");
+    expect(current.instances).toHaveLength(1);
+    expect(current.instances[0]).toMatchObject({ x: 180, y: 260 });
+    expect(current.instances[0]?.properties.Size).toBe("Large");
+    expect({
+      marker: current.instances[0]?.writes,
+      properties: current.instances[0]?.propertyWrites,
+    }).toEqual(writes);
+  });
+
+  it("resumes a partial Icon Instance without duplication", async () => {
+    const current = iconFixture(true);
+    await expect(
+      insertFigmaIconInstance(current.port, current.plan, ICON_CONTEXT),
+    ).rejects.toMatchObject({ code: "PARTIAL_WRITE" });
+    const recovered = await insertFigmaIconInstance(
+      current.port,
+      current.plan,
+      ICON_CONTEXT,
+    );
+    expect(recovered.instance.action).toBe("recovered");
+    expect(current.instances).toHaveLength(1);
   });
 });

@@ -5,6 +5,7 @@ import {
   createFailureResult,
   createFigmaButtonInstancePlan,
   createFigmaButtonPlan,
+  createFigmaIconInstancePlan,
   createFigmaIconPlan,
   createFigmaVariablePlan,
   createSuccessResult,
@@ -21,6 +22,7 @@ import validTokenSet from "../../../design-system/hatch-demo/tokens/button-found
 import validContract from "../../../design-system/hatch-demo/components/button.component.json" with { type: "json" };
 import validRegistry from "../../../design-system/hatch-demo/registry/components.registry.json" with { type: "json" };
 import iconContractFixture from "../../../design-system/hatch-demo/components/icon-check.component.json" with { type: "json" };
+import iconRegistryFixture from "../../../design-system/hatch-demo/registry/icons.registry.json" with { type: "json" };
 import iconTokenFixture from "../../../design-system/hatch-demo/tokens/icon-foundation.tokens.json" with { type: "json" };
 
 import { createGitApprovalVerifier } from "./approval-verifier.js";
@@ -432,6 +434,98 @@ function instanceCommand() {
   });
 }
 
+function iconSnapshot(
+  approvals: readonly ApprovalRecord[],
+): DesignSystemSnapshot {
+  const base = snapshot(approvals);
+  const entry = iconRegistryFixture.entries[0];
+  if (entry === undefined) throw new Error("Icon Registry fixture missing.");
+  return {
+    ...base,
+    components: [
+      ...base.components,
+      {
+        data: ICON_CONTRACT,
+        sourcePath: "components/icon-check.component.json",
+      },
+    ],
+    registries: [
+      ...base.registries,
+      {
+        data: componentRegistrySchema.parse({
+          ...iconRegistryFixture,
+          entries: [
+            {
+              ...entry,
+              figma: {
+                appliedDigest: entry.asset.contentDigest,
+                appliedVersion: entry.asset.version,
+                channel: entry.figma.channel,
+                fileBindingId: entry.figma.fileBindingId,
+                locator: {
+                  componentSetKey: "icon-check-component-set-key",
+                  nodeId: "500:600",
+                },
+                majorVersion: entry.figma.majorVersion,
+                role: "component-set",
+                slotId: "root",
+                status: "ready",
+              },
+            },
+          ],
+        }),
+        sourcePath: "registry/icons.registry.json",
+      },
+    ],
+    tokenSets: [
+      ...base.tokenSets,
+      {
+        data: ICON_TOKENS,
+        sourcePath: "tokens/icon-foundation.tokens.json",
+      },
+    ],
+  };
+}
+
+function iconInstanceCommand(current: DesignSystemSnapshot) {
+  const planned = createFigmaIconInstancePlan(current, {
+    assetId: "icon/check",
+    instanceId: "screen-checkout/success-check",
+    projectId: "hatch-demo",
+    variantSelections: { size: "large" },
+    x: 180,
+    y: 260,
+  });
+  if (!planned.ok) throw new Error(planned.error.message);
+  return writerCommandEnvelopeSchema.parse({
+    approval: {
+      approvalId: planned.data.source.approvalId,
+      mode: "approved",
+      subject: {
+        assetId: planned.data.source.assetId,
+        assetVersion: planned.data.source.assetVersion,
+        contentDigest: planned.data.source.contentDigest,
+        projectId: planned.data.source.projectId,
+        type: "component",
+      },
+    },
+    command: {
+      payload: { plan: planned.data },
+      type: "instances.icon.insert",
+    },
+    idempotencyKey: "icon-instance-approval-verifier-command",
+    operationId: "7d73620e-29b0-4285-8861-1a65b18f11dc",
+    projectId: "hatch-demo",
+    schemaVersion: "1.0.0",
+    source: { client: "mcp-server" },
+    target: {
+      fileBindingId: planned.data.source.fileBindingId,
+      kind: "figma-file",
+      stableId: "hatch-demo/figma-file/library",
+    },
+  });
+}
+
 describe("Git Approval verifier", () => {
   it("rebuilds the entire Registry-backed Instance plan and rejects client tampering", async () => {
     const direction = approvedDirection();
@@ -454,6 +548,29 @@ describe("Git Approval verifier", () => {
     }
     tampered.command.payload.plan.selectedVariant.figmaName =
       "Appearance=Secondary, State=Default";
+    await expect(verify(tampered)).resolves.toMatchObject({
+      code: "APPROVAL_STALE",
+    });
+  });
+
+  it("rebuilds the entire Registry-backed Icon Instance plan", async () => {
+    const direction = approvedDirection();
+    const token = approvedIconToken(direction);
+    const component = approvedIconComponent(token);
+    const current = iconSnapshot([direction, token, component]);
+    const verify = createGitApprovalVerifier(
+      { designSystemRoot: "/unused", expectedProjectId: "hatch-demo" },
+      {
+        loadSnapshot: () => Promise.resolve(createSuccessResult(current)),
+      },
+    );
+    expect(await verify(iconInstanceCommand(current))).toBeNull();
+
+    const tampered = structuredClone(iconInstanceCommand(current));
+    if (tampered.command.type !== "instances.icon.insert") {
+      throw new Error("Expected Icon Instance command.");
+    }
+    tampered.command.payload.plan.componentSet.nodeId = "500:601";
     await expect(verify(tampered)).resolves.toMatchObject({
       code: "APPROVAL_STALE",
     });

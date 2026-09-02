@@ -122,6 +122,7 @@ Registry · 历史             │
 - Registry 驱动的 Button Instance Writer：审计真实 Main Component 与准确 Variant，只创建一个托管 Instance，并在无变化重试时保持零写入；
 - 统一 Writer 重放与破坏性操作策略：恢复时强制真实写入重新审计，并禁止自动删除、Detach 或 Component Swap；
 - 可选的 `hatchkit_insert_button_instance` MCP Tool：一次调用完成 Registry／Variant 查询、确定性计划、认证 Bridge 提交、Plugin 等待与真实 Instance 审计结果；默认不配置本地凭据时完全保持只读；
+- 可选的 `hatchkit_insert_icon_instance` MCP Tool：对已 Ready Icon 的准确尺寸执行同样的失败关闭链路；公开 Icon 样例仍为 `unbuilt`，因此在真实审批和 Figma 登记完成前保持 Writer 零派发；
 - 完整 Agent Loop 的审批负向门禁：缺失、评审中、要求修改、不完整、拒绝、过期、被取代和撤销均在进入 Queue 前阻断，并向 Agent 保留准确恢复动作；
 - 只读 `hatchkit_audit_styles` MCP Tool：从当前 Git 设计事实生成已登记 Variable 允许清单，扫描绑定的 Figma 当前页面，并用准确 Node 与字段证据报告硬编码样式和外部 Variable；
 - 只读 `hatchkit_audit_components` MCP Tool：把真实 Instance、托管 Marker、Component Set 来源、批准 Variant 与当前 Variant Properties 和 Active Registry 交叉核对；

@@ -273,8 +273,13 @@ async function runCommand(
   const buttonCommand = command.command.type === "components.button.ensure";
   const iconCommand = command.command.type === "components.icon.ensure";
   const instanceCommand = command.command.type === "instances.button.insert";
+  const iconInstanceCommand = command.command.type === "instances.icon.insert";
   const writeCommand =
-    variablesCommand || buttonCommand || iconCommand || instanceCommand;
+    variablesCommand ||
+    buttonCommand ||
+    iconCommand ||
+    instanceCommand ||
+    iconInstanceCommand;
   const totalSteps = variablesCommand
     ? 5
     : buttonCommand
@@ -283,7 +288,9 @@ async function runCommand(
         ? 6
         : instanceCommand
           ? 4
-          : 1;
+          : iconInstanceCommand
+            ? 4
+            : 1;
   update({
     approval: writeCommand
       ? command.approval.mode === "approved"
@@ -302,7 +309,7 @@ async function runCommand(
     operation: {
       completedSteps: 0,
       detail: writeCommand
-        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconCommand ? "Icon" : "Button"} plan.`
+        ? `The Figma main thread is preflighting the approved ${variablesCommand ? "Variable" : instanceCommand ? "Button Instance" : iconInstanceCommand ? "Icon Instance" : iconCommand ? "Icon" : "Button"} plan.`
         : "The Figma main thread is validating a diagnostic command.",
       operationId: command.operationId,
       status: "running",
@@ -361,6 +368,10 @@ async function runCommand(
       result.result.type === "instances.button.insert"
         ? result.result
         : null;
+    const iconInstanceResult =
+      "type" in result.result && result.result.type === "instances.icon.insert"
+        ? result.result
+        : null;
     update({
       operation: {
         completedSteps: totalSteps,
@@ -373,7 +384,9 @@ async function runCommand(
                 ? `${String(iconResult.variants.created)} Icon Variants created, ${String(iconResult.variants.updated)} updated, ${String(iconResult.variants.unchanged)} unchanged.`
                 : instanceResult !== null
                   ? `Button Instance ${instanceResult.instance.action} from the registered ${instanceResult.variant.stableId}.`
-                  : "The diagnostic round trip completed without a Figma write.",
+                  : iconInstanceResult !== null
+                    ? `Icon Instance ${iconInstanceResult.instance.action} from the registered ${iconInstanceResult.variant.stableId}.`
+                    : "The diagnostic round trip completed without a Figma write.",
         operationId: command.operationId,
         status: "succeeded",
         step:
@@ -385,7 +398,9 @@ async function runCommand(
                 ? "Icon Component Set audited and managed markers committed"
                 : instanceResult !== null
                   ? "Button Instance audited and managed marker committed"
-                  : "writer.ping acknowledged",
+                  : iconInstanceResult !== null
+                    ? "Icon Instance audited and managed marker committed"
+                    : "writer.ping acknowledged",
         totalSteps,
       },
       writeAuthorized: false,
@@ -407,9 +422,11 @@ async function runCommand(
         ? "The Variables command stopped with a structured failure."
         : iconCommand
           ? "The Icon command stopped with a structured failure."
-          : buttonCommand || instanceCommand
-            ? "The Button command stopped with a structured failure."
-            : "The diagnostic command failed safely.",
+          : iconInstanceCommand
+            ? "The Icon Instance command stopped with a structured failure."
+            : buttonCommand || instanceCommand
+              ? "The Button command stopped with a structured failure."
+              : "The diagnostic command failed safely.",
       operationId: command.operationId,
       status: "failed",
       step: "Review the structured error",
